@@ -1,12 +1,6 @@
-import { BrowserRouter, Routes } from 'react-router-dom';
-import { renderRouterConfig } from './utils';
+import { useRoutes } from 'react-router-dom';
+import routerConfig from './router';
 
-import './assets/index.less';
-
-const App = () => (
-  <BrowserRouter>
-    <Routes>{renderRouterConfig()}</Routes>
-  </BrowserRouter>
-);
+const App = () => useRoutes(routerConfig);
 
 export default App;
