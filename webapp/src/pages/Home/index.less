@@ -1,0 +1,35 @@
+.logo {
+  float: left;
+  width: 120px;
+  height: 31px;
+  margin: 16px 24px 16px 0;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.ant-row-rtl .logo {
+  float: right;
+  margin: 16px 0 16px 24px;
+}
+
+.view-opts,
+.cfgbar {
+  height: 86vh;
+  max-height: 86vh;
+  overflow: auto;
+  background-color: #fff;
+}
+
+.view-opts {
+  &::-webkit-scrollbar  {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #ccc; // 滑块颜色
+    border-radius: 5px; // 滑块圆角
+  }
+}
+
+.cfgbar {
+  padding: 24px;
+}
