@@ -1,5 +1,6 @@
 /**绘制画布网格背景 */
-export const drawCanvasGrid = (ctx: CanvasRenderingContext2D, girdSize = 18) => {
+export const drawCanvasGrid = (ctx: CanvasRenderingContext2D | null, girdSize = 18) => {
+  if (!ctx) return;
   const width = ctx.canvas.width;
   const height = ctx.canvas.height;
 

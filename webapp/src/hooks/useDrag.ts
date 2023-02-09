@@ -28,10 +28,9 @@ export function useDrag(
   }, [dragging]);
 
   const dragEnd = useCallback(() => {
-    targetRef.current.removeEventListener('mousedown', draggStar);
     parentRef.current.removeEventListener('mousemove', dragging);
     targetRef.current.removeEventListener('mouseup', dragEnd);
-  }, [draggStar, dragging]);
+  }, [dragging]);
 
   useEffect(() => {
     targetRef.current.addEventListener('mousedown', draggStar);
