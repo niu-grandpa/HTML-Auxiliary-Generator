@@ -1,12 +1,12 @@
-import { getBackspace } from '../utils';
-
-export type Root = Map<string, TreeNode[]>;
+import { getBackspace, getKebabCase2 } from '../utils';
 
 export type TreeNode = {
   tag: string;
-  dataset?: Record<string, string>;
-  attributes?: Record<string, string>;
   node: Array<string | TreeNode>;
+  props?: Partial<{
+    style: Partial<CSSStyleDeclaration>;
+    attrs: Record<string, any>;
+  }>;
 };
 
 const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
@@ -16,12 +16,12 @@ const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
  * @param {object} root
  * @returns {string}
  */
-export const transformToHTMLString = (root: TreeNode): string => {
+export function transform(root: TreeNode): string {
   const memo = new Map<string, string>();
   let template = '';
 
-  const transform = (root: TreeNode, tab = 0, tmp = '') => {
-    const { tag, node, attributes: attrs } = root;
+  const transformToHTMLString = (root: TreeNode, tab = 0, tmp = '') => {
+    const { tag, node, props } = root;
     const backspace = getBackspace(tab++);
 
     const joinTag = (str: string) => {
@@ -34,7 +34,7 @@ export const transformToHTMLString = (root: TreeNode): string => {
       return tmp;
     }
     // 拼接开始标签
-    joinTag(generateTag({ name: tag, backspace, attrs }));
+    joinTag(generateTag({ name: tag, backspace, props }));
 
     // 处理父标签下嵌套的子标签
     for (const n of node) {
@@ -52,7 +52,7 @@ export const transformToHTMLString = (root: TreeNode): string => {
         template += memo.get(nodeStr);
         continue;
       }
-      const result = transform(n, tab + 1);
+      const result = transformToHTMLString(n, tab + 1);
       memo.set(nodeStr, result);
     }
     // 结束标签
@@ -60,25 +60,45 @@ export const transformToHTMLString = (root: TreeNode): string => {
     return tmp;
   };
 
-  transform(root);
+  transformToHTMLString(root);
   return template;
-};
+}
 
-const generateTag = (obj: {
+function generateTag(obj: {
   name: string;
   backspace: string;
-  attrs?: TreeNode['attributes'];
+  props?: TreeNode['props'];
   end?: boolean;
   close?: boolean;
-}): string => {
-  const { backspace, end, name, close, attrs } = obj;
-  const str = `${backspace}<${end ? '/' : ''}${name}${close ? ' /' : ''}>\n`;
-  const tag = addAttributes(str, attrs, end);
+}): string {
+  const { backspace, end, name, close, props } = obj;
+  const str = `${backspace}<${end ? '/' : ''}${name}${close ? ' /' : ''}>`;
+  const tag = joinProps(str, props, end) + '\n';
   return tag;
-};
+}
 
-const addAttributes = (tag: string, attrs: TreeNode['attributes'], endTag?: boolean) => {
-  if (!attrs || endTag) return tag;
-  // todo
-  return tag;
-};
+function joinProps(tag: string, props: TreeNode['props'], endTag?: boolean): string {
+  if (!props || endTag) return tag;
+
+  const { attrs, style } = props;
+  const isSelfClose = tag.endsWith(' />');
+  const endPosi = tag.length - (isSelfClose ? 3 : 1);
+  let newTag = tag.substring(0, endPosi);
+
+  if (attrs) {
+    for (const key in attrs) {
+      const value = attrs[key];
+      newTag += ` ${getKebabCase2(key)}="${value}"`;
+    }
+  }
+  if (style) {
+    let inlineStyle = ' style=';
+    for (const key in style) {
+      const value = style[key as any];
+      inlineStyle += `"${getKebabCase2(key)}: ${value};"`;
+    }
+    newTag += inlineStyle;
+  }
+
+  return newTag + `${isSelfClose ? ' />' : '>'}`;
+}

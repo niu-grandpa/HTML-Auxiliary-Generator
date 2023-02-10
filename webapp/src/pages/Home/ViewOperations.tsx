@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEffect, useRef } from 'react';
-import { transformToHTMLString } from '../../core';
+import { transform, generate } from '../../core';
 import { drawCanvasGrid } from '../../utils';
 
 /**视图操作区域 */
@@ -22,40 +22,6 @@ const ViewOperations: React.FC = () => {
     const ctx = canvas.getContext('2d');
     drawCanvasGrid(ctx);
   }, [canvasElm]);
-
-  useEffect(() => {
-    const res = transformToHTMLString({
-      tag: 'section',
-      on: {
-        click: () => {
-          console.log(1);
-        },
-      },
-      attributes: {
-        className: 'aaa',
-      },
-      children: [
-        {
-          tag: 'div',
-          children: [
-            {
-              tag: 'span',
-              children: ['标span签'],
-            },
-            {
-              tag: 'span',
-              children: ['标span签'],
-            },
-          ],
-        },
-        {
-          tag: 'p',
-          children: ['标p签'],
-        },
-      ],
-    });
-    console.log(res);
-  }, []);
 
   return (
     <section ref={wrapperElm} className='view-opts'>
