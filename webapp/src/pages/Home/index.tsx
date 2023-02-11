@@ -1,13 +1,23 @@
-import React from 'react';
 import { Col, Layout, Menu, Row } from 'antd';
-import ViewOperations from './ViewOperations';
+import React, { useCallback, useEffect } from 'react';
 import ConfigurationBar from './ConfigurationBar';
+import ViewOperations from './ViewOperations';
 
 import './index.less';
 
 const { Header, Content, Footer } = Layout;
 
 const Home: React.FC = () => {
+  const stopCtxMenu = useCallback((e: MouseEvent) => {
+    e.preventDefault();
+  }, []);
+  useEffect(() => {
+    window.addEventListener('contextmenu', stopCtxMenu);
+    return () => {
+      window.removeEventListener('contextmenu', stopCtxMenu);
+    };
+  }, [stopCtxMenu]);
+
   return (
     <Layout className='layout'>
       <Header>
@@ -15,7 +25,7 @@ const Home: React.FC = () => {
         <Menu theme='dark' mode='horizontal' defaultSelectedKeys={['']} items={[]} />
       </Header>
       <Content style={{ padding: '18px 38px 0 38px' }}>
-        <Row gutter={[26, 26]}>
+        <Row gutter={[24, 24]}>
           <Col span={19}>
             <ViewOperations />
           </Col>
@@ -25,7 +35,7 @@ const Home: React.FC = () => {
         </Row>
       </Content>
       <Footer style={{ textAlign: 'center' }}>
-        HTML Development Aids ©{new Date().getFullYear()} Created by Ryan John
+        HTML Auxiliary Generator ©{new Date().getFullYear()} Created by Ryan John
       </Footer>
     </Layout>
   );
