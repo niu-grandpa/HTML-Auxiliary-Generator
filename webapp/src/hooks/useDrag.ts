@@ -95,10 +95,10 @@ export function useDrag(
       parentElm.addEventListener('mouseup', onCleanup);
     };
 
-    targetElm.addEventListener('mousedown', onMouseDown);
+    targetElm?.addEventListener('mousedown', onMouseDown);
 
     return () => {
-      targetElm.removeEventListener('mousedown', onMouseDown);
+      targetElm?.removeEventListener('mousedown', onMouseDown);
     };
   }, [target, parent, destoryDashed, whenMouseDown]);
 }

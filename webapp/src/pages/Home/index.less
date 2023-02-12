@@ -1,27 +1,85 @@
+@divider-color: #0505050f;
+@light-color: #fff;
+@layout-bgc: #222223;
+
+.layout,
+.layout > .ant-layout-footer {
+  color: @light-color;
+  background-color: @layout-bgc;
+}
+
 .logo {
   float: left;
   width: 120px;
   height: 31px;
   margin: 16px 24px 16px 0;
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.ant-row-rtl .logo {
-  float: right;
-  margin: 16px 0 16px 24px;
+  background: #ffffff4d;
 }
 
 .view-opts,
-.cfgbar {
-  height: 86vh;
-  max-height: 86vh;
-  background-color: #fff;
+.file-list {
+  height: 89vh;
+  max-height: 89vh;
+  border-radius: 4px;
+  overflow: auto;
+}
+
+.cfg-bar,
+.file-list {
+  padding: 16px;
+  background-color: @light-color;
 }
 
 .view-opts {
+  position: relative;
+  overflow: auto;
+  background-color: #f5f5f5;
+  background-image: linear-gradient(@divider-color 1px, transparent 0),
+    linear-gradient(90deg, @divider-color 1px, transparent 0),
+    linear-gradient(@divider-color 1px, transparent 0),
+    linear-gradient(90deg, @divider-color 1px, transparent 0);
+  background-size: 15px 15px, 15px 15px;
+
+  &-magnifier {
+    width: 35px;
+    height: 120px;
+    padding: 10px 0;
+    position: absolute;
+    right: 20px;
+    bottom: 10px;
+    background-color: #ffffffdc;
+    border-radius: 4px;
+    z-index: 10;
+    box-shadow: 3px 3px 10px #00000033;
+  }
+
+  &-box {
+    position: relative;
+    height: 100%;
+    * {
+      cursor: move;
+    }
+    &-item-move {
+      cursor: grabbing;
+      box-shadow: 0 1px 2px -2px #00000029, 0 3px 6px 0 #0000001f, 0 5px 12px 4px #00000017;
+    }
+  }
+
+  &-highline {
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 50%;
+    border: 1px dashed #1677ff52;
+    pointer-events: none;
+  }
 }
 
-.cfgbar {
-  padding: 24px;
-  overflow: auto;
+.cfg-bar {
+  background-color: transparent;
+}
+
+.file-list {
+  color: @light-color;
+  background-color: #292a2b;
 }
