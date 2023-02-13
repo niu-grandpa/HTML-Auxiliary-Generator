@@ -1,4 +1,5 @@
-import { Tree } from 'antd';
+import { FileAddOutlined, FolderAddOutlined } from '@ant-design/icons';
+import { Button, Tree } from 'antd';
 import type { DataNode, DirectoryTreeProps } from 'antd/es/tree';
 import React from 'react';
 
@@ -33,14 +34,22 @@ const DirectoryTree: React.FC = () => {
   };
 
   return (
-    <Directory
-      multiple
-      defaultExpandAll
-      onSelect={onSelect}
-      onExpand={onExpand}
-      treeData={treeData}
-      className='file-list'
-    />
+    <section className='file-list'>
+      <section className='file-list-top'>
+        <span>结构目录</span>
+        <div>
+          <Button type='text' icon={<FileAddOutlined />} />
+          <Button type='text' icon={<FolderAddOutlined />} />
+        </div>
+      </section>
+      <Directory
+        multiple
+        defaultExpandAll
+        onSelect={onSelect}
+        onExpand={onExpand}
+        treeData={treeData}
+      />
+    </section>
   );
 };
 

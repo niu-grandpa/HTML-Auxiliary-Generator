@@ -1,6 +1,7 @@
 @divider-color: #0505050f;
-@light-color: #fff;
+@light-color: #ffffffdc;
 @layout-bgc: #222223;
+@layout-bgc2: #292a2b;
 
 .layout,
 .layout > .ant-layout-footer {
@@ -57,15 +58,13 @@
     position: relative;
     height: 100%;
     * {
-      cursor: move;
-    }
-    &-item-move {
-      cursor: grabbing;
-      box-shadow: 0 1px 2px -2px #00000029, 0 3px 6px 0 #0000001f, 0 5px 12px 4px #00000017;
+      &:hover {
+        cursor: move;
+      }
     }
   }
 
-  &-highline {
+  &-auxline {
     height: 100%;
     position: fixed;
     top: 0;
@@ -80,6 +79,21 @@
 }
 
 .file-list {
-  color: @light-color;
-  background-color: #292a2b;
+  background-color: @layout-bgc2;
+  .ant-tree-list,
+  .ant-btn-text {
+    color: @light-color;
+    background-color: @layout-bgc2;
+  }
+  &-top {
+    display: flex;
+    align-items: center;
+    margin-top: -10px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #aaa;
+    justify-content: space-between;
+    .ant-btn-text:hover {
+      color: #fff;
+    }
+  }
 }

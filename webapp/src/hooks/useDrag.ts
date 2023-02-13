@@ -15,26 +15,46 @@ export function useDrag(
   const targetRef = useRef(target.current);
   const parentRef = useRef(parent.current);
   const callbackRef = useRef(callback);
-  const dashedElm = useRef(document.createElement('div'));
+  const dashedElm = useRef<HTMLElement | null>(null);
+  const auxLineElm1 = useRef<HTMLElement | null>(null);
+  const auxLineElm2 = useRef<HTMLElement | null>(null);
 
-  const createDashed = useCallback((elm: HTMLElement, x: number, y: number) => {
+  const createPlaceholder = useCallback((x: number, y: number) => {
+    const { offsetWidth, offsetHeight } = targetRef.current!;
+    let dashed = dashedElm.current;
     if (dashedElm.current === null) {
       dashedElm.current = document.createElement('div');
+      dashed = dashedElm.current;
+      dashed.id = 'Move_Elm_Placeholder';
+      dashed.style.boxShadow = '0 2px 0 rgb(0 0 0 / 2%)';
+      dashed.style.border = '1px dashed #1677ff';
+      dashed.style.width = `${offsetWidth}px`;
+      dashed.style.height = `${offsetHeight}px`;
+      parentRef.current?.appendChild(dashed!);
     }
-    const dashed = dashedElm.current;
-    dashed.id = 'Move_Elm_Placeholder';
-    dashed.style.width = `${elm.offsetWidth}px`;
-    dashed.style.height = `${elm.offsetHeight}px`;
-    dashed.style.transform = `translate(${x}px, ${y}px)`;
-    dashed.style.boxShadow = '0 2px 0 rgb(0 0 0 / 2%)';
-    dashed.style.border = '1px dashed #1677ff';
-    elm.after(dashed);
+    dashedElm.current.style.display = '';
+    dashed!.style.transform = `translate(${x}px, ${y}px)`;
   }, []);
 
-  const destoryDashed = useCallback(() => {
-    if (dashedElm.current === null) return;
-    parentRef.current!.removeChild(dashedElm.current);
-    dashedElm.current = null as any;
+  const createAuxLine = useCallback((x: number) => {
+    const { offsetWidth } = targetRef.current!;
+    if (auxLineElm1.current === null || auxLineElm2.current === null) {
+      auxLineElm1.current = document.createElement('div');
+      auxLineElm2.current = document.createElement('div');
+      auxLineElm1.current.className = 'view-opts-auxline';
+      auxLineElm2.current.className = 'view-opts-auxline';
+      parentRef.current?.append(auxLineElm1.current, auxLineElm2.current);
+    }
+    auxLineElm1.current.style.display = '';
+    auxLineElm2.current.style.display = '';
+    auxLineElm1.current.style.left = `${x}px`;
+    auxLineElm2.current.style.left = `${x + offsetWidth}px`;
+  }, []);
+
+  const hiddenOtherElm = useCallback(() => {
+    dashedElm.current!.style.display = 'none';
+    auxLineElm1.current!.style.display = 'none';
+    auxLineElm2.current!.style.display = 'none';
   }, []);
 
   const whenMouseDown = useCallback(
@@ -44,10 +64,10 @@ export function useDrag(
       // 距离=点击时的位置相对于浏览器最左边的距离-物体左边框相对于浏览器最左边的距离
       const diffX = ev.clientX - offsetLeft;
       const diffY = ev.clientY - offsetTop;
-      createDashed(targetRef.current!, offsetLeft, offsetTop);
+      createPlaceholder(offsetLeft, offsetTop);
       return [diffX, diffY];
     },
-    [createDashed]
+    [createPlaceholder]
   );
 
   useEffect(() => {
@@ -61,12 +81,11 @@ export function useDrag(
 
     const onMouseDown = (ev: MouseEvent) => {
       ev.stopPropagation();
-
       const [diffX, diffY] = whenMouseDown(ev);
-      const onMouseMove = (ev: MouseEvent) => {
-        ev.stopPropagation();
-        let moveX = ev.clientX - diffX;
-        let moveY = ev.clientY - diffY;
+      const onMouseMove = (ev2: MouseEvent) => {
+        ev2.stopPropagation();
+        let moveX = ev2.clientX - diffX;
+        let moveY = ev2.clientY - diffY;
         if (moveX < 0) {
           moveX = 0;
         } else if (moveX > parentElm.offsetWidth - targetElm.offsetWidth) {
@@ -77,19 +96,16 @@ export function useDrag(
         } else if (moveY > parentElm.offsetHeight - targetElm.offsetHeight) {
           moveY = parentElm.offsetHeight - targetElm.offsetHeight;
         }
+        createAuxLine(moveX);
         callbackRef.current(moveX, moveY);
-        targetElm.classList.add('view-opts-box-item-move');
       };
-
-      const onCleanup = (ev: MouseEvent) => {
-        ev.stopPropagation();
-        destoryDashed();
-        targetElm.classList.remove('view-opts-box-item-move');
+      const onCleanup = (ev3: MouseEvent) => {
+        ev3.stopPropagation();
+        hiddenOtherElm();
         parentElm.removeEventListener('mousemove', onMouseMove);
         parentElm.removeEventListener('mouseleave', onCleanup);
         parentElm.removeEventListener('mouseup', onCleanup);
       };
-
       parentElm.addEventListener('mousemove', onMouseMove);
       parentElm.addEventListener('mouseleave', onCleanup);
       parentElm.addEventListener('mouseup', onCleanup);
@@ -98,7 +114,10 @@ export function useDrag(
     targetElm?.addEventListener('mousedown', onMouseDown);
 
     return () => {
+      dashedElm.current = null;
+      auxLineElm1.current = null;
+      auxLineElm2.current = null;
       targetElm?.removeEventListener('mousedown', onMouseDown);
     };
-  }, [target, parent, destoryDashed, whenMouseDown]);
+  }, [target, parent, whenMouseDown, createAuxLine, hiddenOtherElm]);
 }
