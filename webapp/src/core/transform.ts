@@ -1,8 +1,10 @@
+import { Key } from 'react';
 import { getBackspace, getKebabCase2 } from '../utils';
 
-export type TreeNode = {
+export type VNode = {
   tag: string;
-  node: Array<string | TreeNode>;
+  children: Array<string | VNode>;
+  key?: Key;
   props?: Partial<{
     style: Partial<CSSStyleDeclaration>;
     attrs: Record<string, any>;
@@ -13,15 +15,15 @@ const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
 
 /**
  * 转换节点对象为HTML字符串模板
- * @param {object} root
+ * @param {object} node
  * @returns {string}
  */
-export function transform(root: TreeNode): string {
+export function transform(node: VNode): string {
   const memo = new Map<string, string>();
   let template = '';
 
-  const transformToHTMLString = (root: TreeNode, tab = 0, tmp = '') => {
-    const { tag, node, props } = root;
+  const transformToHTMLString = (node: VNode, tab = 0, tmp = '') => {
+    const { tag, children, props } = node;
     const backspace = getBackspace(tab++);
 
     const joinTag = (str: string) => {
@@ -37,7 +39,7 @@ export function transform(root: TreeNode): string {
     joinTag(generateTag({ name: tag, backspace, props }));
 
     // 处理父标签下嵌套的子标签
-    for (const n of node) {
+    for (const n of children) {
       // 文字内容直接拼接
       if (typeof n === 'string') {
         const content = `${getBackspace(tab + 1)}${n}\n`;
@@ -60,14 +62,14 @@ export function transform(root: TreeNode): string {
     return tmp;
   };
 
-  transformToHTMLString(root);
+  transformToHTMLString(node);
   return template;
 }
 
 function generateTag(obj: {
   name: string;
   backspace: string;
-  props?: TreeNode['props'];
+  props?: VNode['props'];
   end?: boolean;
   close?: boolean;
 }): string {
@@ -77,7 +79,7 @@ function generateTag(obj: {
   return tag;
 }
 
-function joinProps(tag: string, props: TreeNode['props'], endTag?: boolean): string {
+function joinProps(tag: string, props: VNode['props'], endTag?: boolean): string {
   if (!props || endTag) return tag;
 
   const { attrs, style } = props;

@@ -1,4 +1,4 @@
-import { type TreeNode } from '.';
+import { type VNode } from '.';
 
 /**
  * 生成HTML节点树
@@ -16,7 +16,7 @@ export function generate() {
   }
   ```
  */
-  const ROOT_MAP = new Map<string, TreeNode[]>();
+  const ROOT_MAP = new Map<string, VNode[]>();
 
-  return (rootName: string, node: TreeNode[]) => {};
+  return (rootName: string, node: VNode[]) => {};
 }
