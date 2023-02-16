@@ -1,15 +1,15 @@
-import { FileAddOutlined, FolderAddOutlined } from '@ant-design/icons';
-import { Button, Tree } from 'antd';
-import type { DataNode } from 'antd/es/tree';
-import React, { useCallback, useState } from 'react';
+import { Button, Tree, type TreeDataNode } from 'antd';
+import { FC, useCallback, useState } from 'react';
 import { CommonTagsSelect } from '../../components';
+import { generate, VNode } from '../../core';
 
 const { DirectoryTree: Directory } = Tree;
+const { createNode } = generate();
 
-const DirectoryTree: React.FC = () => {
+const DirectoryTree: FC = () => {
   const [openModal, setOpenModal] = useState(false);
   const [currentTag, setCurrentTag] = useState<string>('');
-  const [treeData, setTreeData] = useState<DataNode[]>([]);
+  const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
 
   const handleOpenModal = useCallback(() => {
     setOpenModal(true);
@@ -19,34 +19,37 @@ const DirectoryTree: React.FC = () => {
     setOpenModal(false);
   }, []);
 
-  const handleGetTag = useCallback(
-    (tag: string) => {
-      handleCloseModal();
-      setCurrentTag(tag);
+  const transformToTNType = useCallback((node: VNode): TreeDataNode => {
+    const { tagName, key } = node;
+    return {
+      key,
+      title: tagName,
+    };
+  }, []);
+
+  const handleCreateNode = useCallback(
+    (res: { name: string; tag: string }) => {
+      const { name, tag } = res;
+      const data = transformToTNType(createNode(name, tag));
+      setTreeData([...treeData, data]);
     },
-    [handleCloseModal]
+    [treeData, transformToTNType]
   );
 
   const handleClickTree = useCallback((keys: any, info: any) => {
     console.log('Trigger Select', keys, info);
   }, []);
 
-  const handleRClickTree = useCallback((info: any) => {
+  const handleRTClickTree = useCallback((info: any) => {
     console.log(info);
   }, []);
 
   return (
     <>
-      <CommonTagsSelect open={openModal} onChange={handleGetTag} onCancel={handleCloseModal} />
+      <CommonTagsSelect open={openModal} onChange={handleCreateNode} onCancel={handleCloseModal} />
       <section className='file-list'>
         <section className='file-list-top'>
           <span style={{ fontSize: 12 }}>结构管理器</span>
-          {treeData.length > 0 ?? (
-            <div>
-              <Button type='text' icon={<FileAddOutlined />} />
-              <Button type='text' icon={<FolderAddOutlined />} />
-            </div>
-          )}
         </section>
         {!treeData.length ? (
           <>
@@ -58,9 +61,9 @@ const DirectoryTree: React.FC = () => {
         ) : (
           <Directory
             defaultExpandAll
-            {...{ treeData }}
+            treeData={treeData}
             onSelect={handleClickTree}
-            onRightClick={handleRClickTree}
+            onRightClick={handleRTClickTree}
           />
         )}
       </section>

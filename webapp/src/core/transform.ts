@@ -2,9 +2,9 @@ import { Key } from 'react';
 import { getBackspace, getKebabCase2 } from '../utils';
 
 export type VNode = {
-  tag: string;
+  key: Key;
+  tagName: string;
   children: Array<string | VNode>;
-  key?: Key;
   props?: Partial<{
     style: Partial<CSSStyleDeclaration>;
     attrs: Record<string, any>;
@@ -23,7 +23,7 @@ export function transform(node: VNode): string {
   let template = '';
 
   const transformToHTMLString = (node: VNode, tab = 0, tmp = '') => {
-    const { tag, children, props } = node;
+    const { tagName, children, props } = node;
     const backspace = getBackspace(tab++);
 
     const joinTag = (str: string) => {
@@ -31,12 +31,12 @@ export function transform(node: VNode): string {
       template += str;
     };
     // 自闭合标签，不用处理孩子内容
-    if (SELF_CLOSING_TAG.includes(tag)) {
-      joinTag(generateTag({ name: tag, backspace, close: true }));
+    if (SELF_CLOSING_TAG.includes(tagName)) {
+      joinTag(generateTag({ name: tagName, backspace, close: true }));
       return tmp;
     }
     // 拼接开始标签
-    joinTag(generateTag({ name: tag, backspace, props }));
+    joinTag(generateTag({ name: tagName, backspace, props }));
 
     // 处理父标签下嵌套的子标签
     for (const n of children) {
@@ -58,7 +58,7 @@ export function transform(node: VNode): string {
       memo.set(nodeStr, result);
     }
     // 结束标签
-    joinTag(generateTag({ name: tag, backspace, end: true }));
+    joinTag(generateTag({ name: tagName, backspace, end: true }));
     return tmp;
   };
 
@@ -75,17 +75,17 @@ function generateTag(obj: {
 }): string {
   const { backspace, end, name, close, props } = obj;
   const str = `${backspace}<${end ? '/' : ''}${name}${close ? ' /' : ''}>`;
-  const tag = joinProps(str, props, end) + '\n';
-  return tag;
+  const tagName = joinProps(str, props, end) + '\n';
+  return tagName;
 }
 
-function joinProps(tag: string, props: VNode['props'], endTag?: boolean): string {
-  if (!props || endTag) return tag;
+function joinProps(tagName: string, props: VNode['props'], endTag?: boolean): string {
+  if (!props || endTag) return tagName;
 
   const { attrs, style } = props;
-  const isSelfClose = tag.endsWith(' />');
-  const endPosi = tag.length - (isSelfClose ? 3 : 1);
-  let newTag = tag.substring(0, endPosi);
+  const isSelfClose = tagName.endsWith(' />');
+  const endPosi = tagName.length - (isSelfClose ? 3 : 1);
+  let newTag = tagName.substring(0, endPosi);
 
   if (attrs) {
     for (const key in attrs) {
