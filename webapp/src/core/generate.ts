@@ -1,31 +1,48 @@
+import { type TreeDataNode } from 'antd';
 import { type VNode } from '.';
 
 /**
  * 生成VNode树
  */
 export function generate() {
-  // { tagName: VNode, ... }
-  const record = new Map<string, VNode>();
+  // { key: VNode, ... }
+  const treeMap = new Map<number, VNode>();
+  let nodeKey = 0;
 
   /**
    * 创建vnode节点
-   * @param fileName 容器名字
    * @param tagName 标签名
    * @returns {VNode}
    */
-  function createNode(fileName: string, tagName: string): VNode {
+  function createVNode(tagName: string): VNode {
+    const key = nodeKey++;
     const node: VNode = {
+      key,
       tagName,
-      children: [],
-      key: fileName,
       props: {},
+      children: [],
     };
-    if (!record.has(fileName)) {
-      record.set(fileName, node);
-      console.log('节点记录中已有重复容器名');
-    }
+    treeMap.set(key, node);
     return node;
   }
 
-  return { createNode };
+  /**
+   * 转换为antd Tree组件所需数据的结构
+   * @param {VNode} node
+   * @param {boolean} isLeaf 是否为叶子节点
+   * @returns {TreeDataNode}
+   */
+  function vnodeToTreeNode(node: VNode, isLeaf: boolean): TreeDataNode {
+    const { tagName, key } = node;
+    return {
+      key,
+      isLeaf,
+      title: tagName,
+      children: [],
+    };
+  }
+
+  function treeNodeToVNode() {}
+
+  return { createVNode, vnodeToTreeNode, treeNodeToVNode };
 }

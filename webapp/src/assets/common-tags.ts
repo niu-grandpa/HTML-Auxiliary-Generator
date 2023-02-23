@@ -1,7 +1,7 @@
 import { DefaultOptionType } from 'antd/es/select';
 
 /**常用HTML标签 */
-export const COMMON_TAGS: DefaultOptionType[] = [
+const COMMON_TAGS: DefaultOptionType[] = [
   {
     label: '链接',
     options: [
@@ -288,3 +288,5 @@ export const COMMON_TAGS: DefaultOptionType[] = [
     ],
   },
 ];
+
+export default COMMON_TAGS;
