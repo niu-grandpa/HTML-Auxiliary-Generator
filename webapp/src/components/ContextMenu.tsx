@@ -2,7 +2,7 @@ import { FC, memo, MouseEvent, useCallback, useEffect, useState } from 'react';
 
 import '../assets/components/ContextMenu.less';
 
-export type ItemType = 'create-leaf' | 'create-notleaf' | 'delete-node' | 'setting-css';
+export type ItemType = 'leaf' | 'not-leaf' | 'delete-node' | 'setting-css';
 
 type Props = {
   x: number;
@@ -19,12 +19,12 @@ const ContextMenu: FC<Props> = memo(({ x, y, open, isLeaf, onClick }) => {
   const items: { text: string; value: ItemType; hidden?: boolean }[] = [
     {
       text: '新建单节点...',
-      value: 'create-leaf',
+      value: 'leaf',
       hidden: isLeaf,
     },
     {
       text: '新建容器节点...',
-      value: 'create-notleaf',
+      value: 'not-leaf',
       hidden: isLeaf,
     },
     {
@@ -38,20 +38,17 @@ const ContextMenu: FC<Props> = memo(({ x, y, open, isLeaf, onClick }) => {
   ];
 
   const handleClick = useCallback(
-    (value?: ItemType) => {
-      value ?? onClick(value!);
+    (e?: MouseEvent, value?: ItemType) => {
+      e?.stopPropagation();
+      value && onClick(value);
       setDisplay('none');
     },
     [onClick]
   );
 
-  const handleClose = useCallback(
-    (e: MouseEvent) => {
-      e.stopPropagation();
-      handleClick();
-    },
-    [handleClick]
-  );
+  const handleClose = useCallback(() => {
+    handleClick();
+  }, [handleClick]);
 
   useEffect(() => {
     setDisplay(open ? '' : 'none');
@@ -59,12 +56,16 @@ const ContextMenu: FC<Props> = memo(({ x, y, open, isLeaf, onClick }) => {
   }, [x, y, open]);
 
   return (
-    <div className='ctx-menu-overlay' style={{ display: display }} onClick={handleClose}>
+    <div
+      className='ctx-menu-overlay'
+      style={{ display: display }}
+      onClick={handleClose}
+      onContextMenu={handleClose}>
       <ul className='ctx-menu' style={{ transform: translate }}>
         {items.map(
           ({ text, value, hidden }) =>
             !hidden && (
-              <li key={value} className='ctx-menu-item' onClick={() => handleClick(value)}>
+              <li key={value} className='ctx-menu-item' onClick={e => handleClick(e, value)}>
                 {text}
               </li>
             )

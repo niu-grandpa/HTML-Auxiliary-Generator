@@ -5,11 +5,13 @@ import { COMMON_TAGS } from '../assets';
 
 type Props = Partial<{
   open: boolean;
+  title: string;
+  custom: 'leaf' | 'not-leaf';
   onCancel: () => void;
   onChange: (tagName: string, isLeaf: boolean) => void;
 }>;
 
-const ModalCreateNode: FC<Props> = memo(({ open, onChange, onCancel }) => {
+const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCancel }) => {
   const timer = useRef<any>(null);
 
   const [value, setValue] = useState('');
@@ -39,9 +41,10 @@ const ModalCreateNode: FC<Props> = memo(({ open, onChange, onCancel }) => {
       }, 2000);
       return;
     }
-    onChange?.(value, isLeaf === 1);
+    const type = !custom ? isLeaf === 1 : custom === 'leaf';
+    onChange?.(value, type);
     onCancel?.();
-  }, [onChange, onCancel, value, isLeaf]);
+  }, [onChange, onCancel, value, custom, isLeaf]);
 
   useEffect(() => {
     initData();
@@ -52,13 +55,12 @@ const ModalCreateNode: FC<Props> = memo(({ open, onChange, onCancel }) => {
 
   return (
     <Modal
-      title='新建'
       destroyOnClose
       okText='确定'
       cancelText='取消'
       closable={false}
       onOk={handleOk}
-      {...{ open, onCancel }}>
+      {...{ open, title, onCancel }}>
       <p style={{ marginBottom: 12, color: '#00000073' }}>
         <InfoCircleOutlined /> 提供常用的HTML标签供选择, 请合理选择
       </p>
@@ -74,14 +76,16 @@ const ModalCreateNode: FC<Props> = memo(({ open, onChange, onCancel }) => {
         // @ts-ignore
         filterOption={(input, option) => (option?.label ?? '').includes(input)}
       />
-      <Radio.Group value={isLeaf} onChange={handleRadio}>
-        <Radio value={0}>
-          <Tooltip title='允许在此节点下再新建子节点'>容器节点</Tooltip>
-        </Radio>
-        <Radio value={1}>
-          <Tooltip title='无法再为其添加子节点'>单独节点</Tooltip>
-        </Radio>
-      </Radio.Group>
+      {!custom && (
+        <Radio.Group value={isLeaf} onChange={handleRadio}>
+          <Radio value={0}>
+            <Tooltip title='允许在此节点下再新建子节点'>容器节点</Tooltip>
+          </Radio>
+          <Radio value={1}>
+            <Tooltip title='无法再为其添加子节点'>单独节点</Tooltip>
+          </Radio>
+        </Radio.Group>
+      )}
     </Modal>
   );
 });

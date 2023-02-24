@@ -1,7 +1,7 @@
 import { Button, Tree, type TreeDataNode } from 'antd';
-import { FC, useCallback, useState } from 'react';
+import { FC, MouseEvent, useCallback, useState } from 'react';
 import { ModalCreateNode } from '../../components';
-import { ContextMenu } from '../../components/ContextMenu';
+import { ContextMenu, ItemType } from '../../components/ContextMenu';
 import { generate } from '../../core';
 
 const { DirectoryTree: Directory } = Tree;
@@ -11,11 +11,14 @@ const DirectoryTree: FC = () => {
   const [openMdl, setOpenModal] = useState(false);
   const [openCtxMenu, setOpenCtxMenu] = useState(false);
   const [curIsLeaf, setCurIsLeaf] = useState(false);
+  const [custom, setCustom] = useState<'leaf' | 'not-leaf' | undefined>(undefined);
+  const [mdlTitle, setMdlTitle] = useState('新建容器');
   const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
 
   const handleCreate = useCallback(
     (tagName: string, isLeaf: boolean) => {
+      //todo
       const newData = vnodeToTreeNode(createVNode(tagName), isLeaf);
       setTreeData([...treeData, newData]);
     },
@@ -27,15 +30,23 @@ const DirectoryTree: FC = () => {
   }, []);
 
   const handleRTClickTree = useCallback((info: any) => {
-    // TODO右键判断该节点isLeaf, true则有新建节点的选项，然后将新节点push进其children
-    // TODO 计算位置
     const { event, node } = info;
+    const { clientX, clientY } = event as MouseEvent;
     treeNodeToVNode();
     setOpenCtxMenu(true);
     setCurIsLeaf(node.isLeaf);
+    setCtxMenuPosi({ x: clientX, y: clientY + 10 });
+    console.log(node);
   }, []);
 
-  const handleOptionClick = useCallback(() => {
+  const handleOptionClick = useCallback((value: ItemType) => {
+    const isLf = value === 'leaf';
+    const isNotLf = value === 'not-leaf';
+    if (isLf || isNotLf) {
+      setOpenModal(true);
+      setCustom(value);
+      setMdlTitle(`新建${isLf ? '单' : '容器'}节点`);
+    }
     setOpenCtxMenu(false);
   }, []);
 
@@ -49,7 +60,13 @@ const DirectoryTree: FC = () => {
 
   return (
     <>
-      <ModalCreateNode open={openMdl} onChange={handleCreate} onCancel={handleCloseMdl} />
+      <ModalCreateNode
+        title={mdlTitle}
+        custom={custom}
+        open={openMdl}
+        onChange={handleCreate}
+        onCancel={handleCloseMdl}
+      />
       <section className='file-list' onContextMenu={e => e.preventDefault()}>
         <section className='file-list-top'>
           <span style={{ padding: '8px 0', fontSize: 12 }}>结构管理器</span>

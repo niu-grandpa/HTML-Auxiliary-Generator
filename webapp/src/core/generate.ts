@@ -7,7 +7,18 @@ import { type VNode } from '.';
 export function generate() {
   // { key: VNode, ... }
   const treeMap = new Map<number, VNode>();
-  let nodeKey = 0;
+  const date = new Date();
+  const base = 1013;
+
+  let timestamp =
+    date.getFullYear() +
+    date.getMonth() +
+    date.getDay() +
+    date.getHours() +
+    date.getMinutes() +
+    date.getSeconds();
+
+  let n = 0;
 
   /**
    * 创建vnode节点
@@ -15,7 +26,7 @@ export function generate() {
    * @returns {VNode}
    */
   function createVNode(tagName: string): VNode {
-    const key = nodeKey++;
+    const key = (timestamp + ++n) % base;
     const node: VNode = {
       key,
       tagName,
