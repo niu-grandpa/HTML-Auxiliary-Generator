@@ -1,11 +1,11 @@
 import { Button, Tree, type TreeDataNode } from 'antd';
-import { FC, MouseEvent, useCallback, useState } from 'react';
+import { FC, MouseEvent, useCallback, useEffect, useState } from 'react';
 import { ModalCreateNode } from '../../components';
 import { ContextMenu, ItemType } from '../../components/ContextMenu';
 import { generate } from '../../core';
 
 const { DirectoryTree: Directory } = Tree;
-const { createVNode, vnodeToTreeNode, treeNodeToVNode } = generate();
+const { createVNode, vnodeToTreeNode, treeNodeToVNode, updateNode } = generate();
 
 const DirectoryTree: FC = () => {
   const [openMdl, setOpenModal] = useState(false);
@@ -15,14 +15,21 @@ const DirectoryTree: FC = () => {
   const [mdlTitle, setMdlTitle] = useState('新建容器');
   const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
+  const [selectedNode, setSelectedNode] = useState<TreeDataNode>();
 
   const handleCreate = useCallback(
     (tagName: string, isLeaf: boolean) => {
-      //todo
-      const newData = vnodeToTreeNode(createVNode(tagName), isLeaf);
-      setTreeData([...treeData, newData]);
+      const newNode = vnodeToTreeNode(createVNode(tagName), isLeaf);
+      // 通过右键节点新增
+      if (selectedNode !== undefined) {
+        selectedNode.children?.push(newNode);
+        const data = updateNode(treeData, selectedNode);
+        setTreeData(data);
+      } else {
+        setTreeData([...treeData, newNode]);
+      }
     },
-    [treeData]
+    [treeData, selectedNode]
   );
 
   const handleClickTree = useCallback((keys: any, info: any) => {
@@ -32,11 +39,10 @@ const DirectoryTree: FC = () => {
   const handleRTClickTree = useCallback((info: any) => {
     const { event, node } = info;
     const { clientX, clientY } = event as MouseEvent;
-    treeNodeToVNode();
+    setSelectedNode(node);
     setOpenCtxMenu(true);
     setCurIsLeaf(node.isLeaf);
     setCtxMenuPosi({ x: clientX, y: clientY + 10 });
-    console.log(node);
   }, []);
 
   const handleOptionClick = useCallback((value: ItemType) => {
@@ -57,6 +63,10 @@ const DirectoryTree: FC = () => {
   const handleCloseMdl = useCallback(() => {
     setOpenModal(false);
   }, []);
+
+  useEffect(() => {
+    treeNodeToVNode();
+  }, [selectedNode]);
 
   return (
     <>

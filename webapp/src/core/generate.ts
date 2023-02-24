@@ -55,5 +55,17 @@ export function generate() {
 
   function treeNodeToVNode() {}
 
-  return { createVNode, vnodeToTreeNode, treeNodeToVNode };
+  /**
+   * 当对某个节点对象单独修改时，需要将其更新到源对象中
+   * @param source
+   * @param cur
+   * @returns
+   */
+  function updateNode(source: TreeDataNode[], cur: TreeDataNode): TreeDataNode[] {
+    const copySource = Object.assign(source, {});
+    // todo
+    return copySource;
+  }
+
+  return { createVNode, vnodeToTreeNode, treeNodeToVNode, updateNode };
 }
