@@ -1,13 +1,18 @@
+import { BookOutlined, CodeSandboxOutlined } from '@ant-design/icons';
 import { Button, Tree, type TreeDataNode } from 'antd';
-import { FC, MouseEvent, useCallback, useEffect, useState } from 'react';
+import { FC, memo, MouseEvent, useCallback, useState } from 'react';
 import { ModalCreateNode } from '../../components';
 import { ContextMenu, ItemType } from '../../components/ContextMenu';
 import { generate } from '../../core';
 
-const { DirectoryTree: Directory } = Tree;
-const { createVNode, vnodeToTreeNode, treeNodeToVNode, updateNode } = generate();
+type Props = {
+  onChange: (data: TreeDataNode[]) => void;
+};
 
-const DirectoryTree: FC = () => {
+const { DirectoryTree: Directory } = Tree;
+const { createVNode, vnodeToTreeNode, updateNode } = generate();
+
+const DirectoryTree: FC<Props> = ({ onChange }) => {
   const [openMdl, setOpenModal] = useState(false);
   const [openCtxMenu, setOpenCtxMenu] = useState(false);
   const [curIsLeaf, setCurIsLeaf] = useState(false);
@@ -19,17 +24,21 @@ const DirectoryTree: FC = () => {
 
   const handleCreate = useCallback(
     (tagName: string, isLeaf: boolean) => {
+      let data: TreeDataNode[] = [];
       const newNode = vnodeToTreeNode(createVNode(tagName), isLeaf);
+      newNode.icon = isLeaf ? <BookOutlined /> : <CodeSandboxOutlined />;
       // 通过右键节点新增
       if (selectedNode !== undefined) {
         selectedNode.children?.push(newNode);
-        const data = updateNode(treeData, selectedNode);
+        data = updateNode(treeData, selectedNode);
         setTreeData(data);
       } else {
-        setTreeData([...treeData, newNode]);
+        data = [...treeData, newNode];
+        setTreeData(data);
       }
+      onChange(data);
     },
-    [treeData, selectedNode]
+    [treeData, selectedNode, onChange]
   );
 
   const handleClickTree = useCallback((keys: any, info: any) => {
@@ -64,10 +73,6 @@ const DirectoryTree: FC = () => {
     setOpenModal(false);
   }, []);
 
-  useEffect(() => {
-    treeNodeToVNode();
-  }, [selectedNode]);
-
   return (
     <>
       <ModalCreateNode
@@ -92,6 +97,7 @@ const DirectoryTree: FC = () => {
           <>
             <Directory
               defaultExpandAll
+              showLine
               treeData={treeData}
               onSelect={handleClickTree}
               onRightClick={handleRTClickTree}
@@ -109,4 +115,4 @@ const DirectoryTree: FC = () => {
   );
 };
 
-export default DirectoryTree;
+export default memo(DirectoryTree);

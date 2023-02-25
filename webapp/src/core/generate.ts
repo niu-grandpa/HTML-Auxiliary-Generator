@@ -58,12 +58,22 @@ export function generate() {
   /**
    * 当对某个节点对象单独修改时，需要将其更新到源对象中
    * @param source
-   * @param cur
+   * @param target
    * @returns
    */
-  function updateNode(source: TreeDataNode[], cur: TreeDataNode): TreeDataNode[] {
-    const copySource = Object.assign(source, {});
-    // todo
+  function updateNode(source: TreeDataNode[], target: TreeDataNode): TreeDataNode[] {
+    const copySource = source.slice();
+    const dfs = (root: TreeDataNode[]) => {
+      for (let i = 0; i < root.length; i++) {
+        let node = root[i];
+        if (node.key === target.key) {
+          node = target;
+        } else if (node.children && node.children.length > 0) {
+          dfs(node.children);
+        }
+      }
+    };
+    dfs(copySource);
     return copySource;
   }
 
