@@ -1,9 +1,15 @@
-import { MenuProps, Slider } from 'antd';
-import React, { useCallback, useState } from 'react';
+import { Slider } from 'antd';
+import { FC, memo, useCallback, useState } from 'react';
+import { type VNode } from '../../core/transform';
+
 import ConfigurationBar from './ConfigurationBar';
 
+type Props = {
+  vnode: VNode[];
+};
+
 /**视图操作区域 */
-const ViewOperations: React.FC = () => {
+const ViewOperations: FC<Props> = () => {
   const [scale, setScale] = useState('1');
   const [openConfig, setOpenConfig] = useState(false);
 
@@ -16,19 +22,6 @@ const ViewOperations: React.FC = () => {
     const n = newValue * 0.01;
     setScale((n < 0.3 ? 0.3 : n).toFixed(2));
   }, []);
-
-  const dropdownMeun: MenuProps['items'] = [
-    {
-      label: '样式配置',
-      key: 'setting',
-      onClick: useCallback(() => setOpenConfig(true), []),
-    },
-    {
-      label: '删除',
-      key: 'delete',
-      danger: true,
-    },
-  ];
 
   return (
     <>
@@ -52,4 +45,4 @@ const ViewOperations: React.FC = () => {
   );
 };
 
-export default ViewOperations;
+export default memo(ViewOperations);

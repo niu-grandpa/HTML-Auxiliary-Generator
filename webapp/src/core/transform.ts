@@ -11,14 +11,14 @@ export type VNode = {
   }>;
 };
 
-const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
+export const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
 
 /**
  * 转换节点对象为HTML字符串模板
  * @param {object} node
  * @returns {string}
  */
-export function transform(node: VNode): string {
+export default function transform(node: VNode): string {
   const memo = new Map<string, string>();
   let template = '';
 

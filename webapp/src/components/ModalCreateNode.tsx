@@ -1,7 +1,8 @@
 import { InfoCircleOutlined } from '@ant-design/icons';
-import { Modal, Radio, RadioChangeEvent, Select, Tooltip } from 'antd';
+import { message, Modal, Radio, RadioChangeEvent, Select, Tooltip } from 'antd';
 import { FC, memo, useCallback, useEffect, useRef, useState } from 'react';
 import { COMMON_TAGS } from '../assets';
+import { SELF_CLOSING_TAG } from '../core/transform';
 
 type Props = Partial<{
   open: boolean;
@@ -17,8 +18,20 @@ const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCanc
   const [value, setValue] = useState('');
   const [status, setStatus] = useState<'error' | ''>('');
   const [isLeaf, setIsLeaf] = useState(0);
+  const [disParent, setDisParent] = useState(false);
+
+  const initData = useCallback(() => {
+    setValue('');
+    setStatus('');
+    setIsLeaf(0);
+    setDisParent(false);
+  }, []);
 
   const handleSelectTag = useCallback((value: string) => {
+    if (SELF_CLOSING_TAG.includes(value)) {
+      setIsLeaf(1);
+      setDisParent(true);
+    }
     setStatus('');
     setValue(value);
   }, []);
@@ -27,24 +40,24 @@ const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCanc
     setIsLeaf(target.value);
   }, []);
 
-  const initData = useCallback(() => {
-    setValue('');
-    setStatus('');
-    setIsLeaf(0);
-  }, []);
-
-  const handleOk = useCallback(() => {
+  const isNotSelectTag = useCallback(() => {
     if (!value) {
       setStatus('error');
+      message.error('请选择标签');
       timer.current = setTimeout(() => {
         setStatus('');
       }, 2000);
-      return;
+      return false;
     }
+    return true;
+  }, [value]);
+
+  const handleOk = useCallback(() => {
+    if (!isNotSelectTag()) return;
     const type = !custom ? isLeaf === 1 : custom === 'leaf';
     onChange?.(value, type);
     onCancel?.();
-  }, [onChange, onCancel, value, custom, isLeaf]);
+  }, [onChange, onCancel, value, custom, isLeaf, isNotSelectTag]);
 
   useEffect(() => {
     initData();
@@ -78,7 +91,7 @@ const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCanc
       />
       {!custom && (
         <Radio.Group value={isLeaf} onChange={handleRadio}>
-          <Radio value={0}>
+          <Radio value={0} disabled={disParent}>
             <Tooltip title='允许在此节点下再新建子节点'>容器节点</Tooltip>
           </Radio>
           <Radio value={1}>

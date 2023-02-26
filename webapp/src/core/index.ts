@@ -1,2 +1,9 @@
-export { generate } from './generate';
-export { transform, type VNode } from './transform';
+import generate from './generate';
+import transform from './transform';
+
+const core = {
+  ...generate,
+  ...transform,
+};
+
+export default core;

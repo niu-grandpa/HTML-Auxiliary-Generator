@@ -1,18 +1,21 @@
 import { Col, Layout, Menu, Row, TreeDataNode } from 'antd';
-import React, { useCallback, useState } from 'react';
-import ViewOperations from './ViewOperations';
-
+import React, { useEffect, useState } from 'react';
+import core from '../../core';
 import DirectoryTree from './DirectoryTree';
 import './index.less';
+import ViewOperations from './ViewOperations';
 
+const { treeNodeToVNode } = core;
 const { Header, Content, Footer } = Layout;
 
 const Home: React.FC = () => {
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
 
-  const handleChangeTree = useCallback((data: TreeDataNode[]) => {
-    setTreeData(data);
-  }, []);
+  useEffect(() => {
+    if (treeData.length) {
+      treeNodeToVNode<TreeDataNode>(treeData);
+    }
+  }, [treeData]);
 
   return (
     <Layout className='layout'>
@@ -23,10 +26,10 @@ const Home: React.FC = () => {
       <Content style={{ padding: '18px 38px 0 38px' }}>
         <Row gutter={[19, 19]}>
           <Col span={5}>
-            <DirectoryTree onChange={handleChangeTree} />
+            <DirectoryTree onChange={setTreeData} />
           </Col>
           <Col span={19}>
-            <ViewOperations />
+            <ViewOperations vnode={[]} />
           </Col>
         </Row>
       </Content>

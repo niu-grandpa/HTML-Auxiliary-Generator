@@ -3,14 +3,14 @@ import { Button, Tree, type TreeDataNode } from 'antd';
 import { FC, memo, MouseEvent, useCallback, useState } from 'react';
 import { ModalCreateNode } from '../../components';
 import { ContextMenu, ItemType } from '../../components/ContextMenu';
-import { generate } from '../../core';
+import core from '../../core';
 
 type Props = {
   onChange: (data: TreeDataNode[]) => void;
 };
 
+const { createVNode, vnodeToTreeNode, updateNode } = core;
 const { DirectoryTree: Directory } = Tree;
-const { createVNode, vnodeToTreeNode, updateNode } = generate();
 
 const DirectoryTree: FC<Props> = ({ onChange }) => {
   const [openMdl, setOpenModal] = useState(false);
@@ -25,12 +25,12 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   const handleCreate = useCallback(
     (tagName: string, isLeaf: boolean) => {
       let data: TreeDataNode[] = [];
-      const newNode = vnodeToTreeNode(createVNode(tagName), isLeaf);
+      const newNode = vnodeToTreeNode<TreeDataNode>(createVNode(tagName), isLeaf);
       newNode.icon = isLeaf ? <BookOutlined /> : <CodeSandboxOutlined />;
       // 通过右键节点新增
       if (selectedNode !== undefined) {
         selectedNode.children?.push(newNode);
-        data = updateNode(treeData, selectedNode);
+        data = updateNode<TreeDataNode>(treeData, selectedNode);
         setTreeData(data);
       } else {
         data = [...treeData, newNode];
