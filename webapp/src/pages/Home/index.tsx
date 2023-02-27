@@ -1,6 +1,7 @@
 import { Col, Layout, Menu, Row, TreeDataNode } from 'antd';
 import React, { useEffect, useState } from 'react';
 import core from '../../core';
+import { type VNode } from '../../core/transform';
 import DirectoryTree from './DirectoryTree';
 import './index.less';
 import ViewOperations from './ViewOperations';
@@ -9,13 +10,14 @@ const { treeNodeToVNode } = core;
 const { Header, Content, Footer } = Layout;
 
 const Home: React.FC = () => {
-  const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
+  const [vnode, setVnode] = useState<VNode[]>([]);
+  const [fileListNode, setFileListNode] = useState<TreeDataNode[]>([]);
 
   useEffect(() => {
-    if (treeData.length) {
-      treeNodeToVNode<TreeDataNode>(treeData);
+    if (fileListNode.length) {
+      setVnode(treeNodeToVNode(fileListNode));
     }
-  }, [treeData]);
+  }, [fileListNode]);
 
   return (
     <Layout className='layout'>
@@ -26,10 +28,10 @@ const Home: React.FC = () => {
       <Content style={{ padding: '18px 38px 0 38px' }}>
         <Row gutter={[19, 19]}>
           <Col span={5}>
-            <DirectoryTree onChange={setTreeData} />
+            <DirectoryTree onChange={setFileListNode} />
           </Col>
           <Col span={19}>
-            <ViewOperations vnode={[]} />
+            <ViewOperations {...{ vnode }} />
           </Col>
         </Row>
       </Content>

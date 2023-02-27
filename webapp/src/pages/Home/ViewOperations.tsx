@@ -1,5 +1,5 @@
 import { Slider } from 'antd';
-import { FC, memo, useCallback, useState } from 'react';
+import { FC, memo, useCallback, useMemo, useState } from 'react';
 import { type VNode } from '../../core/transform';
 
 import ConfigurationBar from './ConfigurationBar';
@@ -9,7 +9,9 @@ type Props = {
 };
 
 /**视图操作区域 */
-const ViewOperations: FC<Props> = () => {
+const ViewOperations: FC<Props> = ({ vnode }) => {
+  const data = useMemo(() => vnode, [vnode]);
+
   const [scale, setScale] = useState('1');
   const [openConfig, setOpenConfig] = useState(false);
 

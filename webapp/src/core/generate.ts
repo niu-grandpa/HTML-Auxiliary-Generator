@@ -59,31 +59,9 @@ function _generate_() {
    * antd Tree节点转换为vnode
    * @param node
    */
-  function treeNodeToVNode<T extends TreeDataNode>(node: T[]) {
-    console.log(node);
+  function treeNodeToVNode<T extends TreeDataNode>(node: T[]): VNode[] {
+    return [];
   }
 
-  /**
-   * 当对某个节点对象单独修改时，需要将其更新到源对象中
-   * @param source
-   * @param target
-   * @returns
-   */
-  function updateNode<T extends TreeDataNode>(source: T[], target: T): T[] {
-    const copySource = source.slice();
-    const dfs = (root: T[]) => {
-      for (let i = 0; i < root.length; i++) {
-        let node = root[i];
-        if (node?.key === target?.key) {
-          node = target;
-        } else if (node?.children && node?.children.length > 0) {
-          dfs(node.children as T[]);
-        }
-      }
-    };
-    dfs(copySource);
-    return copySource;
-  }
-
-  return { createVNode, vnodeToTreeNode, treeNodeToVNode, updateNode };
+  return { createVNode, vnodeToTreeNode, treeNodeToVNode };
 }

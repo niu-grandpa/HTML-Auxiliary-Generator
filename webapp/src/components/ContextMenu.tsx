@@ -2,7 +2,7 @@ import { FC, memo, MouseEvent, useCallback, useEffect, useState } from 'react';
 
 import '../assets/components/ContextMenu.less';
 
-export type ItemType = 'leaf' | 'not-leaf' | 'delete-node' | 'setting-css';
+export type ItemType = 'leaf' | 'not-leaf' | 'delete-node' | 'setting-css' | 'change-tag';
 
 type Props = {
   x: number;
@@ -30,6 +30,10 @@ const ContextMenu: FC<Props> = memo(({ x, y, open, isLeaf, onClick }) => {
     {
       text: '样式配置...',
       value: 'setting-css',
+    },
+    {
+      text: '修改标签...',
+      value: 'change-tag',
     },
     {
       text: '删除',
