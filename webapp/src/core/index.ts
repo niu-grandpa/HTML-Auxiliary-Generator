@@ -1,8 +1,10 @@
-import generate from './generate';
-import * as NodeHandler from './node-handler';
-import transform from './transform';
+import generate from './runtime-generate';
+import * as NodeHandler from './runtime-node';
+import transform from './runtime-transform';
+import * as utils from './utils';
 
 const core = {
+  ...utils,
   ...generate,
   ...transform,
   ...NodeHandler,

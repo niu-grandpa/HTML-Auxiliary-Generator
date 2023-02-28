@@ -1,6 +1,6 @@
 import { Slider } from 'antd';
 import { FC, memo, useCallback, useMemo, useState } from 'react';
-import { type VNode } from '../../core/transform';
+import { type VNode } from '../../core/runtime-transform';
 
 import ConfigurationBar from './ConfigurationBar';
 

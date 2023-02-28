@@ -2,7 +2,7 @@ import { InfoCircleOutlined } from '@ant-design/icons';
 import { message, Modal, Radio, RadioChangeEvent, Select, Tooltip } from 'antd';
 import { FC, memo, useCallback, useEffect, useRef, useState } from 'react';
 import { COMMON_TAGS } from '../assets';
-import { SELF_CLOSING_TAG } from '../core/transform';
+import { SELF_CLOSING_TAG } from '../core/runtime-transform';
 
 type Props = Partial<{
   open: boolean;

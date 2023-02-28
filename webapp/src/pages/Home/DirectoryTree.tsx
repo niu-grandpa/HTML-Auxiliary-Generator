@@ -4,15 +4,17 @@ import { FC, memo, MouseEvent, useCallback, useState } from 'react';
 import { ModalCreateNode } from '../../components';
 import { ContextMenu, ItemType } from '../../components/ContextMenu';
 import core from '../../core';
-import { SELF_CLOSING_TAG } from '../../core/transform';
+import { SELF_CLOSING_TAG } from '../../core/runtime-transform';
 
 type Props = {
   onChange: (node: TreeDataNode[]) => void;
 };
 
-const { createVNode, vnodeToTreeNode, updateFileListNode } = core;
+const { createRootKey, createFileListNode, updateFileListNode, createMapRecored } = core;
 const { DirectoryTree: Directory } = Tree;
 const { confirm } = Modal;
+
+const getKey = createRootKey();
 
 const DirectoryTree: FC<Props> = ({ onChange }) => {
   const [openMdl, setOpenModal] = useState(false);
@@ -22,8 +24,17 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   const [custom, setCustom] = useState<'leaf' | 'not-leaf' | undefined>(undefined);
   const [mdlTitle, setMdlTitle] = useState('新建容器');
   const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
+  const [rootKeys, setRootKeys] = useState<number[]>([]);
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [selectedNode, setSelectedNode] = useState<TreeDataNode>();
+
+  // todo 创建多个根节点
+  const handleCreateRoot = useCallback(() => {
+    const key = getKey();
+    createMapRecored(key, []);
+    setRootKeys(arr => [...arr, key]);
+    setOpenModal(true);
+  }, []);
 
   const handleChangeTag = useCallback(
     (curNode: TreeDataNode, newTag: string) => {
@@ -35,11 +46,12 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     [treeData]
   );
 
+  // todo 分离根节点创建逻辑
   const handleCRUDNode = useCallback(
     (tagName: string, isLeaf: boolean) => {
-      const newNode = vnodeToTreeNode<TreeDataNode>(createVNode(tagName), isLeaf);
+      const newNode = createFileListNode(tagName, 0, isLeaf);
       newNode.icon = isLeaf ? <BookOutlined /> : <CodeSandboxOutlined />;
-      let node: TreeDataNode[] = [];
+      let nodes: TreeDataNode[] = [];
       // 通过右键增删节点
       if (selectedNode) {
         if (isChangeTag && selectedNode.children?.length) {
@@ -49,22 +61,22 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
               content: '自闭合标签无法容纳子节点，如果执意这么做则会清空当前节点下所有子元素',
               onOk() {
                 selectedNode.children!.length = 0;
-                node = handleChangeTag(selectedNode, tagName);
+                nodes = handleChangeTag(selectedNode, tagName);
               },
             });
           } else {
-            node = handleChangeTag(selectedNode, tagName);
+            nodes = handleChangeTag(selectedNode, tagName);
           }
         } else {
           selectedNode.children?.push(newNode);
-          node = updateFileListNode(treeData, selectedNode);
+          nodes = updateFileListNode(treeData, selectedNode);
         }
         setSelectedNode(undefined);
       } else {
-        node = treeData.slice().concat(newNode);
+        nodes = treeData.slice().concat(newNode);
       }
-      onChange(node);
-      setTreeData(node);
+      onChange(nodes);
+      setTreeData(nodes);
     },
     [treeData, selectedNode, onChange, isChangeTag, handleChangeTag]
   );
@@ -100,10 +112,6 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     setOpenCtxMenu(false);
   }, []);
 
-  const handleOpenMdl = useCallback(() => {
-    setOpenModal(true);
-  }, []);
-
   const handleCloseMdl = useCallback(() => {
     setOpenModal(false);
   }, []);
@@ -121,30 +129,22 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
         <section className='file-list-top'>
           <span style={{ padding: '8px 0', fontSize: 12 }}>结构管理器</span>
         </section>
-        {!treeData.length ? (
-          <>
-            <p style={{ marginBottom: 18 }}>尚未新建任何容器。</p>
-            <Button type='primary' block onClick={handleOpenMdl}>
-              新建容器
-            </Button>
-          </>
-        ) : (
-          <>
-            <Directory
-              defaultExpandAll
-              showLine
-              treeData={treeData}
-              onSelect={handleClickTree}
-              onRightClick={handleRTClickTree}
-            />
-            <ContextMenu
-              {...{ ...ctxMenuPosi }}
-              open={openCtxMenu}
-              isLeaf={curIsLeaf}
-              onClick={handleOptionClick}
-            />
-          </>
-        )}
+        <Directory
+          defaultExpandAll
+          showLine
+          treeData={treeData}
+          onSelect={handleClickTree}
+          onRightClick={handleRTClickTree}
+        />
+        <ContextMenu
+          {...{ ...ctxMenuPosi }}
+          open={openCtxMenu}
+          isLeaf={curIsLeaf}
+          onClick={handleOptionClick}
+        />
+        <Button type='primary' block onClick={handleCreateRoot}>
+          新建根容器
+        </Button>
       </section>
     </>
   );
