@@ -27,10 +27,11 @@ function findNode(source: any[], node: any) {
 function patchNode(n1: any, n2: any) {
   if (n1.tag !== n2.tag) {
     n1.tag = n2.tag;
+  } else {
+    const oldChildren = n1.children;
+    const newChildren = n2.children;
+    patchChildren(oldChildren, newChildren);
   }
-  const oldChildren = n1.children;
-  const newChildren = n2.children;
-  patchChildren(oldChildren, newChildren);
 }
 
 function patchChildren(c1: any[], c2: any[]) {

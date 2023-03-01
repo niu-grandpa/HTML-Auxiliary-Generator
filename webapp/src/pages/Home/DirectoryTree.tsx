@@ -10,62 +10,59 @@ type Props = {
   onChange: (node: TreeDataNode[]) => void;
 };
 
-const { createRootKey, createFileListNode, updateFileListNode, createMapRecored } = core;
+const { createFileListNode, updateFileListNode } = core;
 const { DirectoryTree: Directory } = Tree;
 const { confirm } = Modal;
-
-const getKey = createRootKey();
 
 const DirectoryTree: FC<Props> = ({ onChange }) => {
   const [openMdl, setOpenModal] = useState(false);
   const [openCtxMenu, setOpenCtxMenu] = useState(false);
   const [curIsLeaf, setCurIsLeaf] = useState(false);
-  const [isChangeTag, setIsChangeTag] = useState(false);
+  const [isEditTag, setIsEditTag] = useState(false);
   const [custom, setCustom] = useState<'leaf' | 'not-leaf' | undefined>(undefined);
   const [mdlTitle, setMdlTitle] = useState('新建容器');
   const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
-  const [rootKeys, setRootKeys] = useState<number[]>([]);
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [selectedNode, setSelectedNode] = useState<TreeDataNode>();
 
-  // todo 创建多个根节点
-  const handleCreateRoot = useCallback(() => {
-    const key = getKey();
-    createMapRecored(key, []);
-    setRootKeys(arr => [...arr, key]);
-    setOpenModal(true);
+  const createNode = useCallback((tagName: string, isLeaf: boolean) => {
+    const node = createFileListNode(tagName, isLeaf);
+    node.icon = isLeaf ? <BookOutlined /> : <CodeSandboxOutlined />;
+    return node;
   }, []);
 
-  const handleChangeTag = useCallback(
+  const editTag = useCallback(
     (curNode: TreeDataNode, newTag: string) => {
       curNode.title = newTag;
-      setIsChangeTag(false);
-      const node = updateFileListNode(treeData, curNode);
-      return node;
+      setIsEditTag(false);
+      const nodes = updateFileListNode(treeData, curNode);
+      return nodes;
     },
     [treeData]
   );
 
-  // todo 分离根节点创建逻辑
-  const handleCRUDNode = useCallback(
+  const changeNode = useCallback(() => {}, []);
+
+  // todo  分离逻辑
+  const handleCreate = useCallback(
     (tagName: string, isLeaf: boolean) => {
-      const newNode = createFileListNode(tagName, 0, isLeaf);
-      newNode.icon = isLeaf ? <BookOutlined /> : <CodeSandboxOutlined />;
+      const newNode = createNode(tagName, isLeaf);
       let nodes: TreeDataNode[] = [];
-      // 通过右键增删节点
+      // todo通过右键增删节点
+      changeNode();
       if (selectedNode) {
-        if (isChangeTag && selectedNode.children?.length) {
+        if (isEditTag && selectedNode.children?.length) {
           if (SELF_CLOSING_TAG.includes(tagName)) {
             confirm({
               title: '警告',
               content: '自闭合标签无法容纳子节点，如果执意这么做则会清空当前节点下所有子元素',
               onOk() {
                 selectedNode.children!.length = 0;
-                nodes = handleChangeTag(selectedNode, tagName);
+                nodes = editTag(selectedNode, tagName);
               },
             });
           } else {
-            nodes = handleChangeTag(selectedNode, tagName);
+            nodes = editTag(selectedNode, tagName);
           }
         } else {
           selectedNode.children?.push(newNode);
@@ -78,7 +75,7 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
       onChange(nodes);
       setTreeData(nodes);
     },
-    [treeData, selectedNode, onChange, isChangeTag, handleChangeTag]
+    [treeData, selectedNode, onChange, isEditTag, editTag, createNode, changeNode]
   );
 
   const handleClickTree = useCallback((keys: any, info: any) => {
@@ -103,13 +100,17 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
       setMdlTitle(`新建${isLf ? '单' : '容器'}节点`);
     } else if (value === 'change-tag') {
       setOpenModal(true);
-      setIsChangeTag(true);
+      setIsEditTag(true);
     } else if (value === 'delete-node') {
       // todo
     } else if (value === 'setting-css') {
       // todo
     }
     setOpenCtxMenu(false);
+  }, []);
+
+  const handleOpenMdl = useCallback(() => {
+    setOpenModal(true);
   }, []);
 
   const handleCloseMdl = useCallback(() => {
@@ -122,29 +123,37 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
         title={mdlTitle}
         custom={custom}
         open={openMdl}
-        onChange={handleCRUDNode}
+        onChange={handleCreate}
         onCancel={handleCloseMdl}
       />
       <section className='file-list' onContextMenu={e => e.preventDefault()}>
         <section className='file-list-top'>
-          <span style={{ padding: '8px 0', fontSize: 12 }}>结构管理器</span>
+          <span style={{ padding: '8px 0', fontSize: 12 }}>结构管理(工作区)</span>
         </section>
-        <Directory
-          defaultExpandAll
-          showLine
-          treeData={treeData}
-          onSelect={handleClickTree}
-          onRightClick={handleRTClickTree}
-        />
-        <ContextMenu
-          {...{ ...ctxMenuPosi }}
-          open={openCtxMenu}
-          isLeaf={curIsLeaf}
-          onClick={handleOptionClick}
-        />
-        <Button type='primary' block onClick={handleCreateRoot}>
-          新建根容器
-        </Button>
+        {!treeData.length ? (
+          <>
+            <p style={{ marginBottom: 18 }}>尚未新建任何容器。</p>
+            <Button type='primary' block onClick={handleOpenMdl}>
+              新建容器
+            </Button>
+          </>
+        ) : (
+          <>
+            <Directory
+              defaultExpandAll
+              showLine
+              treeData={treeData}
+              onSelect={handleClickTree}
+              onRightClick={handleRTClickTree}
+            />
+            <ContextMenu
+              {...{ ...ctxMenuPosi }}
+              open={openCtxMenu}
+              isLeaf={curIsLeaf}
+              onClick={handleOptionClick}
+            />
+          </>
+        )}
       </section>
     </>
   );

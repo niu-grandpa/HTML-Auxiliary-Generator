@@ -1,5 +1,6 @@
 import { type TreeDataNode } from 'antd';
 import { VNode } from './runtime-transform';
+import { createRootKey } from './utils';
 
 const generate = _generate_();
 export default generate;
@@ -9,14 +10,7 @@ export default generate;
 function _generate_() {
   // { key: VNode, ... }
   const map = new Map<number, TreeDataNode[]>();
-
-  function createMapRecored(key: number, fileListRoot: TreeDataNode[]) {
-    map.set(key, fileListRoot);
-  }
-
-  function getMapRecored() {
-    return map;
-  }
+  const getKey = createRootKey();
 
   /**
    * 创建vnode节点
@@ -39,8 +33,8 @@ function _generate_() {
    * @param isLeaf
    * @returns
    */
-  function createFileListNode(tag: string, rootKey: number, isLeaf: boolean) {
-    return vnodeToTreeNode(createVNode(tag, rootKey), isLeaf);
+  function createFileListNode(tag: string, isLeaf: boolean) {
+    return vnodeToTreeNode(createVNode(tag, getKey()), isLeaf);
   }
 
   /**
@@ -68,11 +62,9 @@ function _generate_() {
   }
 
   return {
-    createMapRecored,
     createVNode,
     vnodeToTreeNode,
     treeNodeToVNode,
     createFileListNode,
-    getMapRecored,
   };
 }
