@@ -6,7 +6,7 @@ import DirectoryTree from './DirectoryTree';
 import './index.less';
 import ViewOperations from './ViewOperations';
 
-const { treeNodeToVNode } = core;
+const { filListNodeToVNode } = core;
 const { Header, Content, Footer } = Layout;
 
 const Home: React.FC = () => {
@@ -15,7 +15,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     if (fileListNode.length) {
-      setVnode(treeNodeToVNode(fileListNode));
+      setVnode(filListNodeToVNode(fileListNode));
     }
   }, [fileListNode]);
 

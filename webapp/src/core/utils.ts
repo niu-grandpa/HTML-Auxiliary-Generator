@@ -13,6 +13,6 @@ export function createRootKey(): () => number {
 
   return () => {
     let timestamp = y + m + d + date.getHours() + date.getMinutes() + date.getSeconds();
-    return (timestamp + ++num) % base;
+    return (timestamp + num++) % base;
   };
 }

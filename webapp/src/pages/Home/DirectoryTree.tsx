@@ -1,6 +1,6 @@
 import { BookOutlined, CodeSandboxOutlined } from '@ant-design/icons';
 import { Button, Modal, Tree, type TreeDataNode } from 'antd';
-import { FC, memo, MouseEvent, useCallback, useState } from 'react';
+import { FC, memo, MouseEvent, useCallback, useRef, useState } from 'react';
 import { ModalCreateNode } from '../../components';
 import { ContextMenu, ItemType } from '../../components/ContextMenu';
 import core from '../../core';
@@ -25,6 +25,16 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [selectedNode, setSelectedNode] = useState<TreeDataNode>();
 
+  const second = useRef(false);
+  const createRoot = useCallback(
+    (root: TreeDataNode) => {
+      second.current = true;
+      root.isLeaf = false;
+      return [root];
+    },
+    [second]
+  );
+
   const createNode = useCallback((tagName: string, isLeaf: boolean) => {
     const node = createFileListNode(tagName, isLeaf);
     node.icon = isLeaf ? <BookOutlined /> : <CodeSandboxOutlined />;
@@ -41,41 +51,45 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     [treeData]
   );
 
-  const changeNode = useCallback(() => {}, []);
+  const changeNode = useCallback(
+    (node: TreeDataNode, tag: string) => {
+      let nodes: TreeDataNode[] = [];
+      if (isEditTag && selectedNode?.children?.length) {
+        if (SELF_CLOSING_TAG.includes(tag)) {
+          confirm({
+            title: '警告',
+            content: '自闭合元素无法容纳子节点，如果这么做会清空该节点下的所有子节点',
+            onOk() {
+              selectedNode.children!.length = 0;
+              nodes = editTag(selectedNode, tag);
+            },
+          });
+        } else {
+          nodes = editTag(selectedNode, tag);
+        }
+      } else {
+        selectedNode!.children?.push(node);
+        nodes = updateFileListNode(treeData, selectedNode!);
+      }
+      setSelectedNode(undefined);
+      return nodes;
+    },
+    [isEditTag, editTag, selectedNode, treeData]
+  );
 
-  // todo  分离逻辑
   const handleCreate = useCallback(
     (tagName: string, isLeaf: boolean) => {
-      const newNode = createNode(tagName, isLeaf);
+      const node = createNode(tagName, isLeaf);
       let nodes: TreeDataNode[] = [];
-      // todo通过右键增删节点
-      changeNode();
-      if (selectedNode) {
-        if (isEditTag && selectedNode.children?.length) {
-          if (SELF_CLOSING_TAG.includes(tagName)) {
-            confirm({
-              title: '警告',
-              content: '自闭合标签无法容纳子节点，如果执意这么做则会清空当前节点下所有子元素',
-              onOk() {
-                selectedNode.children!.length = 0;
-                nodes = editTag(selectedNode, tagName);
-              },
-            });
-          } else {
-            nodes = editTag(selectedNode, tagName);
-          }
-        } else {
-          selectedNode.children?.push(newNode);
-          nodes = updateFileListNode(treeData, selectedNode);
-        }
-        setSelectedNode(undefined);
-      } else {
-        nodes = treeData.slice().concat(newNode);
+      if (!second.current && !treeData.length) {
+        nodes = createRoot(node);
+      } else if (second.current && selectedNode) {
+        nodes = changeNode(node, tagName);
       }
       onChange(nodes);
       setTreeData(nodes);
     },
-    [treeData, selectedNode, onChange, isEditTag, editTag, createNode, changeNode]
+    [treeData, selectedNode, onChange, createRoot, createNode, changeNode]
   );
 
   const handleClickTree = useCallback((keys: any, info: any) => {

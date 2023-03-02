@@ -33,22 +33,11 @@ function _generate_() {
    * @param isLeaf
    * @returns
    */
-  function createFileListNode(tag: string, isLeaf: boolean) {
-    return vnodeToTreeNode(createVNode(tag, getKey()), isLeaf);
-  }
-
-  /**
-   * 转换为antd Tree组件所需数据的结构
-   * @param {VNode} node
-   * @param {boolean} isLeaf 是否为叶子节点
-   * @returns {TreeDataNode}
-   */
-  function vnodeToTreeNode(node: VNode, isLeaf: boolean): TreeDataNode {
-    const { tagName, key } = node;
+  function createFileListNode(tag: string, isLeaf: boolean): TreeDataNode {
     return {
-      key,
+      key: getKey(),
       isLeaf,
-      title: tagName,
+      title: tag,
       children: [],
     };
   }
@@ -57,14 +46,13 @@ function _generate_() {
    * antd Tree节点转换为vnode
    * @param node
    */
-  function treeNodeToVNode(node: TreeDataNode[]): VNode[] {
+  function filListNodeToVNode(node: TreeDataNode[]): VNode[] {
     return [];
   }
 
   return {
     createVNode,
-    vnodeToTreeNode,
-    treeNodeToVNode,
+    filListNodeToVNode,
     createFileListNode,
   };
 }
