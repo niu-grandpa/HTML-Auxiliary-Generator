@@ -2,39 +2,55 @@ import { TreeDataNode } from 'antd';
 
 /**
  * 对结构列表的某个节点单独修改时，需要将其更新回源对象列表中
- * @param source
+ * @param root
  * @param node
  * @returns
  */
-export function updateFileListNode<T extends TreeDataNode>(source: T[], node: T): T[] {
-  const oldNode = findNode(source, node);
-  patchNode(oldNode, node);
-  return source;
+export function updateFileListNode<T extends TreeDataNode>(root: T[], node: T): T[] {
+  const oldNode = findNode(root, node);
+  oldNode && patchNode(oldNode, node, root);
+  return root;
 }
 
-function findNode(source: any[], node: any) {
-  for (let i = 0; i < source.length; i++) {
-    const n = source[i];
+function findNode(root: TreeDataNode[], node: TreeDataNode): TreeDataNode | undefined {
+  for (let i = 0; i < root.length; i++) {
+    const n = root[i];
     // 通过 key 找到那个被修改节点在原对象中的原节点
-    if (n?.key === node?.key) {
+    if (n.key === node.key) {
       return n;
-    } else if (n?.children?.length) {
+    } else if (n.children?.length) {
       findNode(n.children, node);
+    }
+  }
+  return undefined;
+}
+
+function patchNode(n1: TreeDataNode, n2: TreeDataNode, root?: TreeDataNode[]) {
+  // 删除节点
+  if (n2.key && !n2.title && !n2.children && !n2.isLeaf) {
+    if (root) {
+      for (const key in root) {
+        if (key === n2.key) delete root[key];
+      }
+    }
+  } else {
+    const oldChildren = n1.children!;
+    const newChildren = n2.children!;
+    // 修改标签名
+    if (n1.title !== n2.title) {
+      n1.title = n2.title;
+      // 在当前节点下新增或删除子节点
+    } else if (oldChildren.length !== newChildren.length) {
+      patchChildren(oldChildren, newChildren);
+      // 修改props
+    } else {
+      patchProps();
     }
   }
 }
 
-function patchNode(n1: any, n2: any) {
-  if (n1.title !== n2.title) {
-    n1.title = n2.title;
-  } else {
-    const oldChildren = n1.children;
-    const newChildren = n2.children;
-    patchChildren(oldChildren, newChildren);
-  }
-}
-
-function patchChildren(c1: any[], c2: any[]) {
+// 只存在同一层新增和删除节点的情况
+function patchChildren(c1: TreeDataNode[], c2: TreeDataNode[]) {
   const oldLen = c1.length;
   const newLen = c2.length;
   // 1.首次新增节点
@@ -48,7 +64,7 @@ function patchChildren(c1: any[], c2: any[]) {
   else if (oldLen < newLen) {
     c1.push(c2[newLen - 1]);
   } // 4.删除节点
-  else {
+  else if (oldLen > newLen) {
     for (let i = 0; i < oldLen; i++) {
       const oldCh = c1[i];
       if (!c2.includes(oldCh)) {

@@ -46,9 +46,7 @@ function _generate_() {
    * antd Tree节点转换为vnode
    * @param node
    */
-  function filListNodeToVNode(node: TreeDataNode[]): VNode[] {
-    return [];
-  }
+  function filListNodeToVNode(node: TreeDataNode[]) {}
 
   return {
     createVNode,

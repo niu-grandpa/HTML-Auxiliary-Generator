@@ -2,6 +2,7 @@ import { Col, Layout, Menu, Row, TreeDataNode } from 'antd';
 import React, { useEffect, useState } from 'react';
 import core from '../../core';
 import { type VNode } from '../../core/runtime-transform';
+import ConfigurationBar from './ConfigurationBar';
 import DirectoryTree from './DirectoryTree';
 import './index.less';
 import ViewOperations from './ViewOperations';
@@ -34,6 +35,7 @@ const Home: React.FC = () => {
             <ViewOperations {...{ vnode }} />
           </Col>
         </Row>
+        <ConfigurationBar />
       </Content>
       <Footer style={{ textAlign: 'center' }}>
         HTML Auxiliary Generator ©{new Date().getFullYear()} Created by Ryan John

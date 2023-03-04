@@ -92,6 +92,11 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     [treeData, selectedNode, onChange, createRoot, createNode, changeNode]
   );
 
+  const deleteNode = useCallback(() => {
+    const nodes = updateFileListNode(treeData, { key: selectedNode!.key });
+    setTreeData(nodes);
+  }, [treeData, selectedNode]);
+
   const handleClickTree = useCallback((keys: any, info: any) => {
     console.log('Trigger Select', keys, info);
   }, []);
@@ -105,23 +110,26 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     setCtxMenuPosi({ x: clientX, y: clientY + 10 });
   }, []);
 
-  const handleOptionClick = useCallback((value: ItemType) => {
-    const isLf = value === 'leaf';
-    const isNotLf = value === 'not-leaf';
-    if (isLf || isNotLf) {
-      setCustom(value);
-      setOpenModal(true);
-      setMdlTitle(`新建${isLf ? '单' : '容器'}节点`);
-    } else if (value === 'change-tag') {
-      setOpenModal(true);
-      setIsEditTag(true);
-    } else if (value === 'delete-node') {
-      // todo
-    } else if (value === 'setting-css') {
-      // todo
-    }
-    setOpenCtxMenu(false);
-  }, []);
+  const handleOptionClick = useCallback(
+    (value: ItemType) => {
+      const isLf = value === 'leaf';
+      const isNotLf = value === 'not-leaf';
+      if (isLf || isNotLf) {
+        setCustom(value);
+        setOpenModal(true);
+        setMdlTitle(`新建${isLf ? '单' : '容器'}节点`);
+      } else if (value === 'change-tag') {
+        setOpenModal(true);
+        setIsEditTag(true);
+      } else if (value === 'delete-node') {
+        deleteNode();
+      } else if (value === 'setting-css') {
+        // todo
+      }
+      setOpenCtxMenu(false);
+    },
+    [deleteNode]
+  );
 
   const handleOpenMdl = useCallback(() => {
     setOpenModal(true);
