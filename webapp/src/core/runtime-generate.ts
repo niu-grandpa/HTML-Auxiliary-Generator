@@ -1,5 +1,4 @@
 import { type TreeDataNode } from 'antd';
-import { VNode } from './runtime-transform';
 import { createRootKey } from './utils';
 
 const generate = _generate_();
@@ -11,21 +10,6 @@ function _generate_() {
   // { key: VNode, ... }
   const map = new Map<number, TreeDataNode[]>();
   const getKey = createRootKey();
-
-  /**
-   * 创建vnode节点
-   * @param tagName 标签名
-   * @returns {VNode}
-   */
-  function createVNode(tagName: string, key: number): VNode {
-    const node: VNode = {
-      key,
-      tagName,
-      props: {},
-      children: [],
-    };
-    return node;
-  }
 
   /**
    * 创建tree文件列表节点
@@ -46,11 +30,20 @@ function _generate_() {
    * antd Tree节点转换为vnode
    * @param node
    */
-  function filListNodeToVNode(node: TreeDataNode[]) {}
+  function filListNodeToVNode(node: TreeDataNode[]) {
+    // todo
+  }
+
+  /**
+   * 根据vnode树构建html字符串
+   */
+  function buildHTMLString(): string {
+    return '';
+  }
 
   return {
-    createVNode,
     filListNodeToVNode,
     createFileListNode,
+    buildHTMLString,
   };
 }

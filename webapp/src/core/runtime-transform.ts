@@ -1,10 +1,10 @@
-import { Key } from 'react';
 import { getBackspace, getKebabCase2 } from '../utils';
 
 export type VNode = {
-  key: Key;
+  key: number;
   tagName: string;
-  children: Array<string | VNode>;
+  // antd Tree组件的数据结构决定了children不存在是字符串的情况
+  children: VNode[];
   props?: Partial<{
     style: Partial<CSSStyleDeclaration>;
     attrs: Record<string, any>;
@@ -40,12 +40,6 @@ export default function transform(node: VNode): string {
 
     // 处理父标签下嵌套的子标签
     for (const n of children) {
-      // 文字内容直接拼接
-      if (typeof n === 'string') {
-        const content = `${getBackspace(tab + 1)}${n}\n`;
-        joinTag(content);
-        continue;
-      }
       // 递归处理子节点对象
       const nodeStr = JSON.stringify(n);
       // 剪枝: 每次递归前先获取哈希表的缓存，

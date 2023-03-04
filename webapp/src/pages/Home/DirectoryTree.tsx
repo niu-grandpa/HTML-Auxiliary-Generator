@@ -101,7 +101,7 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     console.log('Trigger Select', keys, info);
   }, []);
 
-  const handleRTClickTree = useCallback((info: any) => {
+  const handleOpenCtxMenu = useCallback((info: any) => {
     const { event, node } = info;
     const { clientX, clientY } = event as MouseEvent;
     setSelectedNode(node);
@@ -110,7 +110,7 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     setCtxMenuPosi({ x: clientX, y: clientY + 10 });
   }, []);
 
-  const handleOptionClick = useCallback(
+  const handleCtxClick = useCallback(
     (value: ItemType) => {
       const isLf = value === 'leaf';
       const isNotLf = value === 'not-leaf';
@@ -166,13 +166,13 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
               showLine
               treeData={treeData}
               onSelect={handleClickTree}
-              onRightClick={handleRTClickTree}
+              onRightClick={handleOpenCtxMenu}
             />
             <ContextMenu
               {...{ ...ctxMenuPosi }}
               open={openCtxMenu}
               isLeaf={curIsLeaf}
-              onClick={handleOptionClick}
+              onClick={handleCtxClick}
             />
           </>
         )}

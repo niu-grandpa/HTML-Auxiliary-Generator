@@ -25,14 +25,23 @@ function findNode(root: TreeDataNode[], node: TreeDataNode): TreeDataNode | unde
   return undefined;
 }
 
+function deleteNode(root: TreeDataNode[], node: TreeDataNode) {
+  for (let i = 0; i < root.length; i++) {
+    const n = root[i];
+    if (n.key === node.key) {
+      delete root[i];
+      break;
+    } else if (n.children?.length) {
+      deleteNode(n.children, node);
+    }
+  }
+}
+
 function patchNode(n1: TreeDataNode, n2: TreeDataNode, root?: TreeDataNode[]) {
   // 删除节点
-  if (n2.key && !n2.title && !n2.children && !n2.isLeaf) {
-    if (root) {
-      for (const key in root) {
-        if (key === n2.key) delete root[key];
-      }
-    }
+  if (n1.key === n2.key && !n2.title && !n2.children && !n2.isLeaf) {
+    if (!root) return;
+    deleteNode(root, n2);
   } else {
     const oldChildren = n1.children!;
     const newChildren = n2.children!;
