@@ -1,3 +1,4 @@
+import * as handleInteraction from './handle-interaction';
 import generate from './runtime-generate';
 import * as NodeHandler from './runtime-node';
 import transform from './runtime-transform';
@@ -8,6 +9,7 @@ const core = {
   ...generate,
   ...transform,
   ...NodeHandler,
+  ...handleInteraction,
 };
 
 export default core;

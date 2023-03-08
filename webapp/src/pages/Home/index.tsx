@@ -7,8 +7,10 @@ import DirectoryTree from './DirectoryTree';
 import './index.less';
 import ViewOperations from './ViewOperations';
 
-const { filListNodeToVNode } = core;
+const { filListNodeToVNode, createPlaceholder } = core;
 const { Header, Content, Footer } = Layout;
+
+const { mountedDragPlaceholder, setDragPlaceholder } = createPlaceholder();
 
 const Home: React.FC = () => {
   const [vnode, setVnode] = useState<VNode[]>([]);
@@ -19,6 +21,10 @@ const Home: React.FC = () => {
       setVnode(filListNodeToVNode(fileListNode));
     }
   }, [fileListNode]);
+
+  useEffect(() => {
+    mountedDragPlaceholder();
+  }, []);
 
   return (
     <Layout className='layout'>
