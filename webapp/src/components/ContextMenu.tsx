@@ -32,7 +32,7 @@ const ContextMenu: FC<Props> = memo(({ x, y, open, isLeaf, onClick }) => {
       value: 'setting-css',
     },
     {
-      text: '修改标签...',
+      text: '修改...',
       value: 'change-tag',
     },
     {

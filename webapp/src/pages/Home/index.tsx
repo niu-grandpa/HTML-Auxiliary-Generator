@@ -7,20 +7,20 @@ import DirectoryTree from './DirectoryTree';
 import './index.less';
 import ViewOperations from './ViewOperations';
 
-const { filListNodeToVNode, createPlaceholder } = core;
+const { antTreeNodeToVNode, createPlaceholder } = core;
 const { Header, Content, Footer } = Layout;
 
 const { mountedDragPlaceholder, setDragPlaceholder } = createPlaceholder();
 
 const Home: React.FC = () => {
   const [vnode, setVnode] = useState<VNode[]>([]);
-  const [fileListNode, setFileListNode] = useState<TreeDataNode[]>([]);
+  const [antTreeData, setAntTreeData] = useState<TreeDataNode[]>([]);
 
   useEffect(() => {
-    if (fileListNode.length) {
-      setVnode(filListNodeToVNode(fileListNode));
+    if (antTreeData.length) {
+      // setVnode(antTreeNodeToVNode(antTreeData));
     }
-  }, [fileListNode]);
+  }, [antTreeData]);
 
   useEffect(() => {
     mountedDragPlaceholder();
@@ -35,7 +35,7 @@ const Home: React.FC = () => {
       <Content style={{ padding: '18px 38px 0 38px' }}>
         <Row gutter={[19, 19]}>
           <Col span={5}>
-            <DirectoryTree onChange={setFileListNode} />
+            <DirectoryTree onChange={setAntTreeData} />
           </Col>
           <Col span={19}>
             <ViewOperations {...{ vnode }} />

@@ -89,7 +89,7 @@ const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCanc
         // @ts-ignore
         filterOption={(input, option) => (option?.label ?? '').includes(input)}
       />
-      {!custom && (
+      {!custom ? (
         <Radio.Group value={isLeaf} onChange={handleRadio}>
           <Radio value={0} disabled={disParent}>
             <Tooltip title='允许在此节点下再新建子节点'>容器节点</Tooltip>
@@ -98,6 +98,8 @@ const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCanc
             <Tooltip title='无法再为其添加子节点'>单独节点</Tooltip>
           </Radio>
         </Radio.Group>
+      ) : (
+        <Radio checked>{custom === 'leaf' ? '单独节点' : '容器节点'}</Radio>
       )}
     </Modal>
   );

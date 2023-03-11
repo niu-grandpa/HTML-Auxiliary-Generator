@@ -6,9 +6,9 @@ import { TreeDataNode } from 'antd';
  * @param node
  * @returns
  */
-export function updateFileListNode<T extends TreeDataNode>(root: T[], node: T): T[] {
+export function updateAntTree<T extends TreeDataNode>(root: T[], node: T): T[] {
   const oldNode = findNode(root, node);
-  oldNode && patchNode(oldNode, node, root);
+  oldNode && patchNode(oldNode, node);
   return root;
 }
 
@@ -25,36 +25,32 @@ function findNode(root: TreeDataNode[], node: TreeDataNode): TreeDataNode | unde
   return undefined;
 }
 
-function deleteNode(root: TreeDataNode[], node: TreeDataNode) {
+export function deleteNode(root: TreeDataNode[], node: TreeDataNode) {
   for (let i = 0; i < root.length; i++) {
     const n = root[i];
     if (n.key === node.key) {
-      delete root[i];
+      // delete root[i];
+      root.splice(i, 1);
       break;
     } else if (n.children?.length) {
       deleteNode(n.children, node);
     }
   }
+  return root;
 }
 
-function patchNode(n1: TreeDataNode, n2: TreeDataNode, root?: TreeDataNode[]) {
-  // 删除节点
-  if (n1.key === n2.key && !n2.title && !n2.children && !n2.isLeaf) {
-    if (!root) return;
-    deleteNode(root, n2);
+function patchNode(n1: TreeDataNode, n2: TreeDataNode) {
+  const oldChildren = n1.children!;
+  const newChildren = n2.children!;
+  // 修改标签名
+  if (n1.title !== n2.title) {
+    n1.title = n2.title;
+    // 在当前节点下新增或删除子节点
+  } else if (oldChildren.length !== newChildren.length) {
+    patchChildren(oldChildren, newChildren);
+    // 修改props
   } else {
-    const oldChildren = n1.children!;
-    const newChildren = n2.children!;
-    // 修改标签名
-    if (n1.title !== n2.title) {
-      n1.title = n2.title;
-      // 在当前节点下新增或删除子节点
-    } else if (oldChildren.length !== newChildren.length) {
-      patchChildren(oldChildren, newChildren);
-      // 修改props
-    } else {
-      patchProps();
-    }
+    patchProps();
   }
 }
 
