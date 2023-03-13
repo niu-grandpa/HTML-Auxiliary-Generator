@@ -18,7 +18,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     if (antTreeData.length) {
-      // setVnode(antTreeNodeToVNode(antTreeData));
+      setVnode(antTreeNodeToVNode(antTreeData));
     }
   }, [antTreeData]);
 

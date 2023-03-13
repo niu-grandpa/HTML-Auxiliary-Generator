@@ -1,3 +1,6 @@
+import { Key } from 'react';
+import { VNode } from './runtime-transform';
+
 /**
  * 创建文件列表树的根节点key，且其后代也应用该key，由它开始自增
  * @returns {() => number}
@@ -14,5 +17,14 @@ export function createRootKey(): () => number {
   return () => {
     let timestamp = y + m + d + date.getHours() + date.getMinutes() + date.getSeconds();
     return (timestamp + num++) % base;
+  };
+}
+
+export function h(tag: string, props: VNode['props'], children: VNode[], key: Key): VNode {
+  return {
+    key,
+    tag,
+    props,
+    children,
   };
 }

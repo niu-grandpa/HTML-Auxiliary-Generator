@@ -1,5 +1,5 @@
 import {
-  BookOutlined,
+  BuildOutlined,
   CodeSandboxOutlined,
   FileAddOutlined,
   FolderAddOutlined,
@@ -32,7 +32,7 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
 
   const createNode = useCallback((tagName: string, isLeaf: boolean) => {
     const node = createAntTreeNode(tagName, isLeaf);
-    node.icon = isLeaf ? <BookOutlined /> : <CodeSandboxOutlined />;
+    node.icon = isLeaf ? <BuildOutlined /> : <CodeSandboxOutlined />;
     return node;
   }, []);
 

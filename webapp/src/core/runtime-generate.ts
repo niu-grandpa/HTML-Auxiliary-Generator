@@ -1,6 +1,6 @@
 import { type TreeDataNode } from 'antd';
 import { VNode } from './runtime-transform';
-import { createRootKey } from './utils';
+import { createRootKey, h } from './utils';
 
 const generate = _generate_();
 export default generate;
@@ -27,21 +27,29 @@ function _generate_() {
 
   /**
    * antd Tree节点转换为vnode
-   * @param root
+   * @param {TreeDataNode[]} root
+   * @returns {VNode[]}
    */
-  function antTreeNodeToVNode(root: TreeDataNode[]) {
-    const h = (type: string, props: VNode['props'], children: VNode[]) => {
-      return {
-        type,
-        props,
-        children,
-      };
+  function antTreeNodeToVNode(root: TreeDataNode[]): VNode[] {
+    const vdoms = Array<VNode>(root.length);
+
+    const createVnode = (node: TreeDataNode): VNode => {
+      const { title, key, isLeaf, children } = node;
+      const vnode = h(title as string, null, [], key);
+      if (isLeaf) return vnode;
+      vnode.children = antTreeNodeToVNode(children as TreeDataNode[]);
+      return vnode;
     };
-    const dfs = () => {
-      for (let i = 0; i < root.length; i++) {
-        const node = root[i];
-      }
-    };
+
+    let left = 0;
+    let right = root.length - 1;
+
+    while (left <= right) {
+      vdoms[left] = createVnode(root[left++]);
+      vdoms[right] = createVnode(root[right--]);
+    }
+
+    return vdoms;
   }
 
   /**

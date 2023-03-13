@@ -1,14 +1,15 @@
+import { Key } from 'react';
 import { getBackspace, getKebabCase2 } from '../utils';
 
 export type VNode = {
-  key: number;
-  tagName: string;
+  key: Key;
+  tag: string;
   // antd Tree组件的数据结构决定了children不存在是字符串的情况
   children: VNode[];
-  props?: Partial<{
+  props: Partial<{
     style: Partial<CSSStyleDeclaration>;
     attrs: Record<string, any>;
-  }>;
+  }> | null;
 };
 
 export const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
@@ -23,7 +24,7 @@ export default function transform(node: VNode): string {
   let template = '';
 
   const transformToHTMLString = (node: VNode, tab = 0, tmp = '') => {
-    const { tagName, children, props } = node;
+    const { tag, children, props } = node;
     const backspace = getBackspace(tab++);
 
     const joinTag = (str: string) => {
@@ -31,12 +32,12 @@ export default function transform(node: VNode): string {
       template += str;
     };
     // 自闭合标签，不用处理孩子内容
-    if (SELF_CLOSING_TAG.includes(tagName)) {
-      joinTag(generateTag({ name: tagName, backspace, close: true }));
+    if (SELF_CLOSING_TAG.includes(tag)) {
+      joinTag(generateTag({ name: tag, backspace, close: true }));
       return tmp;
     }
     // 拼接开始标签
-    joinTag(generateTag({ name: tagName, backspace, props }));
+    joinTag(generateTag({ name: tag, backspace, props }));
 
     // 处理父标签下嵌套的子标签
     for (const n of children) {
@@ -52,7 +53,7 @@ export default function transform(node: VNode): string {
       memo.set(nodeStr, result);
     }
     // 结束标签
-    joinTag(generateTag({ name: tagName, backspace, end: true }));
+    joinTag(generateTag({ name: tag, backspace, end: true }));
     return tmp;
   };
 
@@ -69,17 +70,17 @@ function generateTag(obj: {
 }): string {
   const { backspace, end, name, close, props } = obj;
   const str = `${backspace}<${end ? '/' : ''}${name}${close ? ' /' : ''}>`;
-  const tagName = joinProps(str, props, end) + '\n';
-  return tagName;
+  const tag = joinProps(str, props || null, end) + '\n';
+  return tag;
 }
 
-function joinProps(tagName: string, props: VNode['props'], endTag?: boolean): string {
-  if (!props || endTag) return tagName;
+function joinProps(tag: string, props: VNode['props'], endTag?: boolean): string {
+  if (!props || endTag) return tag;
 
   const { attrs, style } = props;
-  const isSelfClose = tagName.endsWith(' />');
-  const endPosi = tagName.length - (isSelfClose ? 3 : 1);
-  let newTag = tagName.substring(0, endPosi);
+  const isSelfClose = tag.endsWith(' />');
+  const endPosi = tag.length - (isSelfClose ? 3 : 1);
+  let newTag = tag.substring(0, endPosi);
 
   if (attrs) {
     for (const key in attrs) {

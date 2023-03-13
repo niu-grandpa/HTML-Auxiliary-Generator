@@ -1,5 +1,5 @@
 import { Slider } from 'antd';
-import { FC, memo, useCallback, useMemo, useState } from 'react';
+import { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { type VNode } from '../../core/runtime-transform';
 
 import ConfigurationBar from './ConfigurationBar';
@@ -24,6 +24,12 @@ const ViewOperations: FC<Props> = ({ vnode }) => {
     const n = newValue * 0.01;
     setScale((n < 0.3 ? 0.3 : n).toFixed(2));
   }, []);
+
+  useEffect(() => {
+    if (data.length) {
+      console.log(data);
+    }
+  }, [data]);
 
   return (
     <>
