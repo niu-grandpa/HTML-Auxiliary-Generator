@@ -7,7 +7,7 @@ import {
 import { Button, Col, message, Modal, Row, Tree, type TreeDataNode } from 'antd';
 import { FC, memo, MouseEvent, useCallback, useState } from 'react';
 import { ModalCreateNode } from '../../components';
-import { ContextMenu, ItemType } from '../../components/ContextMenu';
+import { ContextMenu, CTX_MENU_OPTS } from '../../components/ContextMenu';
 import core from '../../core';
 import { SELF_CLOSING_TAG } from '../../core/runtime-transform';
 
@@ -24,11 +24,18 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   const [openCtxMenu, setOpenCtxMenu] = useState(false);
   const [curIsLeaf, setCurIsLeaf] = useState(false);
   const [isEditTag, setIsEditTag] = useState(false);
-  const [custom, setCustom] = useState<'leaf' | 'not-leaf' | undefined>(undefined);
+  const [custom, setCustom] = useState<'leaf' | 'non-leaf' | undefined>(undefined);
   const [mdlTitle, setMdlTitle] = useState('新建视图容器');
   const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [currentSelected, setSelectedNode] = useState<TreeDataNode>();
+
+  const initState = useCallback(() => {
+    custom && setCustom(undefined);
+    curIsLeaf && setCurIsLeaf(false);
+    isEditTag && setIsEditTag(false);
+    currentSelected && setSelectedNode(undefined);
+  }, [custom, isEditTag, curIsLeaf, currentSelected]);
 
   const createNode = useCallback((tagName: string, isLeaf: boolean) => {
     const node = createAntTreeNode(tagName, isLeaf);
@@ -38,7 +45,6 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
 
   const editTag = useCallback((root: TreeDataNode[], node: TreeDataNode, newTag: string) => {
     node.title = newTag;
-    setIsEditTag(false);
     updateAntTree(root, node);
   }, []);
 
@@ -67,10 +73,6 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     [isEditTag, editTag, createNode]
   );
 
-  const clearSelectedNode = useCallback(() => {
-    setSelectedNode(undefined);
-  }, []);
-
   const deleteOneNode = useCallback(() => {
     confirm({
       title: '警告',
@@ -79,10 +81,10 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
         message.success('删除成功');
         const newData = deleteNode(treeData.slice(), currentSelected!);
         setTreeData(newData);
-        clearSelectedNode();
+        initState();
       },
     });
-  }, [treeData, currentSelected, clearSelectedNode]);
+  }, [treeData, currentSelected, initState]);
 
   const isCreateRoot = useCallback(() => currentSelected === undefined, [currentSelected]);
 
@@ -94,15 +96,15 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
         newData.push(createNode(tagName, isLeaf));
       } else if (currentSelected) {
         changeNode(newData, currentSelected, tagName, isLeaf);
-        clearSelectedNode();
       }
+      initState();
       onChange(newData);
       setTreeData(newData);
     },
-    [treeData, currentSelected, onChange, createNode, changeNode, isCreateRoot, clearSelectedNode]
+    [treeData, currentSelected, onChange, createNode, changeNode, isCreateRoot, initState]
   );
 
-  const handleClickTree = useCallback((keys: any, info: any) => {
+  const handleClickNode = useCallback((keys: any, info: any) => {
     console.log('Trigger Select', keys, info);
     setSelectedNode(info.node);
   }, []);
@@ -117,20 +119,23 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   }, []);
 
   const handleCtxClick = useCallback(
-    (value: ItemType) => {
-      const isLf = value === 'leaf';
-      const isNotLf = value === 'not-leaf';
-      if (isLf || isNotLf) {
-        setCustom(value);
+    (value: CTX_MENU_OPTS) => {
+      const leaf = value === CTX_MENU_OPTS.NEW_LEAF;
+      const nonLeaf = value === CTX_MENU_OPTS.NEW_NON_LEAF;
+      if (leaf || nonLeaf) {
         setOpenModal(true);
-        setMdlTitle(`新建${isLf ? '单' : '容器'}节点`);
-      } else if (value === 'change-tag') {
+        leaf && setCustom('leaf');
+        nonLeaf && setCustom('non-leaf');
+        setMdlTitle(`新建${leaf ? '单' : '容器'}节点`);
+      } else if (value === CTX_MENU_OPTS.ADD_TEXT) {
+        // todo
+      } else if (value === CTX_MENU_OPTS.EDIT_TAG) {
         setOpenModal(true);
         setIsEditTag(true);
         setMdlTitle('修改容器标签');
-      } else if (value === 'delete-node') {
+      } else if (value === CTX_MENU_OPTS.REMOVE) {
         deleteOneNode();
-      } else if (value === 'setting-css') {
+      } else if (value === CTX_MENU_OPTS.SET_STYLE) {
         // todo
       }
       setOpenCtxMenu(false);
@@ -142,7 +147,7 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     (isLeaf?: boolean) => {
       if (isLeaf !== undefined) {
         setCurIsLeaf(isLeaf);
-        setCustom(isLeaf ? 'leaf' : 'not-leaf');
+        setCustom(isLeaf ? 'leaf' : 'non-leaf');
       }
       if (currentSelected) {
         setSelectedNode(currentSelected);
@@ -153,11 +158,9 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   );
 
   const handleCloseMdl = useCallback(() => {
-    setCurIsLeaf(false);
+    initState();
     setOpenModal(false);
-    setCustom(undefined);
-    clearSelectedNode();
-  }, []);
+  }, [initState]);
 
   return (
     <>
@@ -208,7 +211,7 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
               defaultExpandAll
               showLine
               treeData={treeData}
-              onSelect={handleClickTree}
+              onSelect={handleClickNode}
               onRightClick={handleOpenCtxMenu}
             />
             <ContextMenu

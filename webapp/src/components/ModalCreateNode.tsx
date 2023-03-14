@@ -7,7 +7,7 @@ import { SELF_CLOSING_TAG } from '../core/runtime-transform';
 type Props = Partial<{
   open: boolean;
   title: string;
-  custom: 'leaf' | 'not-leaf';
+  custom?: 'leaf' | 'non-leaf';
   onCancel: () => void;
   onChange: (tagName: string, isLeaf: boolean) => void;
 }>;
@@ -17,19 +17,19 @@ const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCanc
 
   const [value, setValue] = useState('');
   const [status, setStatus] = useState<'error' | ''>('');
-  const [isLeaf, setIsLeaf] = useState(0);
+  const [radioChecked, setRadioChecked] = useState(0);
   const [disParent, setDisParent] = useState(false);
 
   const initData = useCallback(() => {
     setValue('');
     setStatus('');
-    setIsLeaf(0);
+    setRadioChecked(0);
     setDisParent(false);
   }, []);
 
   const handleSelectTag = useCallback((value: string) => {
     if (SELF_CLOSING_TAG.includes(value)) {
-      setIsLeaf(1);
+      setRadioChecked(1);
       setDisParent(true);
     }
     setStatus('');
@@ -37,27 +37,28 @@ const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCanc
   }, []);
 
   const handleRadio = useCallback(({ target }: RadioChangeEvent) => {
-    setIsLeaf(target.value);
+    setRadioChecked(target.value);
   }, []);
 
-  const isNotSelectTag = useCallback(() => {
+  const notSelected = useCallback(() => {
     if (!value) {
       setStatus('error');
       message.error('请选择标签');
       timer.current = setTimeout(() => {
         setStatus('');
       }, 2000);
-      return false;
+      return true;
     }
-    return true;
+    return false;
   }, [value]);
 
   const handleOk = useCallback(() => {
-    if (!isNotSelectTag()) return;
-    const type = !custom ? isLeaf === 1 : custom === 'leaf';
-    onChange?.(value, type);
+    if (notSelected()) return;
+    // 默认创建容器节点类型
+    const isLeaf = !custom ? radioChecked === 1 : custom === 'leaf';
     onCancel?.();
-  }, [onChange, onCancel, value, custom, isLeaf, isNotSelectTag]);
+    onChange?.(value, isLeaf);
+  }, [onChange, onCancel, value, custom, radioChecked, notSelected]);
 
   useEffect(() => {
     initData();
@@ -90,7 +91,7 @@ const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCanc
         filterOption={(input, option) => (option?.label ?? '').includes(input)}
       />
       {!custom ? (
-        <Radio.Group value={isLeaf} onChange={handleRadio}>
+        <Radio.Group value={radioChecked} onChange={handleRadio}>
           <Radio value={0} disabled={disParent}>
             <Tooltip title='允许在此节点下再新建子节点'>容器节点</Tooltip>
           </Radio>
