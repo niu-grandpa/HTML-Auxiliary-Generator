@@ -1,5 +1,15 @@
 import { Key } from 'react';
-import { VNode } from './runtime-transform';
+
+export type VNode = {
+  key: Key;
+  tag: string;
+  // antd Tree组件的数据结构决定了children不存在是字符串的情况
+  children: VNode[];
+  props: Partial<{
+    style: Partial<CSSStyleDeclaration>;
+    attrs: Record<string, any>;
+  }> | null;
+};
 
 /**
  * 创建文件列表树的根节点key，且其后代也应用该key，由它开始自增

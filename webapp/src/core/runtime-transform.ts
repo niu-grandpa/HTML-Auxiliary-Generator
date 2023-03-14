@@ -1,16 +1,6 @@
-import { Key } from 'react';
+import { useMemoCaches as memoCaches } from '../hooks';
 import { getBackspace, getKebabCase2 } from '../utils';
-
-export type VNode = {
-  key: Key;
-  tag: string;
-  // antd Tree组件的数据结构决定了children不存在是字符串的情况
-  children: VNode[];
-  props: Partial<{
-    style: Partial<CSSStyleDeclaration>;
-    attrs: Record<string, any>;
-  }> | null;
-};
+import { VNode } from './utils';
 
 export const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
 
@@ -20,7 +10,7 @@ export const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
  * @returns {string}
  */
 export default function transform(node: VNode): string {
-  const memo = new Map<string, string>();
+  const memo = memoCaches();
   let template = '';
 
   const transformToHTMLString = (node: VNode, tab = 0, tmp = '') => {
@@ -40,17 +30,14 @@ export default function transform(node: VNode): string {
     joinTag(generateTag({ name: tag, backspace, props }));
 
     // 处理父标签下嵌套的子标签
-    for (const n of children) {
+    for (const child of children) {
       // 递归处理子节点对象
-      const nodeStr = JSON.stringify(n);
       // 剪枝: 每次递归前先获取哈希表的缓存，
       // 如果当前准备进行的递归在之前已进行过，则使用缓存结果避免重复递归
-      if (memo.has(nodeStr)) {
-        template += memo.get(nodeStr);
-        continue;
-      }
-      const result = transformToHTMLString(n, tab + 1);
-      memo.set(nodeStr, result);
+      // eslint-disable-next-line no-loop-func
+      if (memo.get(child, cache => (template += cache))) continue;
+      const result = transformToHTMLString(child, tab + 1);
+      memo.set(child, result);
     }
     // 结束标签
     joinTag(generateTag({ name: tag, backspace, end: true }));

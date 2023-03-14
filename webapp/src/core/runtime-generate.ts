@@ -1,6 +1,6 @@
 import { type TreeDataNode } from 'antd';
-import { VNode } from './runtime-transform';
-import { createRootKey, h } from './utils';
+import { useMemoCaches as memoCaches } from '../hooks';
+import { createRootKey, h, type VNode } from './utils';
 
 const generate = _generate_();
 export default generate;
@@ -8,6 +8,7 @@ export default generate;
 function _generate_() {
   // { key: VNode, ... }
   const map = new Map<number, TreeDataNode[]>();
+  const vnodeMemo = memoCaches();
   const getKey = createRootKey();
 
   /**
@@ -37,7 +38,15 @@ function _generate_() {
       const { title, key, isLeaf, children } = node;
       const vnode = h(title as string, null, [], key);
       if (isLeaf) return vnode;
+      // todo test
+      const nodeWithNoKey = {
+        title,
+        isLeaf,
+        children,
+      };
+      if (vnodeMemo.get(nodeWithNoKey, cache => (vnode.children = cache))) return vnode;
       vnode.children = antTreeNodeToVNode(children as TreeDataNode[]);
+      vnodeMemo.set(nodeWithNoKey, vnode.children);
       return vnode;
     };
 
