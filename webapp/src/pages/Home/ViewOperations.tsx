@@ -1,19 +1,25 @@
 import { Slider } from 'antd';
-import { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { FC, memo, useCallback, useEffect, useState } from 'react';
+import core from '../../core';
 import { type VNode } from '../../core/utils';
 
 import ConfigurationBar from './ConfigurationBar';
 
 type Props = {
-  vnode: VNode[];
+  vnodes: VNode[];
 };
 
-/**视图操作区域 */
-const ViewOperations: FC<Props> = ({ vnode }) => {
-  const data = useMemo(() => vnode, [vnode]);
+const { buildHTMLString } = core;
 
+/**视图操作区域 */
+const ViewOperations: FC<Props> = ({ vnodes }) => {
+  const [htmlString, setHTMLString] = useState<string>('');
   const [scale, setScale] = useState('1');
   const [openConfig, setOpenConfig] = useState(false);
+
+  useEffect(() => {
+    setHTMLString(buildHTMLString(vnodes));
+  }, [vnodes]);
 
   const onCustomCtxMenu = useCallback((e: any) => {
     e.preventDefault();
@@ -24,12 +30,6 @@ const ViewOperations: FC<Props> = ({ vnode }) => {
     const n = newValue * 0.01;
     setScale((n < 0.3 ? 0.3 : n).toFixed(2));
   }, []);
-
-  useEffect(() => {
-    if (data.length) {
-      console.log(data);
-    }
-  }, [data]);
 
   return (
     <>
@@ -45,9 +45,7 @@ const ViewOperations: FC<Props> = ({ vnode }) => {
             tooltip={{ formatter: v => `${v}%` }}
           />
         </div>
-        <section className='view-opts-box' style={{ transform: `scale(${scale})` }}>
-          {/* <Dropdown menu={{ items: dropdownMeun }} trigger={['contextMenu']}></Dropdown> */}
-        </section>
+        <section className='view-opts-box' style={{ transform: `scale(${scale})` }}></section>
       </section>
     </>
   );

@@ -1,7 +1,7 @@
 import { Col, Layout, Menu, Row, TreeDataNode } from 'antd';
 import React, { useEffect, useState } from 'react';
 import core from '../../core';
-import { type VNode } from '../../core/runtime-transform';
+import { type VNode } from '../../core/utils';
 import ConfigurationBar from './ConfigurationBar';
 import DirectoryTree from './DirectoryTree';
 import './index.less';
@@ -13,12 +13,12 @@ const { Header, Content, Footer } = Layout;
 const { mountedDragPlaceholder, setDragPlaceholder } = createPlaceholder();
 
 const Home: React.FC = () => {
-  const [vnode, setVnode] = useState<VNode[]>([]);
+  const [vnodes, setVnodes] = useState<VNode[]>([]);
   const [antTreeData, setAntTreeData] = useState<TreeDataNode[]>([]);
 
   useEffect(() => {
     if (antTreeData.length) {
-      setVnode(antTreeNodeToVNode(antTreeData));
+      setVnodes(antTreeNodeToVNode(antTreeData));
     }
   }, [antTreeData]);
 
@@ -38,7 +38,7 @@ const Home: React.FC = () => {
             <DirectoryTree onChange={setAntTreeData} />
           </Col>
           <Col span={19}>
-            <ViewOperations {...{ vnode }} />
+            <ViewOperations {...{ vnodes }} />
           </Col>
         </Row>
         <ConfigurationBar />

@@ -1,14 +1,11 @@
 import { type TreeDataNode } from 'antd';
-import { useMemoCaches as memoCaches } from '../hooks';
+import transform from './runtime-transform';
 import { createRootKey, h, type VNode } from './utils';
 
 const generate = _generate_();
 export default generate;
 
 function _generate_() {
-  // { key: VNode, ... }
-  const map = new Map<number, TreeDataNode[]>();
-  const vnodeMemo = memoCaches();
   const getKey = createRootKey();
 
   /**
@@ -37,16 +34,8 @@ function _generate_() {
     const createVnode = (node: TreeDataNode): VNode => {
       const { title, key, isLeaf, children } = node;
       const vnode = h(title as string, null, [], key);
-      if (isLeaf) return vnode;
-      // todo test
-      const nodeWithNoKey = {
-        title,
-        isLeaf,
-        children,
-      };
-      if (vnodeMemo.get(nodeWithNoKey, cache => (vnode.children = cache))) return vnode;
+      if (isLeaf || !children?.length) return vnode;
       vnode.children = antTreeNodeToVNode(children as TreeDataNode[]);
-      vnodeMemo.set(nodeWithNoKey, vnode.children);
       return vnode;
     };
 
@@ -64,8 +53,12 @@ function _generate_() {
   /**
    * 根据vnode树构建html字符串
    */
-  function buildHTMLString(): string {
-    return '';
+  function buildHTMLString(vnodes: VNode[]): string {
+    let res = '';
+    for (const vnode of vnodes) {
+      res += transform(vnode);
+    }
+    return res;
   }
 
   return {

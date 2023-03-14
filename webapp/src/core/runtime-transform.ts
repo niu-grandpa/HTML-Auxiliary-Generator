@@ -1,8 +1,9 @@
-import { useMemoCaches as memoCaches } from '../hooks';
 import { getBackspace, getKebabCase2 } from '../utils';
 import { VNode } from './utils';
 
 export const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
+
+const memo = new Map<string, string>();
 
 /**
  * 转换节点对象为HTML字符串模板
@@ -10,69 +11,72 @@ export const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
  * @returns {string}
  */
 export default function transform(node: VNode): string {
-  const memo = memoCaches();
   let template = '';
 
-  const transformToHTMLString = (node: VNode, tab = 0, tmp = '') => {
+  const toHTMLString = (node: VNode, tab = 0, currentLevelResult = '') => {
     const { tag, children, props } = node;
     const backspace = getBackspace(tab++);
-
-    const joinTag = (str: string) => {
-      tmp += str;
-      template += str;
+    const splicingTag = (tag: string) => {
+      currentLevelResult += tag;
+      template += tag;
     };
     // 自闭合标签，不用处理孩子内容
     if (SELF_CLOSING_TAG.includes(tag)) {
-      joinTag(generateTag({ name: tag, backspace, close: true }));
-      return tmp;
+      splicingTag(convertToStr({ tag: tag, backspace, close: true }));
+      return currentLevelResult;
     }
     // 拼接开始标签
-    joinTag(generateTag({ name: tag, backspace, props }));
-
+    splicingTag(convertToStr({ tag: tag, backspace, props }));
     // 处理父标签下嵌套的子标签
     for (const child of children) {
       // 递归处理子节点对象
       // 剪枝: 每次递归前先获取哈希表的缓存，
       // 如果当前准备进行的递归在之前已进行过，则使用缓存结果避免重复递归
-      // eslint-disable-next-line no-loop-func
-      if (memo.get(child, cache => (template += cache))) continue;
-      const result = transformToHTMLString(child, tab + 1);
-      memo.set(child, result);
+      const temp = Object.assign({}, child);
+      temp.key = -1;
+      const jsonKey = JSON.stringify(temp);
+      if (memo.has(jsonKey)) {
+        template += memo.get(jsonKey);
+        continue;
+      }
+      const result = toHTMLString(child, tab + 1);
+      memo.set(jsonKey, result);
     }
     // 结束标签
-    joinTag(generateTag({ name: tag, backspace, end: true }));
-    return tmp;
+    splicingTag(convertToStr({ tag, backspace, end: true }));
+    return currentLevelResult;
   };
 
-  transformToHTMLString(node);
+  toHTMLString(node);
   return template;
 }
 
-function generateTag(obj: {
-  name: string;
+function convertToStr(obj: {
+  tag: string;
   backspace: string;
   props?: VNode['props'];
   end?: boolean;
   close?: boolean;
 }): string {
-  const { backspace, end, name, close, props } = obj;
-  const str = `${backspace}<${end ? '/' : ''}${name}${close ? ' /' : ''}>`;
-  const tag = joinProps(str, props || null, end) + '\n';
-  return tag;
+  const { backspace, end, tag, close, props } = obj;
+  const str = `${backspace}<${end ? '/' : ''}${tag}${close ? ' /' : ''}>`;
+  const res = addProps(str, props || null, end) + '\n';
+  return res;
 }
 
-function joinProps(tag: string, props: VNode['props'], endTag?: boolean): string {
-  if (!props || endTag) return tag;
+function addProps(tag: string, props: VNode['props'], endTag?: boolean): string {
+  if (props === null || endTag) return tag;
 
   const { attrs, style } = props;
   const isSelfClose = tag.endsWith(' />');
   const endPosi = tag.length - (isSelfClose ? 3 : 1);
-  let newTag = tag.substring(0, endPosi);
+
+  let res = tag.substring(0, endPosi);
 
   if (attrs) {
     for (const key in attrs) {
       const value = attrs[key];
-      newTag += ` ${getKebabCase2(key)}="${value}"`;
+      res += ` ${getKebabCase2(key)}="${value}"`;
     }
   }
   if (style) {
@@ -81,8 +85,8 @@ function joinProps(tag: string, props: VNode['props'], endTag?: boolean): string
       const value = style[key as any];
       inlineStyle += `"${getKebabCase2(key)}: ${value};"`;
     }
-    newTag += inlineStyle;
+    res += inlineStyle;
   }
 
-  return newTag + `${isSelfClose ? ' />' : '>'}`;
+  return `${res}${isSelfClose ? ' /' : ''}>}`;
 }

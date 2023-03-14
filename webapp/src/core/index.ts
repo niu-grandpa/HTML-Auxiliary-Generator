@@ -7,7 +7,7 @@ import * as utils from './utils';
 const core = {
   ...utils,
   ...generate,
-  ...transform,
+  transform,
   ...NodeHandler,
   ...handleInteraction,
 };
