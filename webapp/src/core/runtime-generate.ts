@@ -2,6 +2,12 @@ import { type TreeDataNode } from 'antd';
 import transform from './runtime-transform';
 import { createRootKey, h, type VNode } from './utils';
 
+export const enum NodeType {
+  CONTAINER,
+  SINGLE,
+  TEXT,
+}
+
 const generate = _generate_();
 export default generate;
 
@@ -14,13 +20,16 @@ function _generate_() {
    * @param isLeaf
    * @returns
    */
-  function createAntTreeNode(tag: string, isLeaf: boolean): TreeDataNode {
-    return {
+  function createAntTreeNode(tag: string, isLeaf: boolean, type: NodeType): TreeDataNode {
+    const node = {
       key: getKey(),
       isLeaf,
       title: tag,
       children: [],
     };
+    // @ts-ignore
+    node['type'] = type;
+    return node;
   }
 
   /**

@@ -8,7 +8,9 @@ import { Button, Col, message, Modal, Row, Tree, type TreeDataNode } from 'antd'
 import { FC, memo, MouseEvent, useCallback, useState } from 'react';
 import { ModalCreateNode } from '../../components';
 import { ContextMenu, CTX_MENU_OPTS } from '../../components/ContextMenu';
+import { type CreateNodeResult } from '../../components/ModalCreateNode';
 import core from '../../core';
+import { NodeType } from '../../core/runtime-generate';
 import { SELF_CLOSING_TAG } from '../../core/runtime-transform';
 
 type Props = {
@@ -23,6 +25,7 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   const [openCtxMenu, setOpenCtxMenu] = useState(false);
   const [curIsLeaf, setCurIsLeaf] = useState(false);
   const [isEditTag, setIsEditTag] = useState(false);
+  const [hCText, setHCText] = useState(false);
   const [custom, setCustom] = useState<'leaf' | 'non-leaf' | undefined>(undefined);
   const [mdlTitle, setMdlTitle] = useState('新建视图');
   const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
@@ -30,15 +33,16 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   const [currentSelected, setSelectedNode] = useState<TreeDataNode>();
 
   const initState = useCallback(() => {
+    hCText && setHCText(false);
     custom && setCustom(undefined);
     curIsLeaf && setCurIsLeaf(false);
     isEditTag && setIsEditTag(false);
     currentSelected && setSelectedNode(undefined);
-  }, [custom, isEditTag, curIsLeaf, currentSelected]);
+  }, [custom, hCText, isEditTag, curIsLeaf, currentSelected]);
 
-  const createNode = useCallback((tagName: string, isLeaf: boolean) => {
-    const node = createAntTreeNode(tagName, isLeaf);
-    node.icon = isLeaf ? <BuildOutlined /> : <CodeSandboxOutlined />;
+  const createNode = useCallback((value: string, leaf: boolean, type: NodeType) => {
+    const node = createAntTreeNode(value, leaf, type);
+    node.icon = leaf ? <BuildOutlined /> : <CodeSandboxOutlined />;
     return node;
   }, []);
 
@@ -48,28 +52,28 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   }, []);
 
   const changeNode = useCallback(
-    (root: TreeDataNode[], node: TreeDataNode, tagName: string, isLeaf: boolean) => {
+    (root: TreeDataNode[], tagName: string, isLeaf: boolean, type: NodeType) => {
       // 1.修改节点标签
       if (isEditTag) {
-        if (node?.children?.length && SELF_CLOSING_TAG.includes(tagName)) {
+        if (currentSelected?.children?.length && SELF_CLOSING_TAG.includes(tagName)) {
           confirm({
             title: '警告',
-            content: '自闭合元素无法容纳子节点，如果这么做会清空该节点下的所有子节点',
+            content: '自闭合元素不能作为容器，会清空该节点下的子节点',
             onOk() {
-              node.children!.length = 0;
-              editTag(root, node, tagName);
+              currentSelected.children!.length = 0;
+              editTag(root, currentSelected, tagName);
             },
           });
         } else {
-          editTag(root, node, tagName);
+          editTag(root, currentSelected!, tagName);
         }
         // 2.新增节点
       } else {
-        node.children?.push(createNode(tagName, isLeaf));
-        updateAntTree(root, node);
+        currentSelected!.children?.push(createNode(tagName, isLeaf, type));
+        updateAntTree(root, currentSelected!);
       }
     },
-    [isEditTag, editTag, createNode]
+    [isEditTag, editTag, createNode, currentSelected]
   );
 
   const deleteOneNode = useCallback(() => {
@@ -85,14 +89,14 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     });
   }, [treeData, currentSelected, initState]);
 
-  const handleChangeData = useCallback(
-    (tagName: string, isLeaf: boolean) => {
+  const handleChangeTree = useCallback(
+    ({ value, type, leaf }: CreateNodeResult) => {
       const newData: TreeDataNode[] = treeData.slice();
       // 没有选中任何节点进行创建，说明是要创建根节点
       if (!currentSelected) {
-        newData.push(createNode(tagName, isLeaf));
+        newData.push(createNode(value, leaf, type));
       } else {
-        changeNode(newData, currentSelected, tagName, isLeaf);
+        changeNode(newData, value, leaf, type);
       }
       initState();
       onChange(newData);
@@ -127,6 +131,7 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
       } else if (value === CTX_MENU_OPTS.ADD_TEXT) {
         setOpenModal(true);
       } else if (value === CTX_MENU_OPTS.EDIT_TAG) {
+        setHCText(true);
         setOpenModal(true);
         setIsEditTag(true);
         setMdlTitle('重命名标签');
@@ -165,7 +170,8 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
         title={mdlTitle}
         custom={custom}
         open={openMdl}
-        onChange={handleChangeData}
+        hiddenCreateText={hCText}
+        onChange={handleChangeTree}
         onCancel={handleCloseMdl}
       />
       <section className='file-list' onContextMenu={e => e.preventDefault()}>
