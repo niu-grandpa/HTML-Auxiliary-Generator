@@ -1,5 +1,5 @@
 import { InfoCircleOutlined } from '@ant-design/icons';
-import { message, Modal, Radio, RadioChangeEvent, Select, Tooltip } from 'antd';
+import { Input, message, Modal, Radio, RadioChangeEvent, Select, Tooltip } from 'antd';
 import { FC, memo, useCallback, useEffect, useRef, useState } from 'react';
 import { COMMON_TAGS } from '../assets';
 import { SELF_CLOSING_TAG } from '../core/runtime-transform';
@@ -7,40 +7,48 @@ import { SELF_CLOSING_TAG } from '../core/runtime-transform';
 type Props = Partial<{
   open: boolean;
   title: string;
-  custom?: 'leaf' | 'non-leaf';
+  custom: 'leaf' | 'non-leaf';
   onCancel: () => void;
   onChange: (tagName: string, isLeaf: boolean) => void;
 }>;
+
+const enum CreateNodeType {
+  CONTAINER,
+  SINGLE,
+  TEXT,
+}
+
+const { TextArea } = Input;
 
 const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCancel }) => {
   const timer = useRef<any>(null);
 
   const [value, setValue] = useState('');
   const [status, setStatus] = useState<'error' | ''>('');
-  const [radioChecked, setRadioChecked] = useState(0);
   const [disabled, setDisabled] = useState(false);
+  const [nodeType, setNodeType] = useState<CreateNodeType>(CreateNodeType.CONTAINER);
 
   const initData = useCallback(() => {
     value && setValue('');
     status && setStatus('');
     disabled && setDisabled(false);
-    radioChecked === 1 && setRadioChecked(0);
-  }, [value, status, disabled, radioChecked]);
+    nodeType > 0 && setNodeType(CreateNodeType.CONTAINER);
+  }, [value, status, disabled, nodeType]);
 
   const handleSelectTag = useCallback(
     (value: string) => {
       if (SELF_CLOSING_TAG.includes(value)) {
-        setRadioChecked(1);
         setDisabled(true);
+        setNodeType(CreateNodeType.CONTAINER);
       }
-      status && setStatus('');
       setValue(value);
+      status && setStatus('');
     },
     [status]
   );
 
-  const handleRadio = useCallback(({ target }: RadioChangeEvent) => {
-    setRadioChecked(target.value);
+  const handleChangeType = useCallback(({ target }: RadioChangeEvent) => {
+    setNodeType(target.value);
   }, []);
 
   const hasError = useCallback((condition: boolean, msg: string) => {
@@ -62,11 +70,11 @@ const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCanc
 
   const handleOk = useCallback(() => {
     if (hasError(value === '', '请选择标签')) return;
-    const isLeaf = !custom ? radioChecked === 1 : custom === 'leaf';
+    const isLeaf = !custom ? nodeType === CreateNodeType.SINGLE : custom === 'leaf';
     if (hasError(!isLeaf && SELF_CLOSING_TAG.includes(value), '自闭合标签不能作为容器节点')) return;
     onChange?.(value, isLeaf);
     handleCancel();
-  }, [onChange, value, custom, radioChecked, hasError, handleCancel]);
+  }, [onChange, value, custom, nodeType, hasError, handleCancel]);
 
   useEffect(() => {
     return () => {
@@ -86,25 +94,32 @@ const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCanc
       <p style={{ marginBottom: 12, color: '#00000073' }}>
         <InfoCircleOutlined /> 提供常用的HTML标签供选择, 请合理选择
       </p>
-      <Select
-        showSearch
-        allowClear
-        status={status}
-        options={COMMON_TAGS}
-        style={{ width: '100%', marginBottom: 16 }}
-        onChange={handleSelectTag}
-        placeholder='请选择...'
-        optionFilterProp='label'
-        // @ts-ignore
-        filterOption={(input, option) => (option?.label ?? '').includes(input)}
-      />
+      {nodeType === CreateNodeType.TEXT ? (
+        <TextArea placeholder='输入文本内容...' rows={2} style={{ marginBottom: 12 }} />
+      ) : (
+        <Select
+          showSearch
+          allowClear
+          status={status}
+          options={COMMON_TAGS}
+          style={{ width: '100%', marginBottom: 16 }}
+          onChange={handleSelectTag}
+          placeholder='请选择元素...'
+          optionFilterProp='label'
+          // @ts-ignore
+          filterOption={(input, option) => (option?.label ?? '').includes(input)}
+        />
+      )}
       {!custom ? (
-        <Radio.Group value={radioChecked} onChange={handleRadio}>
-          <Radio value={0} disabled={disabled}>
-            <Tooltip title='允许在此节点下再新建子节点'>容器节点</Tooltip>
+        <Radio.Group value={nodeType} onChange={handleChangeType}>
+          <Radio value={CreateNodeType.CONTAINER} {...{ disabled }}>
+            <Tooltip title='允许在此节点下嵌套子节点'>容器节点</Tooltip>
           </Radio>
-          <Radio value={1}>
-            <Tooltip title='无法再为其添加子节点'>单独节点</Tooltip>
+          <Radio value={CreateNodeType.SINGLE}>
+            <Tooltip title='无法嵌套除了文本外的节点'>单独节点</Tooltip>
+          </Radio>
+          <Radio value={CreateNodeType.TEXT} {...{ disabled }}>
+            <Tooltip title='文本'>文本节点</Tooltip>
           </Radio>
         </Radio.Group>
       ) : (

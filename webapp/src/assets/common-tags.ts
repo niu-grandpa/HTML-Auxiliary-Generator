@@ -3,6 +3,66 @@ import { DefaultOptionType } from 'antd/es/select';
 /**常用HTML标签 */
 const COMMON_TAGS: DefaultOptionType[] = [
   {
+    label: '分区元素',
+    options: [
+      {
+        label: 'div',
+        value: 'div',
+      },
+      {
+        label: 'span',
+        value: 'span',
+      },
+    ],
+  },
+  {
+    label: '段落元素',
+    options: [
+      {
+        label: 'p',
+        value: 'p',
+      },
+    ],
+  },
+  {
+    label: '结构标记',
+    options: [
+      {
+        label: 'header',
+        value: 'header',
+      },
+      {
+        label: 'nav',
+        value: 'nav',
+      },
+      {
+        label: 'aside',
+        value: 'aside',
+      },
+      {
+        label: 'article',
+        value: 'article',
+      },
+      {
+        label: 'section',
+        value: 'section',
+      },
+      {
+        label: 'footer',
+        value: 'footer',
+      },
+    ],
+  },
+  {
+    label: '换行元素',
+    options: [
+      {
+        label: 'br',
+        value: 'br',
+      },
+    ],
+  },
+  {
     label: '链接',
     options: [
       {
@@ -74,42 +134,11 @@ const COMMON_TAGS: DefaultOptionType[] = [
     ],
   },
   {
-    label: '段落元素',
-    options: [
-      {
-        label: 'p',
-        value: 'p',
-      },
-    ],
-  },
-  {
-    label: '换行元素',
-    options: [
-      {
-        label: 'br',
-        value: 'br',
-      },
-    ],
-  },
-  {
     label: '分割线元素',
     options: [
       {
         label: 'hr',
         value: 'hr',
-      },
-    ],
-  },
-  {
-    label: '分区元素',
-    options: [
-      {
-        label: 'div',
-        value: 'div',
-      },
-      {
-        label: 'span',
-        value: 'span',
       },
     ],
   },
@@ -225,35 +254,6 @@ const COMMON_TAGS: DefaultOptionType[] = [
       {
         label: 'option',
         value: 'option',
-      },
-    ],
-  },
-  {
-    label: '结构标记',
-    options: [
-      {
-        label: 'header',
-        value: 'header',
-      },
-      {
-        label: 'nav',
-        value: 'nav',
-      },
-      {
-        label: 'aside',
-        value: 'aside',
-      },
-      {
-        label: 'article',
-        value: 'article',
-      },
-      {
-        label: 'section',
-        value: 'section',
-      },
-      {
-        label: 'footer',
-        value: 'footer',
       },
     ],
   },

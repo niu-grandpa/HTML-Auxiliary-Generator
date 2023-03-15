@@ -43,7 +43,7 @@ const ContextMenu: FC<Props> = memo(({ x, y, open, isLeaf, onClick }) => {
       type: CTX_MENU_OPTS.SET_STYLE,
     },
     {
-      text: '修改...',
+      text: '重命名...',
       type: CTX_MENU_OPTS.EDIT_TAG,
     },
     {

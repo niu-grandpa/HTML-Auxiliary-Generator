@@ -24,7 +24,7 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   const [curIsLeaf, setCurIsLeaf] = useState(false);
   const [isEditTag, setIsEditTag] = useState(false);
   const [custom, setCustom] = useState<'leaf' | 'non-leaf' | undefined>(undefined);
-  const [mdlTitle, setMdlTitle] = useState('新建视图容器');
+  const [mdlTitle, setMdlTitle] = useState('新建视图');
   const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [currentSelected, setSelectedNode] = useState<TreeDataNode>();
@@ -125,11 +125,11 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
         nonLeaf && setCustom('non-leaf');
         setMdlTitle(`新建${leaf ? '单' : '容器'}节点`);
       } else if (value === CTX_MENU_OPTS.ADD_TEXT) {
-        // todo
+        setOpenModal(true);
       } else if (value === CTX_MENU_OPTS.EDIT_TAG) {
         setOpenModal(true);
         setIsEditTag(true);
-        setMdlTitle('修改容器标签');
+        setMdlTitle('重命名标签');
       } else if (value === CTX_MENU_OPTS.REMOVE) {
         deleteOneNode();
       } else if (value === CTX_MENU_OPTS.SET_STYLE) {
@@ -205,9 +205,10 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
         ) : (
           <>
             <Tree
+              showIcon
               showLine
               blockNode
-              draggable
+              draggable={{ icon: false }}
               defaultExpandAll
               treeData={treeData}
               onSelect={handleClickNode}
