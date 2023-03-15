@@ -16,7 +16,6 @@ type Props = {
 };
 
 const { createAntTreeNode, updateAntTree, deleteNode } = core;
-const { DirectoryTree: Directory } = Tree;
 const { confirm } = Modal;
 
 const DirectoryTree: FC<Props> = ({ onChange }) => {
@@ -86,27 +85,25 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     });
   }, [treeData, currentSelected, initState]);
 
-  const isCreateRoot = useCallback(() => currentSelected === undefined, [currentSelected]);
-
   const handleChangeData = useCallback(
     (tagName: string, isLeaf: boolean) => {
       const newData: TreeDataNode[] = treeData.slice();
       // 没有选中任何节点进行创建，说明是要创建根节点
-      if (isCreateRoot()) {
+      if (!currentSelected) {
         newData.push(createNode(tagName, isLeaf));
-      } else if (currentSelected) {
+      } else {
         changeNode(newData, currentSelected, tagName, isLeaf);
       }
       initState();
       onChange(newData);
       setTreeData(newData);
     },
-    [treeData, currentSelected, onChange, createNode, changeNode, isCreateRoot, initState]
+    [treeData, currentSelected, onChange, createNode, changeNode, initState]
   );
 
   const handleClickNode = useCallback((keys: any, info: any) => {
     console.log('Trigger Select', keys, info);
-    setSelectedNode(info.node);
+    setSelectedNode(info.selectedNodes[0]);
   }, []);
 
   const handleOpenCtxMenu = useCallback((info: any) => {
@@ -207,9 +204,11 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
           </>
         ) : (
           <>
-            <Directory
-              defaultExpandAll
+            <Tree
               showLine
+              blockNode
+              draggable
+              defaultExpandAll
               treeData={treeData}
               onSelect={handleClickNode}
               onRightClick={handleOpenCtxMenu}

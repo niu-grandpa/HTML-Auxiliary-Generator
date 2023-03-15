@@ -18,54 +18,61 @@ const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCanc
   const [value, setValue] = useState('');
   const [status, setStatus] = useState<'error' | ''>('');
   const [radioChecked, setRadioChecked] = useState(0);
-  const [disParent, setDisParent] = useState(false);
+  const [disabled, setDisabled] = useState(false);
 
   const initData = useCallback(() => {
-    setValue('');
-    setStatus('');
-    setRadioChecked(0);
-    setDisParent(false);
-  }, []);
+    value && setValue('');
+    status && setStatus('');
+    disabled && setDisabled(false);
+    radioChecked === 1 && setRadioChecked(0);
+  }, [value, status, disabled, radioChecked]);
 
-  const handleSelectTag = useCallback((value: string) => {
-    if (SELF_CLOSING_TAG.includes(value)) {
-      setRadioChecked(1);
-      setDisParent(true);
-    }
-    setStatus('');
-    setValue(value);
-  }, []);
+  const handleSelectTag = useCallback(
+    (value: string) => {
+      if (SELF_CLOSING_TAG.includes(value)) {
+        setRadioChecked(1);
+        setDisabled(true);
+      }
+      status && setStatus('');
+      setValue(value);
+    },
+    [status]
+  );
 
   const handleRadio = useCallback(({ target }: RadioChangeEvent) => {
     setRadioChecked(target.value);
   }, []);
 
-  const notSelected = useCallback(() => {
-    if (!value) {
+  const hasError = useCallback((condition: boolean, msg: string) => {
+    if (condition) {
       setStatus('error');
-      message.error('请选择标签');
+      message.error(msg);
       timer.current = setTimeout(() => {
         setStatus('');
       }, 2000);
       return true;
     }
     return false;
-  }, [value]);
+  }, []);
+
+  const handleCancel = useCallback(() => {
+    onCancel?.();
+    initData();
+  }, [onCancel, initData]);
 
   const handleOk = useCallback(() => {
-    if (notSelected()) return;
-    // 默认创建容器节点类型
+    if (hasError(value === '', '请选择标签')) return;
     const isLeaf = !custom ? radioChecked === 1 : custom === 'leaf';
-    onCancel?.();
+    if (hasError(!isLeaf && SELF_CLOSING_TAG.includes(value), '自闭合标签不能作为容器节点')) return;
     onChange?.(value, isLeaf);
-  }, [onChange, onCancel, value, custom, radioChecked, notSelected]);
+    handleCancel();
+  }, [onChange, value, custom, radioChecked, hasError, handleCancel]);
 
   useEffect(() => {
-    initData();
     return () => {
       clearTimeout(timer.current);
     };
-  }, [initData]);
+  }, []);
 
   return (
     <Modal
@@ -74,7 +81,8 @@ const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCanc
       cancelText='取消'
       closable={false}
       onOk={handleOk}
-      {...{ open, title, onCancel }}>
+      onCancel={handleCancel}
+      {...{ open, title }}>
       <p style={{ marginBottom: 12, color: '#00000073' }}>
         <InfoCircleOutlined /> 提供常用的HTML标签供选择, 请合理选择
       </p>
@@ -92,7 +100,7 @@ const ModalCreateNode: FC<Props> = memo(({ open, title, custom, onChange, onCanc
       />
       {!custom ? (
         <Radio.Group value={radioChecked} onChange={handleRadio}>
-          <Radio value={0} disabled={disParent}>
+          <Radio value={0} disabled={disabled}>
             <Tooltip title='允许在此节点下再新建子节点'>容器节点</Tooltip>
           </Radio>
           <Radio value={1}>
