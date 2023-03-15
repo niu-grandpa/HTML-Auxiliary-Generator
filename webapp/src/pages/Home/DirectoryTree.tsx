@@ -2,6 +2,7 @@ import {
   BuildOutlined,
   CodeSandboxOutlined,
   FileAddOutlined,
+  FileTextOutlined,
   FolderAddOutlined,
 } from '@ant-design/icons';
 import { Button, Col, message, Modal, Row, Tree, type TreeDataNode } from 'antd';
@@ -20,29 +21,36 @@ type Props = {
 const { createAntTreeNode, updateAntTree, deleteNode } = core;
 const { confirm } = Modal;
 
+const nodeIcons = {
+  0: <CodeSandboxOutlined />,
+  1: <BuildOutlined />,
+  2: <FileTextOutlined />,
+};
+
 const DirectoryTree: FC<Props> = ({ onChange }) => {
-  const [openMdl, setOpenModal] = useState(false);
-  const [openCtxMenu, setOpenCtxMenu] = useState(false);
-  const [curIsLeaf, setCurIsLeaf] = useState(false);
-  const [isEditTag, setIsEditTag] = useState(false);
+  const [isLeaf, setIsLeaf] = useState(false);
+  const [isText, setIsText] = useState(false);
   const [hCText, setHCText] = useState(false);
-  const [custom, setCustom] = useState<'leaf' | 'non-leaf' | undefined>(undefined);
-  const [mdlTitle, setMdlTitle] = useState('新建视图');
-  const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
+  const [openMdl, setOpenModal] = useState(false);
+  const [isEditTag, setIsEditTag] = useState(false);
+  const [openCtxMenu, setOpenCtxMenu] = useState(false);
+  const [mdlTitle, setMdlTitle] = useState('新建节点');
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
+  const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
   const [currentSelected, setSelectedNode] = useState<TreeDataNode>();
+  const [createType, setCreateType] = useState<NodeType>(NodeType.CONTAINER);
 
   const initState = useCallback(() => {
     hCText && setHCText(false);
-    custom && setCustom(undefined);
-    curIsLeaf && setCurIsLeaf(false);
+    isText && setIsText(false);
+    isLeaf && setIsLeaf(false);
     isEditTag && setIsEditTag(false);
-    currentSelected && setSelectedNode(undefined);
-  }, [custom, hCText, isEditTag, curIsLeaf, currentSelected]);
+    createType > 0 && setCreateType(NodeType.CONTAINER);
+  }, [createType, isText, hCText, isEditTag, isLeaf]);
 
   const createNode = useCallback((value: string, leaf: boolean, type: NodeType) => {
     const node = createAntTreeNode(value, leaf, type);
-    node.icon = leaf ? <BuildOutlined /> : <CodeSandboxOutlined />;
+    node.icon = nodeIcons[type];
     return node;
   }, []);
 
@@ -115,7 +123,8 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     const { clientX, clientY } = event as MouseEvent;
     setSelectedNode(node);
     setOpenCtxMenu(true);
-    setCurIsLeaf(node.isLeaf);
+    setIsLeaf(node.isLeaf);
+    setIsText(node.type === NodeType.TEXT);
     setCtxMenuPosi({ x: clientX, y: clientY + 10 });
   }, []);
 
@@ -125,11 +134,13 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
       const nonLeaf = value === CTX_MENU_OPTS.NEW_NON_LEAF;
       if (leaf || nonLeaf) {
         setOpenModal(true);
-        leaf && setCustom('leaf');
-        nonLeaf && setCustom('non-leaf');
+        leaf && setCreateType(NodeType.SINGLE);
+        nonLeaf && setCreateType(NodeType.CONTAINER);
         setMdlTitle(`新建${leaf ? '单' : '容器'}节点`);
       } else if (value === CTX_MENU_OPTS.ADD_TEXT) {
         setOpenModal(true);
+        setMdlTitle('添加文本内容');
+        setCreateType(NodeType.TEXT);
       } else if (value === CTX_MENU_OPTS.EDIT_TAG) {
         setHCText(true);
         setOpenModal(true);
@@ -147,14 +158,17 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
 
   const handleOpenMdl = useCallback(
     (isLeaf?: boolean) => {
-      if (isLeaf !== undefined) {
-        setCurIsLeaf(isLeaf);
-        setCustom(isLeaf ? 'leaf' : 'non-leaf');
+      // @ts-ignore
+      if (currentSelected && currentSelected['type'] === NodeType.TEXT) {
+        message.info('不能为文本节点增添子节点');
+        return;
       }
-      if (currentSelected) {
-        setSelectedNode(currentSelected);
+      if (isLeaf !== undefined) {
+        setIsLeaf(isLeaf);
+        setCreateType(isLeaf ? NodeType.SINGLE : NodeType.CONTAINER);
       }
       setOpenModal(true);
+      setSelectedNode(currentSelected);
     },
     [currentSelected]
   );
@@ -164,13 +178,17 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     setOpenModal(false);
   }, [initState]);
 
+  const clearSelectedNode = useCallback(() => {
+    currentSelected && setSelectedNode(undefined);
+  }, [currentSelected]);
+
   return (
     <>
       <ModalCreateNode
         title={mdlTitle}
-        custom={custom}
         open={openMdl}
-        hiddenCreateText={hCText}
+        type={createType}
+        hiddenTextType={hCText}
         onChange={handleChangeTree}
         onCancel={handleCloseMdl}
       />
@@ -214,17 +232,17 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
               showIcon
               showLine
               blockNode
-              draggable={{ icon: false }}
               defaultExpandAll
               treeData={treeData}
+              draggable={{ icon: false }}
               onSelect={handleClickNode}
               onRightClick={handleOpenCtxMenu}
             />
             <ContextMenu
-              {...{ ...ctxMenuPosi }}
               open={openCtxMenu}
-              isLeaf={curIsLeaf}
+              onClose={clearSelectedNode}
               onClick={handleCtxClick}
+              {...{ ...ctxMenuPosi, isLeaf, isText }}
             />
           </>
         )}

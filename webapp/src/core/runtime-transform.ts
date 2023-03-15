@@ -1,5 +1,6 @@
 import { getBackspace, getKebabCase2 } from '../utils';
-import { VNode } from './utils';
+import { NodeType } from './runtime-generate';
+import { type VNode } from './utils';
 
 export const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
 
@@ -14,12 +15,17 @@ export default function transform(node: VNode): string {
   let template = '';
 
   const toHTMLString = (node: VNode, tab = 0, currentLevelResult = '') => {
-    const { tag, children, props } = node;
+    const { type, tag, children, props } = node;
     const backspace = getBackspace(tab++);
     const splicingTag = (tag: string) => {
       currentLevelResult += tag;
       template += tag;
     };
+    // 文本节点
+    if (type === NodeType.TEXT) {
+      splicingTag(tag);
+      return currentLevelResult;
+    }
     // 自闭合标签，不用处理孩子内容
     if (SELF_CLOSING_TAG.includes(tag)) {
       splicingTag(convertToStr({ tag: tag, backspace, close: true }));
@@ -29,10 +35,10 @@ export default function transform(node: VNode): string {
     splicingTag(convertToStr({ tag: tag, backspace, props }));
     // 处理父标签下嵌套的子标签
     for (const child of children) {
-      // 递归处理子节点对象
-      // 剪枝: 每次递归前先获取哈希表的缓存，
+      // 递归处理子节点对象。剪枝: 每次递归前先获取哈希表的缓存，
       // 如果当前准备进行的递归在之前已进行过，则使用缓存结果避免重复递归
       const temp = Object.assign({}, child);
+      // 避免key不同，而节点相同结果也相同，导致取缓存失败
       temp.key = -1;
       const jsonKey = JSON.stringify(temp);
       if (memo.has(jsonKey)) {
@@ -46,7 +52,6 @@ export default function transform(node: VNode): string {
     splicingTag(convertToStr({ tag, backspace, end: true }));
     return currentLevelResult;
   };
-
   toHTMLString(node);
   return template;
 }

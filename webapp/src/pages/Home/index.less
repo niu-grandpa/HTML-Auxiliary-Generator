@@ -87,9 +87,17 @@
     background-color: @layout-bgc2;
   }
   .ant-tree-node-content-wrapper.ant-tree-node-selected {
-    border-radius: 0;
+    border-radius: 2px;
     color: @light-color;
     background-color: #1ef9cdcf;
+  }
+  .ant-tree-title {
+    display: inline-block;
+    max-width: 199px;
+    margin-bottom: -5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   &-top {
     display: flex;

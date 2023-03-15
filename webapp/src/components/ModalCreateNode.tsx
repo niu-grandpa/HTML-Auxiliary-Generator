@@ -10,8 +10,8 @@ export type CreateNodeResult = { value: string; leaf: boolean; type: NodeType };
 type Props = Partial<{
   open: boolean;
   title: string;
-  custom: 'leaf' | 'non-leaf';
-  hiddenCreateText: boolean;
+  type: NodeType;
+  hiddenTextType: boolean;
   onCancel: () => void;
   onChange: (result: CreateNodeResult) => void;
 }>;
@@ -19,14 +19,17 @@ type Props = Partial<{
 const { TextArea } = Input;
 
 const ModalCreateNode: FC<Props> = memo(
-  ({ open, title, custom, onChange, onCancel, hiddenCreateText }) => {
+  ({ open, type, title, onChange, onCancel, hiddenTextType }) => {
     const timer = useRef<any>(null);
-
-    const [tagName, setTagName] = useState('');
     const [text, setText] = useState('');
+    const [tagName, setTagName] = useState('');
     const [status, setStatus] = useState<'error' | ''>('');
     const [disabled, setDisabled] = useState(false);
     const [nodeType, setNodeType] = useState<NodeType>(NodeType.CONTAINER);
+
+    useEffect(() => {
+      if (type !== undefined) setNodeType(type);
+    }, [type]);
 
     const initData = useCallback(() => {
       tagName && setTagName('');
@@ -39,7 +42,7 @@ const ModalCreateNode: FC<Props> = memo(
       (tagName: string) => {
         if (SELF_CLOSING_TAG.includes(tagName)) {
           setDisabled(true);
-          setNodeType(NodeType.CONTAINER);
+          setNodeType(NodeType.SINGLE);
         }
         setTagName(tagName);
         status && setStatus('');
@@ -78,11 +81,11 @@ const ModalCreateNode: FC<Props> = memo(
         return;
       }
       if (hasError(tagName === '', '请选择标签')) return;
-      const leaf = !custom ? nodeType === NodeType.SINGLE : custom === 'leaf';
+      const leaf = nodeType === NodeType.SINGLE;
       if (hasError(!leaf && SELF_CLOSING_TAG.includes(tagName), '自闭合元素不能作为容器节点'))
         return;
       callback({ value: tagName, leaf, type: nodeType });
-    }, [text, tagName, custom, nodeType, hasError, callback]);
+    }, [text, tagName, nodeType, hasError, callback]);
 
     useEffect(() => {
       return () => {
@@ -100,7 +103,7 @@ const ModalCreateNode: FC<Props> = memo(
         onCancel={handleCancel}
         {...{ open, title }}>
         <p style={{ marginBottom: 12, color: '#00000073' }}>
-          <InfoCircleOutlined /> 提供常用的HTML标签供选择, 请合理选择
+          <InfoCircleOutlined /> 提供常用的HTML标签, 请合理选择
         </p>
         {nodeType === NodeType.TEXT ? (
           <TextArea
@@ -123,21 +126,17 @@ const ModalCreateNode: FC<Props> = memo(
             filterOption={(input, option) => (option?.label ?? '').includes(input)}
           />
         )}
-        {!custom ? (
-          <Radio.Group value={nodeType} onChange={e => setNodeType(e.target.value)}>
-            <Radio value={NodeType.CONTAINER} {...{ disabled }}>
-              <Tooltip title='允许在此节点下嵌套子节点'>容器节点</Tooltip>
-            </Radio>
-            <Radio value={NodeType.SINGLE}>
-              <Tooltip title='无法嵌套除了文本外的节点'>单独节点</Tooltip>
-            </Radio>
-            <Radio value={NodeType.TEXT} disabled={disabled || hiddenCreateText}>
-              <Tooltip title='文本'>文本节点</Tooltip>
-            </Radio>
-          </Radio.Group>
-        ) : (
-          <Radio checked>{custom === 'leaf' ? '单独节点' : '容器节点'}</Radio>
-        )}
+        <Radio.Group value={nodeType} onChange={e => setNodeType(e.target.value)}>
+          <Radio value={NodeType.CONTAINER} {...{ disabled }}>
+            <Tooltip title='允许在此节点下嵌套子节点'>容器节点</Tooltip>
+          </Radio>
+          <Radio value={NodeType.SINGLE}>
+            <Tooltip title='无法嵌套除了文本外的节点'>单独节点</Tooltip>
+          </Radio>
+          <Radio value={NodeType.TEXT} disabled={disabled || hiddenTextType}>
+            <Tooltip title='添加一段文本内容'>文本节点</Tooltip>
+          </Radio>
+        </Radio.Group>
       </Modal>
     );
   }

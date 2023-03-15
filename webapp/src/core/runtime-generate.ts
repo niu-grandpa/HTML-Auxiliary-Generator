@@ -41,8 +41,9 @@ function _generate_() {
     const vdoms = Array<VNode>(root.length);
 
     const createVnode = (node: TreeDataNode): VNode => {
-      const { title, key, isLeaf, children } = node;
-      const vnode = h(title as string, null, [], key);
+      // @ts-ignore
+      const { title, key, isLeaf, children, type } = node;
+      const vnode = h(type, title as string, null, [], key);
       if (isLeaf || !children?.length) return vnode;
       vnode.children = antTreeNodeToVNode(children as TreeDataNode[]);
       return vnode;

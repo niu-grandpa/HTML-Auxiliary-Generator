@@ -15,15 +15,17 @@ type Props = {
   x: number;
   y: number;
   open: boolean;
+  isText: boolean;
   isLeaf: boolean;
+  onClose: () => void;
   onClick: (type: CTX_MENU_OPTS) => void;
 };
 
-const ContextMenu: FC<Props> = memo(({ x, y, open, isLeaf, onClick }) => {
+const ContextMenu: FC<Props> = memo(({ x, y, open, isLeaf, isText, onClick, onClose }) => {
   const [display, setDisplay] = useState('none');
   const [translate, setTranslate] = useState('');
 
-  const items: { text: string; type: CTX_MENU_OPTS; hidden?: boolean }[] = [
+  const items: { text: string; type: CTX_MENU_OPTS; hidden: boolean }[] = [
     {
       text: '新建单节点...',
       type: CTX_MENU_OPTS.NEW_LEAF,
@@ -37,33 +39,38 @@ const ContextMenu: FC<Props> = memo(({ x, y, open, isLeaf, onClick }) => {
     {
       text: '添加文本',
       type: CTX_MENU_OPTS.ADD_TEXT,
+      hidden: isText,
     },
     {
       text: '样式配置...',
       type: CTX_MENU_OPTS.SET_STYLE,
+      hidden: false,
     },
     {
       text: '重命名...',
       type: CTX_MENU_OPTS.EDIT_TAG,
+      hidden: isText,
     },
     {
       text: '删除',
       type: CTX_MENU_OPTS.REMOVE,
+      hidden: false,
     },
   ];
 
   const handleClick = useCallback(
     (e?: MouseEvent, type?: CTX_MENU_OPTS) => {
       e?.stopPropagation();
-      type !== undefined && onClick(type);
+      if (type !== undefined) onClick(type);
       setDisplay('none');
     },
     [onClick]
   );
 
   const handleClose = useCallback(() => {
-    handleClick();
-  }, [handleClick]);
+    onClose();
+    setDisplay('none');
+  }, [onClose]);
 
   useEffect(() => {
     setDisplay(open ? '' : 'none');

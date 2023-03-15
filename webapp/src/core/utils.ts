@@ -1,6 +1,8 @@
 import { Key } from 'react';
+import { NodeType } from './runtime-generate';
 
 export type VNode = {
+  type: NodeType;
   key: Key;
   tag: string;
   // antd Tree组件的数据结构决定了children不存在是字符串的情况
@@ -30,8 +32,15 @@ export function createRootKey(): () => number {
   };
 }
 
-export function h(tag: string, props: VNode['props'], children: VNode[], key: Key): VNode {
+export function h(
+  type: NodeType,
+  tag: string,
+  props: VNode['props'],
+  children: VNode[],
+  key: Key
+): VNode {
   return {
+    type,
     key,
     tag,
     props,
