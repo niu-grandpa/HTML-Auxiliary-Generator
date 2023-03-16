@@ -1,6 +1,6 @@
 import { type TreeDataNode } from 'antd';
 import transform from './runtime-transform';
-import { createRootKey, h, type VNode } from './utils';
+import { createNodeKey, h, type VNode } from './utils';
 
 export const enum NodeType {
   CONTAINER,
@@ -9,11 +9,10 @@ export const enum NodeType {
 }
 
 const generate = _generate_();
-export default generate;
+const savedKeys: number[] = [];
+export { generate, savedKeys };
 
 function _generate_() {
-  const getKey = createRootKey();
-
   /**
    * 创建antd tree节点
    * @param tag
@@ -22,7 +21,7 @@ function _generate_() {
    */
   function createAntTreeNode(tag: string, isLeaf: boolean, type: NodeType): TreeDataNode {
     const node = {
-      key: getKey(),
+      key: createNodeKey(),
       isLeaf,
       title: tag,
       children: [],

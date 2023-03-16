@@ -154,10 +154,10 @@ const ModalCreateNode: FC<Props> = memo(
         )}
         {!disabledRadio && (
           <Radio.Group value={nodeType} onChange={e => setNodeType(e.target.value)}>
-            <Radio value={NodeType.CONTAINER} disabled={disabled || nodeType === NodeType.TEXT}>
+            <Radio value={NodeType.CONTAINER} disabled={disabled || type === NodeType.TEXT}>
               <Tooltip title='允许在此节点下嵌套子节点'>容器节点</Tooltip>
             </Radio>
-            <Radio value={NodeType.SINGLE} disabled={nodeType === NodeType.TEXT}>
+            <Radio value={NodeType.SINGLE} disabled={type === NodeType.TEXT}>
               <Tooltip title='无法嵌套除了文本外的节点'>单独节点</Tooltip>
             </Radio>
             <Radio value={NodeType.TEXT} disabled={disabled || hiddenTextType}>

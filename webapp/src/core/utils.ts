@@ -1,5 +1,6 @@
+import { TreeDataNode } from 'antd';
 import { Key } from 'react';
-import { NodeType } from './runtime-generate';
+import { NodeType, savedKeys as SAVED_KEYS } from './runtime-generate';
 
 export type VNode = {
   type: NodeType;
@@ -13,23 +14,24 @@ export type VNode = {
   }> | null;
 };
 
-/**
- * 创建文件列表树的根节点key，且其后代也应用该key，由它开始自增
- * @returns {() => number}
- */
-export function createRootKey(): () => number {
-  const base = 1013;
-  const date = new Date();
-  const y = date.getFullYear();
-  const m = date.getMonth();
-  const d = date.getDay();
+let uid = 0;
+export function createNodeKey() {
+  while (SAVED_KEYS.includes(uid)) {
+    uid++;
+  }
+  SAVED_KEYS.push(uid);
+  SAVED_KEYS.sort((a, b) => a - b);
+  return uid;
+}
 
-  let num = 0;
-
-  return () => {
-    let timestamp = y + m + d + date.getHours() + date.getMinutes() + date.getSeconds();
-    return (timestamp + num++) % base;
-  };
+// 解决复制的节点 key 冲突
+export function resolveKeyConflicts(node: TreeDataNode) {
+  node.key = createNodeKey();
+  if (node.isLeaf || !node.children?.length) return;
+  for (let i = 0; i < node.children.length; i++) {
+    const child = node.children[i];
+    resolveKeyConflicts(child);
+  }
 }
 
 export function h(
