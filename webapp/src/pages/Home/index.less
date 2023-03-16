@@ -86,10 +86,16 @@
     color: @light-color;
     background-color: @layout-bgc2;
   }
-  .ant-tree-node-content-wrapper.ant-tree-node-selected {
-    border-radius: 2px;
-    color: @light-color;
-    background-color: #1ef9cdcf;
+
+  .ant-tree-node-content-wrapper {
+    &.ant-tree-node-selected {
+      border-radius: 2px;
+      color: @light-color;
+      background-color: #ffffff1a;
+    }
+    &:hover {
+      background-color: #ffffff1a;
+    }
   }
   .ant-tree-title {
     display: inline-block;

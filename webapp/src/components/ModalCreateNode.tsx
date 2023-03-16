@@ -1,17 +1,30 @@
 import { InfoCircleOutlined } from '@ant-design/icons';
-import { Input, message, Modal, Radio, Select, Tooltip } from 'antd';
+import { Input, InputNumber, message, Modal, Radio, Select, Space, Tooltip } from 'antd';
 import { FC, memo, useCallback, useEffect, useRef, useState } from 'react';
 import { COMMON_TAGS } from '../assets';
 import { NodeType } from '../core/runtime-generate';
 import { SELF_CLOSING_TAG } from '../core/runtime-transform';
 
-export type CreateNodeResult = { value: string; leaf: boolean; type: NodeType };
+export type CreateNodeResult = {
+  /**创建的标签名或文本内容 */
+  value: string;
+  /**是否叶子节点 */
+  leaf: boolean;
+  /**节点类型 */
+  type: NodeType;
+  /**重复创建数量 */
+  count: number;
+};
 
 type Props = Partial<{
   open: boolean;
   title: string;
   type: NodeType;
+  disabledRadio: boolean;
+  /**隐藏文本类型操作 */
   hiddenTextType: boolean;
+  /**隐藏批量创建 */
+  hiddenRepeat: boolean;
   onCancel: () => void;
   onChange: (result: CreateNodeResult) => void;
 }>;
@@ -19,10 +32,11 @@ type Props = Partial<{
 const { TextArea } = Input;
 
 const ModalCreateNode: FC<Props> = memo(
-  ({ open, type, title, onChange, onCancel, hiddenTextType }) => {
+  ({ open, type, title, onChange, onCancel, hiddenTextType, hiddenRepeat, disabledRadio }) => {
     const timer = useRef<any>(null);
     const [text, setText] = useState('');
     const [tagName, setTagName] = useState('');
+    const [repeat, setRepeat] = useState(1);
     const [status, setStatus] = useState<'error' | ''>('');
     const [disabled, setDisabled] = useState(false);
     const [nodeType, setNodeType] = useState<NodeType>(NodeType.CONTAINER);
@@ -35,8 +49,9 @@ const ModalCreateNode: FC<Props> = memo(
       tagName && setTagName('');
       status && setStatus('');
       disabled && setDisabled(false);
+      repeat > 1 && setRepeat(1);
       nodeType > 0 && setNodeType(NodeType.CONTAINER);
-    }, [tagName, status, disabled, nodeType]);
+    }, [tagName, status, repeat, disabled, nodeType]);
 
     const handleSelectTag = useCallback(
       (tagName: string) => {
@@ -69,23 +84,23 @@ const ModalCreateNode: FC<Props> = memo(
 
     const callback = useCallback(
       ({ value, leaf, type }: CreateNodeResult) => {
-        onChange?.({ value, leaf, type });
+        onChange?.({ value, leaf, type, count: repeat });
         handleCancel();
       },
-      [onChange, handleCancel]
+      [onChange, handleCancel, repeat]
     );
 
     const handleCreate = useCallback(() => {
       if (nodeType === NodeType.TEXT) {
-        callback({ value: text, leaf: true, type: NodeType.TEXT });
+        callback({ value: text, leaf: true, type: NodeType.TEXT, count: repeat });
         return;
       }
       if (hasError(tagName === '', '请选择标签')) return;
       const leaf = nodeType === NodeType.SINGLE;
       if (hasError(!leaf && SELF_CLOSING_TAG.includes(tagName), '自闭合元素不能作为容器节点'))
         return;
-      callback({ value: tagName, leaf, type: nodeType });
-    }, [text, tagName, nodeType, hasError, callback]);
+      callback({ value: tagName, leaf, type: nodeType, count: repeat });
+    }, [text, tagName, nodeType, hasError, callback, repeat]);
 
     useEffect(() => {
       return () => {
@@ -102,41 +117,54 @@ const ModalCreateNode: FC<Props> = memo(
         onOk={handleCreate}
         onCancel={handleCancel}
         {...{ open, title }}>
-        <p style={{ marginBottom: 12, color: '#00000073' }}>
+        <p style={{ color: '#00000073' }}>
           <InfoCircleOutlined /> 提供常用的HTML标签, 请合理选择
         </p>
         {nodeType === NodeType.TEXT ? (
           <TextArea
             placeholder='输入文本内容...'
             rows={2}
-            style={{ marginBottom: 12 }}
+            style={{ margin: '16px 0' }}
             onChange={e => setText(e.target.value)}
           />
         ) : (
-          <Select
-            showSearch
-            allowClear
-            status={status}
-            options={COMMON_TAGS}
-            style={{ width: '100%', marginBottom: 16 }}
-            onChange={handleSelectTag}
-            placeholder='请选择元素...'
-            optionFilterProp='label'
-            // @ts-ignore
-            filterOption={(input, option) => (option?.label ?? '').includes(input)}
-          />
+          <Space direction='horizontal' style={{ margin: '16px 0' }}>
+            <Select
+              showSearch
+              allowClear
+              status={status}
+              style={{ width: 260 }}
+              options={COMMON_TAGS}
+              onChange={handleSelectTag}
+              placeholder='请选择元素...'
+              optionFilterProp='label'
+              // @ts-ignore
+              filterOption={(input, option) => (option?.label ?? '').includes(input)}
+            />
+            {!hiddenRepeat && (
+              <InputNumber
+                addonAfter='数量'
+                style={{ width: 130 }}
+                min={1}
+                defaultValue={1}
+                onChange={value => setRepeat(value || 1)}
+              />
+            )}
+          </Space>
         )}
-        <Radio.Group value={nodeType} onChange={e => setNodeType(e.target.value)}>
-          <Radio value={NodeType.CONTAINER} {...{ disabled }}>
-            <Tooltip title='允许在此节点下嵌套子节点'>容器节点</Tooltip>
-          </Radio>
-          <Radio value={NodeType.SINGLE}>
-            <Tooltip title='无法嵌套除了文本外的节点'>单独节点</Tooltip>
-          </Radio>
-          <Radio value={NodeType.TEXT} disabled={disabled || hiddenTextType}>
-            <Tooltip title='添加一段文本内容'>文本节点</Tooltip>
-          </Radio>
-        </Radio.Group>
+        {!disabledRadio && (
+          <Radio.Group value={nodeType} onChange={e => setNodeType(e.target.value)}>
+            <Radio value={NodeType.CONTAINER} disabled={disabled || nodeType === NodeType.TEXT}>
+              <Tooltip title='允许在此节点下嵌套子节点'>容器节点</Tooltip>
+            </Radio>
+            <Radio value={NodeType.SINGLE} disabled={nodeType === NodeType.TEXT}>
+              <Tooltip title='无法嵌套除了文本外的节点'>单独节点</Tooltip>
+            </Radio>
+            <Radio value={NodeType.TEXT} disabled={disabled || hiddenTextType}>
+              <Tooltip title='添加一段文本内容'>文本节点</Tooltip>
+            </Radio>
+          </Radio.Group>
+        )}
       </Modal>
     );
   }

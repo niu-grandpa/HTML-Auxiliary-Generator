@@ -6,7 +6,7 @@ import {
   FolderAddOutlined,
 } from '@ant-design/icons';
 import { Button, Col, message, Modal, Row, Tree, type TreeDataNode } from 'antd';
-import { FC, memo, MouseEvent, useCallback, useState } from 'react';
+import { FC, memo, MouseEvent, useCallback, useMemo, useState } from 'react';
 import { ModalCreateNode } from '../../components';
 import { ContextMenu, CTX_MENU_OPTS } from '../../components/ContextMenu';
 import { type CreateNodeResult } from '../../components/ModalCreateNode';
@@ -34,9 +34,12 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   const [openMdl, setOpenModal] = useState(false);
   const [isEditTag, setIsEditTag] = useState(false);
   const [openCtxMenu, setOpenCtxMenu] = useState(false);
+  const [hiddenRepeat, setHiddenRepeat] = useState(false);
+  const [disabledRadio, setDisabledRadio] = useState(false);
   const [mdlTitle, setMdlTitle] = useState('新建节点');
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
+  const [copyNode, setCopyNode] = useState<TreeDataNode>();
   const [currentSelected, setSelectedNode] = useState<TreeDataNode>();
   const [createType, setCreateType] = useState<NodeType>(NodeType.CONTAINER);
 
@@ -45,8 +48,22 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     isText && setIsText(false);
     isLeaf && setIsLeaf(false);
     isEditTag && setIsEditTag(false);
+    copyNode && setCopyNode(undefined);
+    hiddenRepeat && setHiddenRepeat(false);
+    disabledRadio && setDisabledRadio(false);
+    mdlTitle && setMdlTitle('新建节点');
     createType > 0 && setCreateType(NodeType.CONTAINER);
-  }, [createType, isText, hCText, isEditTag, isLeaf]);
+  }, [
+    createType,
+    isText,
+    hCText,
+    mdlTitle,
+    isEditTag,
+    hiddenRepeat,
+    isLeaf,
+    copyNode,
+    disabledRadio,
+  ]);
 
   const createNode = useCallback((value: string, leaf: boolean, type: NodeType) => {
     const node = createAntTreeNode(value, leaf, type);
@@ -54,7 +71,7 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     return node;
   }, []);
 
-  const editTag = useCallback((root: TreeDataNode[], node: TreeDataNode, newTag: string) => {
+  const onEditTag = useCallback((root: TreeDataNode[], node: TreeDataNode, newTag: string) => {
     node.title = newTag;
     updateAntTree(root, node);
   }, []);
@@ -69,11 +86,11 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
             content: '自闭合元素不能作为容器，会清空该节点下的子节点',
             onOk() {
               currentSelected.children!.length = 0;
-              editTag(root, currentSelected, tagName);
+              onEditTag(root, currentSelected, tagName);
             },
           });
         } else {
-          editTag(root, currentSelected!, tagName);
+          onEditTag(root, currentSelected!, tagName);
         }
         // 2.新增节点
       } else {
@@ -81,29 +98,45 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
         updateAntTree(root, currentSelected!);
       }
     },
-    [isEditTag, editTag, createNode, currentSelected]
+    [isEditTag, onEditTag, createNode, currentSelected]
   );
 
-  const deleteOneNode = useCallback(() => {
-    confirm({
-      title: '警告',
-      content: '确定要删除该节点吗?',
-      onOk() {
-        message.success('删除成功');
+  const onClearSelectedNode = useCallback(() => {
+    currentSelected && setSelectedNode(undefined);
+  }, [currentSelected]);
+
+  const onDeleteOneNode = useCallback(
+    (showConfirm = true) => {
+      const onDelete = () => {
         const newData = deleteNode(treeData.slice(), currentSelected!);
         setTreeData(newData);
-        initState();
-      },
-    });
-  }, [treeData, currentSelected, initState]);
+        onClearSelectedNode();
+      };
+      if (!showConfirm) {
+        onDelete();
+        return;
+      }
+      confirm({
+        title: '警告',
+        content: '确定要删除该节点吗?',
+        onOk() {
+          onDelete();
+          message.success('删除成功');
+        },
+      });
+    },
+    [treeData, currentSelected, onClearSelectedNode]
+  );
 
   const handleChangeTree = useCallback(
-    ({ value, type, leaf }: CreateNodeResult) => {
+    ({ value, type, leaf, count }: CreateNodeResult) => {
       const newData: TreeDataNode[] = treeData.slice();
-      // 没有选中任何节点进行创建，说明是要创建根节点
-      if (!currentSelected) {
-        newData.push(createNode(value, leaf, type));
-      } else {
+      while (count--) {
+        // 没有选中任何节点进行创建，说明是要创建根节点
+        if (!currentSelected) {
+          newData.push(createNode(value, leaf, type));
+          continue;
+        }
         changeNode(newData, value, leaf, type);
       }
       initState();
@@ -128,32 +161,80 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     setCtxMenuPosi({ x: clientX, y: clientY + 10 });
   }, []);
 
-  const handleCtxClick = useCallback(
-    (value: CTX_MENU_OPTS) => {
-      const leaf = value === CTX_MENU_OPTS.NEW_LEAF;
-      const nonLeaf = value === CTX_MENU_OPTS.NEW_NON_LEAF;
-      if (leaf || nonLeaf) {
+  // 右键下拉菜单的选项方法
+  const getCtxOptsMethods = useMemo(
+    () => ({
+      // 新建单节点
+      0: () => {
         setOpenModal(true);
-        leaf && setCreateType(NodeType.SINGLE);
-        nonLeaf && setCreateType(NodeType.CONTAINER);
-        setMdlTitle(`新建${leaf ? '单' : '容器'}节点`);
-      } else if (value === CTX_MENU_OPTS.ADD_TEXT) {
+        setCreateType(NodeType.SINGLE);
+        setMdlTitle('新建单节点');
+      },
+      // 新建容器节点
+      1: () => {
+        setOpenModal(true);
+        setCreateType(NodeType.CONTAINER);
+        setMdlTitle('新建容器节点');
+      },
+      // 添加文本内容
+      2: () => {
         setOpenModal(true);
         setMdlTitle('添加文本内容');
         setCreateType(NodeType.TEXT);
-      } else if (value === CTX_MENU_OPTS.EDIT_TAG) {
+      },
+      // 样式配置
+      3: () => {},
+      // 复制
+      4: () => {
+        message.success('复制成功');
+        setCopyNode(() => Object.assign({}, currentSelected));
+        onClearSelectedNode();
+      },
+      // 剪切
+      5: () => {
+        setCopyNode(() => Object.assign({}, currentSelected));
+        onDeleteOneNode();
+      },
+      // 粘贴
+      6: () => {
+        if (!currentSelected || !copyNode) {
+          message.info('请先复制或剪切节点');
+          return;
+        }
+        if (currentSelected?.isLeaf) {
+          message.error('无法粘贴到该节点类型下');
+          return;
+        }
+        // todo 拷贝节点
+        // @ts-ignore
+        const { title: value, isLeaf: leaf, type } = copyNode!;
+        // @ts-ignore
+        handleChangeTree({ value, type, leaf, count: 1 });
+      },
+      // 重命名标签
+      7: () => {
         setHCText(true);
         setOpenModal(true);
         setIsEditTag(true);
+        setHiddenRepeat(true);
+        setDisabledRadio(true);
         setMdlTitle('重命名标签');
-      } else if (value === CTX_MENU_OPTS.REMOVE) {
-        deleteOneNode();
-      } else if (value === CTX_MENU_OPTS.SET_STYLE) {
-        // todo
+      },
+      8: onDeleteOneNode,
+    }),
+    [copyNode, onDeleteOneNode, currentSelected, onClearSelectedNode, handleChangeTree]
+  );
+
+  const handleCtxClick = useCallback(
+    (value: CTX_MENU_OPTS) => {
+      if (value === CTX_MENU_OPTS.NEW_LEAF || value === CTX_MENU_OPTS.NEW_NON_LEAF) {
+        getCtxOptsMethods[value]();
+        return;
       }
+      getCtxOptsMethods[value]();
       setOpenCtxMenu(false);
     },
-    [deleteOneNode]
+    [getCtxOptsMethods]
   );
 
   const handleOpenMdl = useCallback(
@@ -178,16 +259,13 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     setOpenModal(false);
   }, [initState]);
 
-  const clearSelectedNode = useCallback(() => {
-    currentSelected && setSelectedNode(undefined);
-  }, [currentSelected]);
-
   return (
     <>
       <ModalCreateNode
         title={mdlTitle}
         open={openMdl}
         type={createType}
+        {...{ hiddenRepeat, disabledRadio }}
         hiddenTextType={hCText}
         onChange={handleChangeTree}
         onCancel={handleCloseMdl}
@@ -197,26 +275,22 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
           <Col style={{ fontSize: 13 }} span={18}>
             结构管理(工作区)
           </Col>
-          {treeData.length ? (
-            <>
-              <Col span={3}>
-                <Button
-                  onClick={() => handleOpenMdl(true)}
-                  size='small'
-                  ghost
-                  icon={<FileAddOutlined />}
-                />
-              </Col>
-              <Col span={3}>
-                <Button
-                  onClick={() => handleOpenMdl(false)}
-                  size='small'
-                  ghost
-                  icon={<FolderAddOutlined />}
-                />
-              </Col>
-            </>
-          ) : null}
+          <Col span={3}>
+            <Button
+              onClick={() => handleOpenMdl(true)}
+              size='small'
+              ghost
+              icon={<FileAddOutlined />}
+            />
+          </Col>
+          <Col span={3}>
+            <Button
+              onClick={() => handleOpenMdl(false)}
+              size='small'
+              ghost
+              icon={<FolderAddOutlined />}
+            />
+          </Col>
         </Row>
         <hr style={{ marginTop: 10, marginBottom: 16 }} />
         {!treeData.length ? (
@@ -230,7 +304,6 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
           <>
             <Tree
               showIcon
-              showLine
               blockNode
               defaultExpandAll
               treeData={treeData}
@@ -240,7 +313,7 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
             />
             <ContextMenu
               open={openCtxMenu}
-              onClose={clearSelectedNode}
+              onClose={onClearSelectedNode}
               onClick={handleCtxClick}
               {...{ ...ctxMenuPosi, isLeaf, isText }}
             />

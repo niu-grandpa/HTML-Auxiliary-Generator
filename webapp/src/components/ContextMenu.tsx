@@ -7,6 +7,9 @@ export const enum CTX_MENU_OPTS {
   NEW_NON_LEAF,
   ADD_TEXT,
   SET_STYLE,
+  COPY,
+  CUT,
+  PASTE,
   EDIT_TAG,
   REMOVE,
 }
@@ -25,7 +28,7 @@ const ContextMenu: FC<Props> = memo(({ x, y, open, isLeaf, isText, onClick, onCl
   const [display, setDisplay] = useState('none');
   const [translate, setTranslate] = useState('');
 
-  const items: { text: string; type: CTX_MENU_OPTS; hidden: boolean }[] = [
+  const items: { text: string; type: CTX_MENU_OPTS; hidden?: boolean }[] = [
     {
       text: '新建单节点...',
       type: CTX_MENU_OPTS.NEW_LEAF,
@@ -37,24 +40,34 @@ const ContextMenu: FC<Props> = memo(({ x, y, open, isLeaf, isText, onClick, onCl
       hidden: isLeaf,
     },
     {
-      text: '添加文本',
+      text: '添加文本...',
       type: CTX_MENU_OPTS.ADD_TEXT,
       hidden: isText,
     },
     {
       text: '样式配置...',
       type: CTX_MENU_OPTS.SET_STYLE,
-      hidden: false,
     },
     {
-      text: '重命名...',
+      text: '复制',
+      type: CTX_MENU_OPTS.COPY,
+    },
+    {
+      text: '剪切',
+      type: CTX_MENU_OPTS.CUT,
+    },
+    {
+      text: '粘贴',
+      type: CTX_MENU_OPTS.PASTE,
+    },
+    {
+      text: '修改标签...',
       type: CTX_MENU_OPTS.EDIT_TAG,
       hidden: isText,
     },
     {
       text: '删除',
       type: CTX_MENU_OPTS.REMOVE,
-      hidden: false,
     },
   ];
 
