@@ -35,7 +35,7 @@ const Home: React.FC = () => {
       <Content style={{ padding: '18px 38px 0 38px' }}>
         <Row gutter={[19, 19]}>
           <Col span={5}>
-            <DirectoryTree onChange={setAntTreeData} />
+            <DirectoryTree selectedKey={0} onChange={setAntTreeData} />
           </Col>
           <Col span={19}>
             <ViewOperations {...{ vnodes }} />

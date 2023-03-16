@@ -6,8 +6,8 @@ import {
   FolderAddOutlined,
 } from '@ant-design/icons';
 import { Button, Col, message, Modal, Row, Tree, type TreeDataNode } from 'antd';
-import { cloneDeep, head } from 'lodash-es';
-import { FC, Key, memo, MouseEvent, useCallback, useState } from 'react';
+import { cloneDeep, head, isEqual } from 'lodash-es';
+import { FC, Key, memo, MouseEvent, useCallback, useEffect, useState } from 'react';
 import { ModalCreateNode } from '../../components';
 import { ContextMenu, CTX_MENU_OPTS } from '../../components/ContextMenu';
 import { type CreateNodeResult } from '../../components/ModalCreateNode';
@@ -16,6 +16,7 @@ import { NodeType } from '../../core/runtime-generate';
 import { SELF_CLOSING_TAG } from '../../core/runtime-transform';
 
 type Props = {
+  selectedKey: number;
   onChange: (node: TreeDataNode[]) => void;
 };
 
@@ -28,7 +29,7 @@ const nodeIcons = {
   2: <FileTextOutlined />,
 };
 
-const DirectoryTree: FC<Props> = ({ onChange }) => {
+const DirectoryTree: FC<Props> = ({ selectedKey, onChange }) => {
   const [isLeaf, setIsLeaf] = useState(false);
   const [isText, setIsText] = useState(false);
   const [hCText, setHCText] = useState(false);
@@ -39,11 +40,14 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   const [disabledRadio, setDisabledRadio] = useState(false);
   const [mdlTitle, setMdlTitle] = useState('新建节点');
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
-  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
   const [copyNode, setCopyNode] = useState<TreeDataNode>();
-  const [currentSelected, setSelectedNode] = useState<TreeDataNode>();
+  const [selectedNode, setSelectedNode] = useState<TreeDataNode>();
   const [createType, setCreateType] = useState<NodeType>(NodeType.CONTAINER);
+
+  useEffect(() => {
+    if (treeData.length) onChange(treeData);
+  }, [treeData, onChange]);
 
   const initState = useCallback(() => {
     hCText && setHCText(false);
@@ -70,18 +74,18 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   const handleOpenMdl = useCallback(
     (isLeaf?: boolean) => {
       // @ts-ignore
-      if (currentSelected && currentSelected['type'] === NodeType.TEXT) {
+      if (selectedNode && isEqual(selectedNode['type'], NodeType.TEXT)) {
         message.info('不能为文本节点增添子节点');
         return;
       }
-      if (isLeaf !== undefined) {
-        setIsLeaf(isLeaf);
+      if (!isEqual(isLeaf, undefined)) {
+        setIsLeaf(isLeaf!);
         setCreateType(isLeaf ? NodeType.SINGLE : NodeType.CONTAINER);
       }
       setOpenModal(true);
-      setSelectedNode(currentSelected);
+      setSelectedNode(selectedNode);
     },
-    [currentSelected]
+    [selectedNode]
   );
 
   const handleCloseMdl = useCallback(() => {
@@ -103,26 +107,27 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   const updateNode = useCallback(
     (root: TreeDataNode[], tagName: string, isLeaf: boolean, type: NodeType) => {
       // 1.修改节点标签
-      if (isEditTag) {
-        if (currentSelected?.children?.length && SELF_CLOSING_TAG.includes(tagName)) {
+      if (isEqual(isEditTag, true)) {
+        if (selectedNode?.children?.length && SELF_CLOSING_TAG.includes(tagName)) {
           confirm({
             title: '警告',
             content: '自闭合元素不能作为容器，会清空该节点下的子节点',
             onOk() {
-              currentSelected.children!.length = 0;
-              changeTag(root, currentSelected, tagName);
+              selectedNode.children!.length = 0;
+              changeTag(root, selectedNode, tagName);
             },
           });
-        } else {
-          changeTag(root, currentSelected!, tagName);
+          return;
         }
-        // 2.新增节点
-      } else {
-        currentSelected!.children?.push(createNode(tagName, isLeaf, type));
-        updateAntTree(root, currentSelected!);
+        changeTag(root, selectedNode!, tagName);
+        return;
       }
+      // 2.新增节点
+      selectedNode!.children?.push(createNode(tagName, isLeaf, type));
+      updateAntTree(root, selectedNode!);
+      return root;
     },
-    [isEditTag, changeTag, createNode, currentSelected]
+    [isEditTag, changeTag, createNode, selectedNode]
   );
 
   const onClearSelectedNode = useCallback(() => {
@@ -161,11 +166,10 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   const onDeleteNode = useCallback(
     (source: TreeDataNode, showConfirm = true) => {
       const onDelete = () => {
-        const newData = deleteNode(treeData.slice(), source!);
-        setTreeData(newData);
+        setTreeData(deleteNode(cloneDeep(treeData), source!));
         onClearSelectedNode();
       };
-      if (!showConfirm) {
+      if (isEqual(showConfirm, false)) {
         onDelete();
         return;
       }
@@ -183,24 +187,24 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
 
   const onCutNode = useCallback(
     (source: TreeDataNode) => {
-      if (treeData.length === 1 && head(treeData) === source) {
+      if (isEqual(treeData.length, 1) && isEqual(head(treeData), source)) {
         message.info('根节点数量小于2, 不能进行剪切');
         onClearSelectedNode();
         return;
       }
-      setCopyNode(cloneDeep(currentSelected));
+      setCopyNode(cloneDeep(source));
       onDeleteNode(source, false);
     },
-    [treeData, currentSelected, onClearSelectedNode, onDeleteNode]
+    [treeData, onClearSelectedNode, onDeleteNode]
   );
 
   const onPasteNode = useCallback(
     (target: TreeDataNode, source: TreeDataNode) => {
-      if (!source || !target) {
+      if (isEqual(source, undefined) || isEqual(target, undefined)) {
         message.info('请先复制或剪切节点');
         return;
       }
-      if (source?.isLeaf) {
+      if (isEqual(source?.isLeaf, undefined)) {
         message.error('无法粘贴到该节点类型下');
         return;
       }
@@ -209,8 +213,9 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
       source.children?.push(target);
       onClearSelectedNode();
       setCopyNode(undefined);
+      setTreeData(updateAntTree(cloneDeep(treeData), source));
     },
-    [onClearSelectedNode]
+    [onClearSelectedNode, treeData]
   );
 
   const onRenameTag = useCallback(() => {
@@ -228,7 +233,7 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
     setSelectedNode(node);
     setOpenCtxMenu(true);
     setIsLeaf(node.isLeaf);
-    setIsText(node.type === NodeType.TEXT);
+    setIsText(isEqual(node.type, NodeType.TEXT));
     setCtxMenuPosi({ x: clientX, y: clientY + 10 });
   }, []);
 
@@ -248,26 +253,26 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
           onSetStyle();
           break;
         case CTX_MENU_OPTS.COPY:
-          onCopyNode(currentSelected!);
+          onCopyNode(selectedNode!);
           break;
         case CTX_MENU_OPTS.CUT:
-          onCutNode(currentSelected!);
+          onCutNode(selectedNode!);
           break;
         case CTX_MENU_OPTS.PASTE:
-          onPasteNode(copyNode!, currentSelected!);
+          onPasteNode(copyNode!, selectedNode!);
           break;
         case CTX_MENU_OPTS.EDIT_TAG:
           onRenameTag();
           break;
         case CTX_MENU_OPTS.REMOVE:
-          onDeleteNode(currentSelected!);
+          onDeleteNode(selectedNode!);
           break;
       }
       setOpenCtxMenu(false);
     },
     [
       copyNode,
-      currentSelected,
+      selectedNode,
       onAddText,
       onCopyNode,
       onCreateContainer,
@@ -281,26 +286,26 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
   );
 
   const handleClickNode = useCallback((keys: Key[], info: any) => {
+    console.log(info);
     setSelectedNode(info.selectedNodes[0]);
   }, []);
 
   const handleChangeTree = useCallback(
     ({ value, type, leaf, count }: CreateNodeResult) => {
-      const newData: TreeDataNode[] = treeData.slice();
+      const newData: TreeDataNode[] = cloneDeep(treeData);
       while (count--) {
         // 没有选中任何节点进行创建，说明是要创建根节点
-        if (!currentSelected) {
+        if (!selectedNode) {
           newData.push(createNode(value, leaf, type));
           continue;
         }
         updateNode(newData, value, leaf, type);
       }
-      onChange(newData);
       setTreeData(newData);
       initState();
       onClearSelectedNode();
     },
-    [treeData, currentSelected, onChange, createNode, updateNode, initState, onClearSelectedNode]
+    [treeData, selectedNode, createNode, updateNode, initState, onClearSelectedNode]
   );
 
   return (
@@ -350,9 +355,10 @@ const DirectoryTree: FC<Props> = ({ onChange }) => {
               showIcon
               blockNode
               defaultExpandAll
+              {...{ treeData }}
               draggable={{ icon: false }}
               onSelect={handleClickNode}
-              {...{ selectedKeys, treeData }}
+              selectedKeys={[selectedKey]}
               onRightClick={handleOpenCtxMenu}
             />
             <ContextMenu
