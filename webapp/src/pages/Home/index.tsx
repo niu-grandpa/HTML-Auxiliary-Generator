@@ -34,10 +34,14 @@ const Home: React.FC = () => {
       </Header>
       <Content style={{ padding: '18px 38px 0 38px' }}>
         <Row gutter={[19, 19]}>
-          <Col span={5}>
-            <DirectoryTree selectedKey={0} onChange={setAntTreeData} />
+          <Col span={6}>
+            <DirectoryTree
+              selectedKey={0}
+              onChange={setAntTreeData}
+              fieldNames={{ title: 'alias' }}
+            />
           </Col>
-          <Col span={19}>
+          <Col span={18}>
             <ViewOperations {...{ vnodes }} />
           </Col>
         </Row>

@@ -53,6 +53,7 @@ const ContextMenu: FC<Props> = memo(
         {
           text: '样式配置...',
           type: CTX_MENU_OPTS.SET_STYLE,
+          hidden: isText,
         },
         {
           text: '剪切',
@@ -68,7 +69,7 @@ const ContextMenu: FC<Props> = memo(
           disabled: disPaste,
         },
         {
-          text: '修改标签...',
+          text: '编辑...',
           type: CTX_MENU_OPTS.EDIT_TAG,
           hidden: isText,
         },

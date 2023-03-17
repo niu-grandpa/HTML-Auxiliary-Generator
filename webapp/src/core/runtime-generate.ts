@@ -19,15 +19,21 @@ function _generate_() {
    * @param isLeaf
    * @returns
    */
-  function createAntTreeNode(tag: string, isLeaf: boolean, type: NodeType): TreeDataNode {
+
+  function createAntTreeNode(
+    tag: string,
+    alias: string,
+    isLeaf: boolean,
+    type: NodeType
+  ): TreeDataNode {
     const node = {
-      key: createNodeKey(),
+      type,
       isLeaf,
+      alias: alias || tag,
       title: tag,
       children: [],
+      key: createNodeKey(),
     };
-    // @ts-ignore
-    node['type'] = type;
     return node;
   }
 

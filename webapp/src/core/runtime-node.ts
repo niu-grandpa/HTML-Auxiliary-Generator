@@ -40,26 +40,27 @@ export function deleteNode(root: TreeDataNode[], node: TreeDataNode) {
 }
 
 function patchNode(n1: TreeDataNode, n2: TreeDataNode) {
-  const oldChildren = n1.children!;
-  const newChildren = n2.children!;
   // 修改标签名
   if (n1.title !== n2.title) {
     n1.title = n2.title;
-    // 在当前节点下新增或删除子节点
-  } else if (oldChildren.length !== newChildren.length) {
-    patchChildren(oldChildren, newChildren);
-    // 修改props
-  } else {
-    patchProps();
   }
+  // @ts-ignore
+  if (n1.alias !== n2.alias) {
+    // @ts-ignore
+    n1.alias = n2.alias;
+  }
+  const oldChildren = n1.children!;
+  const newChildren = n2.children!;
+  if (oldChildren.length !== newChildren.length) {
+    patchChildren(oldChildren, newChildren);
+  }
+  return n1;
 }
 
 // 只存在同一层新增和删除节点的情况
 function patchChildren(c1: TreeDataNode[], c2: TreeDataNode[]) {
   const oldLen = c1.length;
   const newLen = c2.length;
-  console.log(c1, c2);
-
   // 1.首次新增节点
   if (!oldLen && newLen) {
     c1 = c2.slice();
