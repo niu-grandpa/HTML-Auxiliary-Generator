@@ -58,6 +58,8 @@ function patchNode(n1: TreeDataNode, n2: TreeDataNode) {
 function patchChildren(c1: TreeDataNode[], c2: TreeDataNode[]) {
   const oldLen = c1.length;
   const newLen = c2.length;
+  console.log(c1, c2);
+
   // 1.首次新增节点
   if (!oldLen && newLen) {
     c1 = c2.slice();

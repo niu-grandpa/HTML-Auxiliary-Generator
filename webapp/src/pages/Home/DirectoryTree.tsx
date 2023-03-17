@@ -6,7 +6,7 @@ import {
   FolderAddOutlined,
 } from '@ant-design/icons';
 import { Button, Col, message, Modal, Row, Tree, type TreeDataNode } from 'antd';
-import { cloneDeep, head, isEqual } from 'lodash-es';
+import { clone, cloneDeep, head, isEqual } from 'lodash-es';
 import { FC, Key, memo, MouseEvent, useCallback, useEffect, useState } from 'react';
 import { ModalCreateNode } from '../../components';
 import { ContextMenu, CTX_MENU_OPTS } from '../../components/ContextMenu';
@@ -33,6 +33,7 @@ const DirectoryTree: FC<Props> = ({ selectedKey, onChange }) => {
   const [isLeaf, setIsLeaf] = useState(false);
   const [isText, setIsText] = useState(false);
   const [hCText, setHCText] = useState(false);
+  const [disPaste, setDisPaste] = useState(true);
   const [openMdl, setOpenModal] = useState(false);
   const [isEditTag, setIsEditTag] = useState(false);
   const [openCtxMenu, setOpenCtxMenu] = useState(false);
@@ -48,6 +49,11 @@ const DirectoryTree: FC<Props> = ({ selectedKey, onChange }) => {
   useEffect(() => {
     if (treeData.length) onChange(treeData);
   }, [treeData, onChange]);
+
+  useEffect(() => {
+    if (!copyNode || isLeaf) setDisPaste(true);
+    else setDisPaste(false);
+  }, [copyNode, isLeaf]);
 
   const initState = useCallback(() => {
     hCText && setHCText(false);
@@ -117,15 +123,14 @@ const DirectoryTree: FC<Props> = ({ selectedKey, onChange }) => {
               changeTag(root, selectedNode, tagName);
             },
           });
-          return;
+          return root;
         }
         changeTag(root, selectedNode!, tagName);
-        return;
+        return root;
       }
       // 2.新增节点
       selectedNode!.children?.push(createNode(tagName, isLeaf, type));
-      updateAntTree(root, selectedNode!);
-      return root;
+      return updateAntTree(root, selectedNode!);
     },
     [isEditTag, changeTag, createNode, selectedNode]
   );
@@ -156,7 +161,6 @@ const DirectoryTree: FC<Props> = ({ selectedKey, onChange }) => {
 
   const onCopyNode = useCallback(
     (source: TreeDataNode) => {
-      message.success('复制成功');
       setCopyNode(cloneDeep(source));
       onClearSelectedNode();
     },
@@ -166,7 +170,7 @@ const DirectoryTree: FC<Props> = ({ selectedKey, onChange }) => {
   const onDeleteNode = useCallback(
     (source: TreeDataNode, showConfirm = true) => {
       const onDelete = () => {
-        setTreeData(deleteNode(cloneDeep(treeData), source!));
+        setTreeData(deleteNode(clone(treeData), source!));
         onClearSelectedNode();
       };
       if (isEqual(showConfirm, false)) {
@@ -192,28 +196,18 @@ const DirectoryTree: FC<Props> = ({ selectedKey, onChange }) => {
         onClearSelectedNode();
         return;
       }
-      setCopyNode(cloneDeep(source));
+      onCopyNode(source);
       onDeleteNode(source, false);
     },
-    [treeData, onClearSelectedNode, onDeleteNode]
+    [treeData, onClearSelectedNode, onDeleteNode, onCopyNode]
   );
 
   const onPasteNode = useCallback(
     (target: TreeDataNode, source: TreeDataNode) => {
-      if (isEqual(source, undefined) || isEqual(target, undefined)) {
-        message.info('请先复制或剪切节点');
-        return;
-      }
-      if (isEqual(source?.isLeaf, undefined)) {
-        message.error('无法粘贴到该节点类型下');
-        return;
-      }
-      // todo
       resolveKeyConflicts(target);
       source.children?.push(target);
       onClearSelectedNode();
-      setCopyNode(undefined);
-      setTreeData(updateAntTree(cloneDeep(treeData), source));
+      setTreeData(updateAntTree(clone(treeData), source));
     },
     [onClearSelectedNode, treeData]
   );
@@ -292,14 +286,14 @@ const DirectoryTree: FC<Props> = ({ selectedKey, onChange }) => {
 
   const handleChangeTree = useCallback(
     ({ value, type, leaf, count }: CreateNodeResult) => {
-      const newData: TreeDataNode[] = cloneDeep(treeData);
+      let newData: TreeDataNode[] = clone(treeData);
       while (count--) {
         // 没有选中任何节点进行创建，说明是要创建根节点
         if (!selectedNode) {
           newData.push(createNode(value, leaf, type));
           continue;
         }
-        updateNode(newData, value, leaf, type);
+        newData = updateNode(newData, value, leaf, type)!;
       }
       setTreeData(newData);
       initState();
@@ -365,7 +359,7 @@ const DirectoryTree: FC<Props> = ({ selectedKey, onChange }) => {
               open={openCtxMenu}
               onClose={onClearSelectedNode}
               onClick={handleCtxClick}
-              {...{ ...ctxMenuPosi, isLeaf, isText }}
+              {...{ ...ctxMenuPosi, isLeaf, isText, disPaste }}
             />
           </>
         )}
