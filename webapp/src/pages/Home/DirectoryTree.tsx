@@ -106,7 +106,7 @@ const DirectoryTree: FC<Props> = ({ fieldNames, selectedKey, onChange }) => {
     return node;
   }, []);
 
-  const onEditNode = useCallback(
+  const editNode = useCallback(
     (root: TreeDataNode[], node: TreeDataNode, { value, alias }: CreateNodeResult) => {
       node.title = value;
       // @ts-ignore
@@ -117,27 +117,27 @@ const DirectoryTree: FC<Props> = ({ fieldNames, selectedKey, onChange }) => {
   );
 
   const updateNode = useCallback(
-    (root: TreeDataNode[], data: CreateNodeResult) => {
+    (root: TreeDataNode[], data: CreateNodeResult, target: TreeDataNode) => {
       const { value: tag } = data;
       // 1.修改节点标签
       if (isEqual(isEditTag, true)) {
-        if (selectedNode?.children?.length && SELF_CLOSING_TAG.includes(tag)) {
+        if (target.children?.length && SELF_CLOSING_TAG.includes(tag)) {
           confirm({
             title: '警告',
             content: '自闭合元素不能作为容器，会清空该节点下的子节点',
             onOk() {
-              selectedNode.children!.length = 0;
-              return onEditNode(root, selectedNode, data);
+              target.children!.length = 0;
+              return editNode(root, target, data);
             },
           });
         }
-        return onEditNode(root, selectedNode!, data);
+        return editNode(root, target, data);
       }
       // 2.新增节点
-      selectedNode!.children?.push(createNode(data));
-      return updateAntTree(root, selectedNode!);
+      target!.children?.push(createNode(data));
+      return updateAntTree(root, target);
     },
-    [isEditTag, onEditNode, createNode, selectedNode]
+    [isEditTag, editNode, createNode]
   );
 
   const onClearSelectedNode = useCallback(() => {
@@ -217,7 +217,7 @@ const DirectoryTree: FC<Props> = ({ fieldNames, selectedKey, onChange }) => {
     [onClearSelectedNode, treeData]
   );
 
-  const onRenameTag = useCallback(() => {
+  const onEditNode = useCallback(() => {
     sethCText(true);
     setOpenModal(true);
     setIsEditTag(true);
@@ -261,7 +261,7 @@ const DirectoryTree: FC<Props> = ({ fieldNames, selectedKey, onChange }) => {
           onPasteNode(copyNode!, selectedNode!);
           break;
         case CTX_MENU_OPTS.EDIT_TAG:
-          onRenameTag();
+          onEditNode();
           break;
         case CTX_MENU_OPTS.REMOVE:
           onDeleteNode(selectedNode!);
@@ -279,7 +279,7 @@ const DirectoryTree: FC<Props> = ({ fieldNames, selectedKey, onChange }) => {
       onCutNode,
       onDeleteNode,
       onPasteNode,
-      onRenameTag,
+      onEditNode,
       onSetStyle,
     ]
   );
@@ -291,15 +291,16 @@ const DirectoryTree: FC<Props> = ({ fieldNames, selectedKey, onChange }) => {
 
   const handleChangeTree = useCallback(
     (res: CreateNodeResult) => {
+      const target = cloneDeep(selectedNode)!;
       let { repeat } = res;
-      let newData: TreeDataNode[] = clone(treeData);
+      let newData: TreeDataNode[] = cloneDeep(treeData);
       while (repeat--) {
         // 没有选中任何节点进行创建，说明是要创建根节点
-        if (!selectedNode) {
+        if (!target) {
           newData.push(createNode(res));
           continue;
         }
-        newData = updateNode(newData, res)!;
+        newData = updateNode(newData, res, target)!;
       }
       setTreeData(newData);
       initState();

@@ -6,30 +6,46 @@ import { TreeDataNode } from 'antd';
  * @param node
  * @returns
  */
-export function updateAntTree<T extends TreeDataNode>(root: T[], node: T): T[] {
+export function updateAntTree(root: TreeDataNode[], node: TreeDataNode): TreeDataNode[] {
   const oldNode = findNode(root, node);
   oldNode && patchNode(oldNode, node);
   return root;
 }
 
 function findNode(root: TreeDataNode[], node: TreeDataNode): TreeDataNode | undefined {
-  for (let i = 0; i < root.length; i++) {
-    const n = root[i];
-    // 通过 key 找到那个被修改节点在原对象中的原节点
-    if (n.key === node.key) {
-      return n;
-    } else if (n.children?.length) {
-      findNode(n.children, node);
+  let left = 0;
+  let right = root.length - 1;
+  while (left <= right) {
+    const leftNode = root[left++];
+    const rightNode = root[right--];
+    if (leftNode.key === node.key) {
+      return leftNode;
+    }
+    if (rightNode.key === node.key) {
+      return rightNode;
+    }
+    if (leftNode.children?.length) {
+      return findNode(leftNode.children, node);
+    }
+    if (rightNode.children?.length) {
+      return findNode(rightNode.children, node);
     }
   }
-  return undefined;
+  // for (let i = 0; i < root.length; i++) {
+  //   const n = root[i];
+  //   // 通过 key 找到那个被修改节点在原对象中的原节点
+  //   if (n.key === node.key) {
+  //     return n;
+  //   } else if (n.children?.length) {
+  //     return findNode(n.children, node);
+  //   }
+  // }
 }
 
 export function deleteNode(root: TreeDataNode[], node: TreeDataNode) {
   for (let i = 0; i < root.length; i++) {
     const n = root[i];
     if (n.key === node.key) {
-      // delete root[i];
       root.splice(i, 1);
       break;
     } else if (n.children?.length) {
@@ -52,7 +68,9 @@ function patchNode(n1: TreeDataNode, n2: TreeDataNode) {
   const oldChildren = n1.children!;
   const newChildren = n2.children!;
   if (oldChildren.length !== newChildren.length) {
-    patchChildren(oldChildren, newChildren);
+    n1.children = patchChildren(oldChildren, newChildren);
+  } else {
+    // todo
   }
   return n1;
 }
@@ -73,15 +91,27 @@ function patchChildren(c1: TreeDataNode[], c2: TreeDataNode[]) {
     c1.push(c2[newLen - 1]);
   } // 4.删除节点
   else if (oldLen > newLen) {
-    for (let i = 0; i < oldLen; i++) {
-      const oldCh = c1[i];
-      if (!c2.includes(oldCh)) {
-        const targetIdx = c1.indexOf(oldCh);
+    let l = 0;
+    let h = oldLen - 1;
+    while (l <= h) {
+      const leftChild = c1[l++];
+      const rightChild = c1[h++];
+      if (!c2.includes(leftChild) || !c2.includes(rightChild)) {
+        const targetIdx = c1.indexOf(leftChild || rightChild);
         c1.splice(targetIdx, 1);
         break;
       }
     }
+    // for (let i = 0; i < oldLen; i++) {
+    //   const oldCh = c1[i];
+    //   if (!c2.includes(oldCh)) {
+    //     const targetIdx = c1.indexOf(oldCh);
+    //     c1.splice(targetIdx, 1);
+    //     break;
+    //   }
+    // }
   }
+  return c1;
 }
 
 function patchProps() {}
