@@ -8,10 +8,10 @@ export type VNode = {
   tag: string;
   // antd Tree组件的数据结构决定了children不存在是字符串的情况
   children: VNode[];
-  props: Partial<{
-    style: Partial<CSSStyleDeclaration>;
-    attrs: Record<string, any>;
-  }> | null;
+  props: {
+    attrs?: Record<string, string>;
+    style?: Partial<CSSStyleDeclaration>;
+  } | null;
 };
 
 let uid = 0;

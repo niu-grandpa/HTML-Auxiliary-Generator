@@ -178,20 +178,24 @@ const ModalCreateNode: FC<Props> = memo(
                 placeholder='列表显示的别名'
                 onChange={({ target }) => changeData('alias', target.value)}
               />
-              <InputNumber
-                disabled={disRepeat}
-                min={defaultData.repeat}
-                addonBefore='重复数'
-                defaultValue={defaultData.repeat}
-                onChange={value => changeData('repeat', value)}
-              />
+              <Tooltip title='批量创建节点'>
+                <InputNumber
+                  disabled={disRepeat}
+                  min={defaultData.repeat}
+                  addonBefore='重复数'
+                  defaultValue={defaultData.repeat}
+                  onChange={value => changeData('repeat', value)}
+                />
+              </Tooltip>
             </Space>
             <Space>
-              <Input
-                addonBefore='class'
-                placeholder='元素类名'
-                onChange={({ target }) => changeData('className', target.value)}
-              />
+              <Tooltip title='添加多个类名请用空格分隔'>
+                <Input
+                  addonBefore='class'
+                  placeholder='元素类名'
+                  onChange={({ target }) => changeData('className', target.value)}
+                />
+              </Tooltip>
               <Input
                 addonBefore='identit'
                 placeholder='元素id'

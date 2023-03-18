@@ -1,9 +1,8 @@
 import { Slider } from 'antd';
 import { FC, memo, useCallback, useEffect, useState } from 'react';
+import { DrawerStyleSettings } from '../../components';
 import core from '../../core';
 import { type VNode } from '../../core/utils';
-
-import ConfigurationBar from './ConfigurationBar';
 
 type Props = {
   vnodes: VNode[];
@@ -12,10 +11,10 @@ type Props = {
 const { buildHTMLString } = core;
 
 /**视图操作区域 */
-const ViewOperations: FC<Props> = ({ vnodes }) => {
+const ViewOperations: FC<Props> = memo(({ vnodes }) => {
   const [htmlString, setHTMLString] = useState<string>('');
   const [scale, setScale] = useState('1');
-  const [openConfig, setOpenConfig] = useState(false);
+  const [openDrawer, setOpenDrawer] = useState(false);
 
   useEffect(() => {
     setHTMLString(buildHTMLString(vnodes));
@@ -33,7 +32,7 @@ const ViewOperations: FC<Props> = ({ vnodes }) => {
 
   return (
     <>
-      <ConfigurationBar open={openConfig} onClose={() => setOpenConfig(false)} />
+      <DrawerStyleSettings open={openDrawer} onClose={() => setOpenDrawer(false)} />
       <section className='view-opts' onContextMenu={onCustomCtxMenu}>
         <div className='view-opts-magnifier'>
           <Slider
@@ -49,6 +48,6 @@ const ViewOperations: FC<Props> = ({ vnodes }) => {
       </section>
     </>
   );
-};
+});
 
-export default memo(ViewOperations);
+export default ViewOperations;

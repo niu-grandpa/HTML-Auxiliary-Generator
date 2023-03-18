@@ -10,7 +10,7 @@ const routerConfig: RouteObject[] = [
   {
     path: '/',
     children: [
-      { path: '', element: <LazyLoading children={<Welcome />} /> },
+      { path: '', element: <LazyLoading children={<Welcome />} />, index: true },
       { path: '*', element: <LazyLoading children={<Error />} /> },
       { path: 'home', element: <LazyLoading children={<Home />} /> },
     ],

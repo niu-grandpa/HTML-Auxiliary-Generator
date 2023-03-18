@@ -81,13 +81,13 @@ function addProps(tag: string, props: VNode['props'], endTag?: boolean): string 
   if (attrs) {
     for (const key in attrs) {
       const value = attrs[key];
-      res += ` ${getKebabCase2(key)}="${value}"`;
+      res += ` key="${value}";`;
     }
   }
   if (style) {
     let inlineStyle = ' style=';
     for (const key in style) {
-      const value = style[key as any];
+      const value = style[key];
       inlineStyle += `"${getKebabCase2(key)}: ${value};"`;
     }
     res += inlineStyle;

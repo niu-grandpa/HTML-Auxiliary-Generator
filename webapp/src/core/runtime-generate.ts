@@ -1,4 +1,5 @@
 import { type TreeDataNode } from 'antd';
+import { CreateNodeResult } from '../components/ModalCreateNode';
 import transform from './runtime-transform';
 import { createNodeKey, h, type VNode } from './utils';
 
@@ -19,19 +20,23 @@ function _generate_() {
    * @param isLeaf
    * @returns
    */
-
   function createAntTreeNode(
-    tag: string,
-    alias: string,
-    isLeaf: boolean,
-    type: NodeType
+    data: CreateNodeResult & { style?: Partial<CSSStyleDeclaration> }
   ): TreeDataNode {
+    const { type, leaf, value, alias, className, identity, style } = data;
     const node = {
       type,
-      isLeaf,
-      alias: alias || tag,
-      title: tag,
+      isLeaf: leaf,
+      title: value,
       children: [],
+      alias: alias || value,
+      props: {
+        attrs: {
+          class: className,
+          id: identity,
+        },
+        style,
+      },
       key: createNodeKey(),
     };
     return node;

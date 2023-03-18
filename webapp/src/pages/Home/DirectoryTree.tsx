@@ -8,7 +8,7 @@ import {
 import { Button, Col, message, Modal, Row, Tree, type TreeDataNode } from 'antd';
 import { clone, cloneDeep, head, isEqual } from 'lodash-es';
 import { FC, Key, memo, MouseEvent, useCallback, useEffect, useState } from 'react';
-import { ModalCreateNode } from '../../components';
+import { DrawerStyleSettings, ModalCreateNode } from '../../components';
 import { ContextMenu, CTX_MENU_OPTS } from '../../components/ContextMenu';
 import { type CreateNodeResult } from '../../components/ModalCreateNode';
 import core from '../../core';
@@ -17,7 +17,7 @@ import { SELF_CLOSING_TAG } from '../../core/runtime-transform';
 
 type Props = {
   selectedKey: number;
-  onChange: (node: TreeDataNode[]) => void;
+  onChange: (node: TreeDataNode[], selectedKey: Key[]) => void;
   fieldNames: Partial<{ title: string; key: string; children: string }>;
 };
 
@@ -30,17 +30,19 @@ const nodeIcons = {
   2: <FileTextOutlined />,
 };
 
-const DirectoryTree: FC<Props> = ({ fieldNames, selectedKey, onChange }) => {
+const DirectoryTree: FC<Props> = memo(({ fieldNames, selectedKey, onChange }) => {
+  const [mdlTitle, setMdlTitle] = useState('新建节点');
   const [isLeaf, setIsLeaf] = useState(false);
   const [isText, setIsText] = useState(false);
   const [disPaste, setDisPaste] = useState(true);
   const [openMdl, setOpenModal] = useState(false);
   const [isEditTag, setIsEditTag] = useState(false);
   const [disRepeat, setDisRepeat] = useState(false);
+  const [openDrawer, setOpenDrawer] = useState(false);
   const [hiddenTextType, sethCText] = useState(false);
   const [openCtxMenu, setOpenCtxMenu] = useState(false);
   const [disabledRadio, setDisabledRadio] = useState(false);
-  const [mdlTitle, setMdlTitle] = useState('新建节点');
+  const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
   const [copyNode, setCopyNode] = useState<TreeDataNode>();
@@ -48,8 +50,8 @@ const DirectoryTree: FC<Props> = ({ fieldNames, selectedKey, onChange }) => {
   const [createType, setCreateType] = useState<NodeType>(NodeType.CONTAINER);
 
   useEffect(() => {
-    if (treeData.length) onChange(treeData);
-  }, [treeData, onChange]);
+    if (treeData.length) onChange(treeData, selectedKeys);
+  }, [treeData, onChange, selectedKeys]);
 
   useEffect(() => {
     if (!copyNode || isLeaf) setDisPaste(true);
@@ -100,9 +102,10 @@ const DirectoryTree: FC<Props> = ({ fieldNames, selectedKey, onChange }) => {
     setOpenModal(false);
   }, [initState]);
 
-  const createNode = useCallback(({ value, leaf, type, alias }: CreateNodeResult) => {
-    const node = createAntTreeNode(value, alias, leaf, type);
-    node.icon = nodeIcons[type];
+  const createNode = useCallback((data: CreateNodeResult) => {
+    // todo 样式
+    const node = createAntTreeNode(data);
+    node.icon = nodeIcons[data.type];
     return node;
   }, []);
 
@@ -162,7 +165,9 @@ const DirectoryTree: FC<Props> = ({ fieldNames, selectedKey, onChange }) => {
     setCreateType(NodeType.TEXT);
   }, []);
 
-  const onSetStyle = useCallback(() => {}, []);
+  const onSetStyle = useCallback(() => {
+    setOpenDrawer(true);
+  }, []);
 
   const onCopyNode = useCallback(
     (source: TreeDataNode) => {
@@ -175,7 +180,7 @@ const DirectoryTree: FC<Props> = ({ fieldNames, selectedKey, onChange }) => {
   const onDeleteNode = useCallback(
     (source: TreeDataNode, showConfirm = true) => {
       const onDelete = () => {
-        setTreeData(deleteNode(clone(treeData), source!));
+        setTreeData(deleteNode(cloneDeep(treeData), cloneDeep(source)!));
         onClearSelectedNode();
       };
       if (isEqual(showConfirm, false)) {
@@ -285,7 +290,7 @@ const DirectoryTree: FC<Props> = ({ fieldNames, selectedKey, onChange }) => {
   );
 
   const handleClickNode = useCallback((keys: Key[], info: any) => {
-    console.log(info);
+    setSelectedKeys(keys);
     setSelectedNode(info.selectedNodes[0]);
   }, []);
 
@@ -367,11 +372,12 @@ const DirectoryTree: FC<Props> = ({ fieldNames, selectedKey, onChange }) => {
               onClick={handleCtxClick}
               {...{ ...ctxMenuPosi, isLeaf, isText, disPaste }}
             />
+            <DrawerStyleSettings open={openDrawer} onClose={() => setOpenDrawer(false)} />
           </>
         )}
       </section>
     </>
   );
-};
+});
 
-export default memo(DirectoryTree);
+export default DirectoryTree;

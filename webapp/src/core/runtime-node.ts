@@ -88,7 +88,7 @@ function patchChildren(c1: TreeDataNode[], c2: TreeDataNode[]) {
   }
   // 3.追加节点
   else if (oldLen < newLen) {
-    c1.push(c2[newLen - 1]);
+    c1.push(...c2.slice(oldLen, newLen));
   } // 4.删除节点
   else if (oldLen > newLen) {
     let l = 0;

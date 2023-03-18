@@ -2,15 +2,14 @@ import { Col, Layout, Menu, Row, TreeDataNode } from 'antd';
 import React, { useEffect, useState } from 'react';
 import core from '../../core';
 import { type VNode } from '../../core/utils';
-import ConfigurationBar from './ConfigurationBar';
 import DirectoryTree from './DirectoryTree';
 import './index.less';
 import ViewOperations from './ViewOperations';
 
-const { antTreeNodeToVNode, createPlaceholder } = core;
+const { antTreeNodeToVNode, onDrag } = core;
 const { Header, Content, Footer } = Layout;
 
-const { mountedDragPlaceholder, setDragPlaceholder } = createPlaceholder();
+const { active: activeDragElem, setPosition } = onDrag();
 
 const Home: React.FC = () => {
   const [vnodes, setVnodes] = useState<VNode[]>([]);
@@ -23,7 +22,8 @@ const Home: React.FC = () => {
   }, [antTreeData]);
 
   useEffect(() => {
-    mountedDragPlaceholder();
+    activeDragElem();
+    document.title = '开发管理页 - HTML Auxiliary Generator';
   }, []);
 
   return (
@@ -45,7 +45,6 @@ const Home: React.FC = () => {
             <ViewOperations {...{ vnodes }} />
           </Col>
         </Row>
-        <ConfigurationBar />
       </Content>
       <Footer style={{ textAlign: 'center' }}>
         HTML Auxiliary Generator ©{new Date().getFullYear()} Created by Ryan John
