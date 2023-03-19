@@ -1,4 +1,3 @@
-import * as handleInteraction from './handle-interaction';
 import { generate, savedKeys as SAVED_KEYS } from './runtime-generate';
 import * as NodeHandler from './runtime-node';
 import transform from './runtime-transform';
@@ -10,7 +9,6 @@ const core = {
   transform,
   SAVED_KEYS,
   ...NodeHandler,
-  ...handleInteraction,
 };
 
 export default core;

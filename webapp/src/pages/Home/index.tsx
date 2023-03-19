@@ -6,10 +6,8 @@ import DirectoryTree from './DirectoryTree';
 import './index.less';
 import ViewOperations from './ViewOperations';
 
-const { antTreeNodeToVNode, onDrag } = core;
+const { antTreeNodeToVNode } = core;
 const { Header, Content, Footer } = Layout;
-
-const { active: activeDragElem, setPosition } = onDrag();
 
 const Home: React.FC = () => {
   const [vnodes, setVnodes] = useState<VNode[]>([]);
@@ -22,7 +20,6 @@ const Home: React.FC = () => {
   }, [antTreeData]);
 
   useEffect(() => {
-    activeDragElem();
     document.title = '开发管理页 - HTML Auxiliary Generator';
   }, []);
 
