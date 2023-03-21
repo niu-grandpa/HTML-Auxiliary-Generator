@@ -51,10 +51,9 @@
   &-box {
     position: relative;
     height: 100%;
-    * {
-      &:hover {
-        cursor: move;
-      }
+    [data-is-moving='true'] {
+      user-select: none;
+      cursor: grabbing;
     }
   }
 
