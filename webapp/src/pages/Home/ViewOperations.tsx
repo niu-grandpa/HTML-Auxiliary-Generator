@@ -44,7 +44,14 @@ const ViewOperations: FC<Props> = memo(({ vnodes }) => {
             tooltip={{ formatter: v => `${v}%` }}
           />
         </div>
-        <section className='view-opts-box' style={{ transform: `scale(${scale})` }}></section>
+        <section className='view-opts-box' style={{ transform: `scale(${scale})` }}>
+          <div className='view-opts-auxline'>
+            <div className='view-opts-auxline-y' />
+            <div className='view-opts-auxline-x' />
+            <div className='view-opts-auxline-x' />
+            <div className='view-opts-auxline-y' />
+          </div>
+        </section>
       </section>
     </>
   );

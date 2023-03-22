@@ -1,5 +1,22 @@
 import { MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+type AuxlineData = {
+  /** x轴辅助线的水平局中值 */
+  xAlign: number;
+  /** 用于x轴左辅助线 */
+  xLeft: number;
+  /** 用于x轴右辅助线 */
+  xRight: number;
+  /** y轴辅助线的垂直局中值 */
+  yAlign: number;
+  /** 用于y轴上辅助线 */
+  yTop: number;
+  /** 用于y轴下辅助线 */
+  yBottom: number;
+};
+
+type AuxlineCb = (data: AuxlineData) => void;
+
 const turnPositive = (num: number) => (num < 0 ? 0 : num);
 
 /**
@@ -7,12 +24,13 @@ const turnPositive = (num: number) => (num < 0 ? 0 : num);
  *
  * 该函数用于实现元素跟随鼠标移动
  */
-export function useElementMovement(): (ref: MutableRefObject<HTMLElement>) => void {
+export function useElementMovement() {
   const refElem = useRef<HTMLElement | null>(null);
   const activeElem = useRef<HTMLElement | null>(null);
-
   // getBoundingClientRect
   const activeElemBCR = useRef<DOMRect>();
+  // 获取辅助线坐标数据的回调函数
+  const callbackRef = useRef<AuxlineCb>();
 
   // 初始坐标数据
   const [coordinate, setCoordinate] = useState({
@@ -24,7 +42,7 @@ export function useElementMovement(): (ref: MutableRefObject<HTMLElement>) => vo
     initailY: 0,
   });
 
-  const setMainlyData = useCallback((target: HTMLElement, clientX: number, clientY: number) => {
+  const setTargetData = useCallback((target: HTMLElement, clientX: number, clientY: number) => {
     activeElem.current = target;
     activeElem.current.dataset.isMoving = 'true';
     activeElemBCR.current = target.getBoundingClientRect();
@@ -39,13 +57,34 @@ export function useElementMovement(): (ref: MutableRefObject<HTMLElement>) => vo
     });
   }, []);
 
-  // refElem鼠标移动
-  const onMoveing = useCallback(
-    (event: MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
+  const activeHandler = useCallback((ref: MutableRefObject<HTMLElement>) => {
+    refElem.current = ref.current;
+  }, []);
 
-      const { clientX, clientY } = event;
+  const getAuxlineData = useCallback((callback: AuxlineCb) => {
+    callbackRef.current = callback;
+  }, []);
+
+  const calcAuxlineData = useCallback(
+    (x: number, y: number) => {
+      const top = y + coordinate.initailY;
+      const left = x + coordinate.initailX;
+      const { width, height } = activeElemBCR.current!;
+      const data: AuxlineData = {
+        xAlign: top + (height >> 1),
+        xLeft: left,
+        xRight: left + width,
+        yAlign: left + (width >> 1),
+        yTop: top,
+        yBottom: top + height,
+      };
+      return data;
+    },
+    [coordinate]
+  );
+
+  const calcMoveingData = useCallback(
+    (clientX: number, clientY: number): number[] => {
       const { shiftX, shiftY, initailX, initailY } = coordinate;
 
       const { width: targetWidth, height: targetHeight } = activeElemBCR.current!;
@@ -63,13 +102,26 @@ export function useElementMovement(): (ref: MutableRefObject<HTMLElement>) => vo
       // 修正目标超出左右边界
       x < -initailX && (x = -initailX);
       x > maxLeftMargin && (x = maxLeftMargin);
+
       // 修正目标超出上下边界
       y < -initailY && (y = -initailY);
       y > maxRightMargin && (y = maxRightMargin);
 
-      activeElem.current!.style.translate = `${x}px ${y}px`;
+      return [x, y];
     },
     [coordinate]
+  );
+
+  // refElem鼠标移动
+  const onMoveing = useCallback(
+    (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const [x, y] = calcMoveingData(event.clientX, event.clientY);
+      callbackRef.current?.(calcAuxlineData(x, y));
+      activeElem.current!.style.translate = `${x}px ${y}px`;
+    },
+    [calcMoveingData, calcAuxlineData]
   );
 
   const onMoveEnd = useCallback(
@@ -102,13 +154,13 @@ export function useElementMovement(): (ref: MutableRefObject<HTMLElement>) => vo
         return false;
       }
 
-      setMainlyData(target as HTMLElement, clientX, clientY);
+      setTargetData(target as HTMLElement, clientX, clientY);
 
       refElem.current!.addEventListener('mousemove', onMoveing);
       refElem.current!.addEventListener('mouseleave', onMoveEnd);
       refElem.current!.addEventListener('mouseup', onMoveEnd);
     },
-    [setMainlyData, onMoveing, onMoveEnd]
+    [setTargetData, onMoveing, onMoveEnd]
   );
 
   useEffect(() => {
@@ -117,13 +169,10 @@ export function useElementMovement(): (ref: MutableRefObject<HTMLElement>) => vo
       refElem.current.addEventListener('mousedown', onReadyToMove);
       return () => {
         refElem.current!.removeEventListener('mousedown', onReadyToMove);
+        refElem.current = null;
       };
     }
   }, [refElem, onReadyToMove, onMoveing]);
 
-  const activeHandler = useCallback((ref: MutableRefObject<HTMLElement>) => {
-    refElem.current = ref.current;
-  }, []);
-
-  return useMemo(() => activeHandler, [activeHandler]);
+  return useMemo(() => ({ activeHandler, getAuxlineData }), [activeHandler, getAuxlineData]);
 }

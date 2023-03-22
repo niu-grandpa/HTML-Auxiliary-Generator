@@ -13,9 +13,11 @@
     }
     .box {
       width: 60%;
+      position: relative;
       height: 300px;
       margin: 0 auto;
       border: 1px solid;
+      overflow: hidden;
     }
     [data-is-moving='true'] {
       user-select: none;
@@ -24,12 +26,22 @@
     .line {
       width: 100%;
       height: 1px;
+      position: absolute;
       background-color: coral;
       z-index: -9999;
     }
 
     .vertial {
-      transform: rotate(90deg);
+      width: 1px;
+      height: 100%;
+      top: 0;
+    }
+    .horizontal {
+      left: 0;
+    }
+
+    .auxline {
+      display: none;
     }
   </style>
   <body>
@@ -41,14 +53,20 @@
       <button data-is-moving-target="true">按钮</button>
       <button data-is-moving-target="true">按钮</button>
       <button data-is-moving-target="true">按钮</button>
+      <div class="auxline">
+        <div class="line horizontal" id="left"></div>
+        <div class="line horizontal" id="right"></div>
+        <div class="line vertial" id="top"></div>
+        <div class="line vertial" id="bottom"></div>
+      </div>
     </div>
-    <div class="line"></div>
-    <div class="line"></div>
-    <div class="line vertial"></div>
-    <div class="line vertial"></div>
   </body>
   <script>
     const box = document.querySelector('.box');
+    const lf = document.querySelector('#left');
+    const rt = document.querySelector('#right');
+    const tp = document.querySelector('#top');
+    const bt = document.querySelector('#bottom');
 
     let targetElem = null;
     let targetBCR = null;
@@ -84,8 +102,27 @@
         y = box.offsetHeight - (targetBCR.height + fixY);
         console.log('修正下边界');
       }
+      const xCenter = (box.offsetWidth >> 1) - (targetBCR.width >> 1);
+      const yCenter = (box.offsetHeight >> 1) - (targetBCR.height >> 1);
 
       targetElem.style.translate = `${x}px ${y}px`;
+
+      tp.style.left = x + fixX + (targetBCR.width >> 1) + 'px';
+      tp.style.height = y + fixY + 'px';
+
+      bt.style.left = x + fixX + (targetBCR.width >> 1) + 'px';
+      bt.style.top = y + fixY + targetBCR.height + 'px';
+
+      lf.style.top = y + fixY + (targetBCR.height >> 1) + 'px';
+      lf.style.width = x + fixX + 'px';
+
+      rt.style.top = y + fixY + (targetBCR.height >> 1) + 'px';
+      rt.style.left = x + fixX + targetBCR.width + 'px';
+      document.querySelector('.auxline').style.display = 'block';
+      /**
+       * 辅助线计算公式
+       *
+       */
     };
 
     const finishEv = e => {
@@ -95,6 +132,7 @@
         targetElem.dataset.isMoving = '';
         targetElem = null;
       }
+      document.querySelector('.auxline').style.display = 'none';
       box.removeEventListener('mousemove', handleMove);
       box.removeEventListener('mouseleave', finishEv);
       box.removeEventListener('mouseup', finishEv);
