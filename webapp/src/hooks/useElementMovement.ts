@@ -1,124 +1,175 @@
-import { MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  MutableRefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
-type AuxlineData = {
-  /** x轴辅助线的水平局中值 */
+export type AuxlineData = {
+  /** 画布x轴中心点 */
+  xCenter: number;
+  /** 画布y轴中心点 */
+  yCenter: number;
+  /** x水平轴的中点距 */
   xAlign: number;
   /** 用于x轴左辅助线 */
-  xLeft: number;
+  x1: number;
   /** 用于x轴右辅助线 */
-  xRight: number;
-  /** y轴辅助线的垂直局中值 */
+  x2: number;
+  /** y垂直轴的中点距 */
   yAlign: number;
   /** 用于y轴上辅助线 */
-  yTop: number;
+  y1: number;
   /** 用于y轴下辅助线 */
-  yBottom: number;
+  y2: number;
 };
 
 type AuxlineCb = (data: AuxlineData) => void;
+type getIsMovingCb = (moving: boolean) => void;
+type MouseCoordinateCb = (x: number, y: number) => void;
 
-const turnPositive = (num: number) => (num < 0 ? 0 : num);
+type UseElementMovement = {
+  getAuxlineData: (callback: AuxlineCb) => void;
+  getIsMoving: (callback: getIsMovingCb) => void;
+  getMouseCoordinate: (callback: MouseCoordinateCb) => void;
+  activeHandler: (ref: MutableRefObject<HTMLElement | null>) => void;
+};
 
 /**
  * useElementMovement
  *
  * 该函数用于实现元素跟随鼠标移动
+ * @param {string} tagetDatasetName 目标对象的dataset字段名
  */
-export function useElementMovement() {
+export function useElementMovement(
+  tagetDatasetName: string
+): UseElementMovement {
   const refElem = useRef<HTMLElement | null>(null);
   const activeElem = useRef<HTMLElement | null>(null);
   // getBoundingClientRect
   const activeElemBCR = useRef<DOMRect>();
-  // 获取辅助线坐标数据的回调函数
-  const callbackRef = useRef<AuxlineCb>();
 
-  // 初始坐标数据
+  // 获取辅助线坐标数据的回调函数
+  const getAuxlineCbRef = useRef<AuxlineCb>();
+  // 当前是否准备要移动。鼠标按下
+  const getIsMovingCbRef = useRef<getIsMovingCb>();
+  // 获取鼠标坐标数据的回调函数
+  const getMouseCoordinateCbRef = useRef<MouseCoordinateCb>();
+
+  // 目标元素初始坐标数据
   const [coordinate, setCoordinate] = useState({
-    // 鼠标指针在目标元素的偏移量
     shiftX: 0,
     shiftY: 0,
-    // 目标初始位置
     initailX: 0,
     initailY: 0,
   });
 
-  const setTargetData = useCallback((target: HTMLElement, clientX: number, clientY: number) => {
-    activeElem.current = target;
-    activeElem.current.dataset.isMoving = 'true';
-    activeElemBCR.current = target.getBoundingClientRect();
-
-    setCoordinate(value => {
-      // 加5修正鼠标指针位置
-      value.shiftX = clientX - activeElemBCR.current!.x + 5;
-      value.shiftY = clientY - activeElemBCR.current!.y + 5;
-      value.initailX = turnPositive(target.offsetLeft - refElem.current!.offsetLeft);
-      value.initailY = turnPositive(target.offsetTop - refElem.current!.offsetTop);
-      return value;
-    });
-  }, []);
-
-  const activeHandler = useCallback((ref: MutableRefObject<HTMLElement>) => {
-    refElem.current = ref.current;
-  }, []);
-
-  const getAuxlineData = useCallback((callback: AuxlineCb) => {
-    callbackRef.current = callback;
-  }, []);
-
-  const calcAuxlineData = useCallback(
-    (x: number, y: number) => {
-      const top = y + coordinate.initailY;
-      const left = x + coordinate.initailX;
-      const { width, height } = activeElemBCR.current!;
-      const data: AuxlineData = {
-        xAlign: top + (height >> 1),
-        xLeft: left,
-        xRight: left + width,
-        yAlign: left + (width >> 1),
-        yTop: top,
-        yBottom: top + height,
-      };
-      return data;
-    },
-    [coordinate]
-  );
-
   const calcMoveingData = useCallback(
     (clientX: number, clientY: number): number[] => {
-      const { shiftX, shiftY, initailX, initailY } = coordinate;
+      const { width, height } = activeElemBCR.current!;
+      const { initailX, initailY, shiftX, shiftY } = coordinate;
 
-      const { width: targetWidth, height: targetHeight } = activeElemBCR.current!;
-      const { offsetWidth: wrapperWidth, offsetHeight: wrapperHeight } = refElem.current!;
+      const { offsetWidth, offsetHeight } = refElem.current!;
+      const { x: parentX, y: parentY } =
+        refElem.current!.getBoundingClientRect();
 
-      const maxLeftMargin = wrapperWidth - (targetWidth + initailX);
-      const maxRightMargin = wrapperHeight - (targetHeight + initailY);
+      const minTop = parentY - initailY; // [0, -n)
+      const minLeft = parentX - initailX; // [0, -n)
+      const maxRight = offsetWidth - (initailX + width) + parentX;
+      const maxBottom = offsetHeight - (initailY + height) + parentY;
 
-      // 计算公式
-      // x = 鼠标坐标 - 目标初始坐标 - 鼠标指针偏移量 - 父盒子初始偏移量
-      // y = 鼠标坐标 - 目标初始坐标 - 鼠标指针偏移量
-      let x = clientX - initailX - shiftX - refElem.current!.offsetLeft;
-      let y = clientY - initailY - shiftY;
+      let x = ~~(clientX - initailX - shiftX);
+      let y = ~~(clientY - initailY - shiftY);
 
-      // 修正目标超出左右边界
-      x < -initailX && (x = -initailX);
-      x > maxLeftMargin && (x = maxLeftMargin);
-
-      // 修正目标超出上下边界
-      y < -initailY && (y = -initailY);
-      y > maxRightMargin && (y = maxRightMargin);
+      // 防止上左边界溢出
+      y < minTop && (y = minTop);
+      x < minLeft && (x = minLeft);
+      // 防止下右边界溢出
+      x > maxRight && (x = maxRight);
+      y > maxBottom && (y = maxBottom);
 
       return [x, y];
     },
     [coordinate]
   );
 
-  // refElem鼠标移动
+  const calcAuxlineData = useCallback((x: number, y: number): AuxlineData => {
+    const { width, height } = activeElemBCR.current!;
+
+    const { offsetLeft: targetLeft, offsetTop: targetTop } =
+      activeElem.current!;
+
+    const { offsetWidth: parentWidth, offsetHeight: parentHeight } =
+      refElem.current!;
+    // x1、x2、y1、y2 的轴线距离是相对于目标元素位置来计算的
+    // 初始水平和垂直距
+    const horizontal = x + targetLeft;
+    const vertical = y + targetTop;
+    // x轴左距
+    const x1 = horizontal;
+    // x轴右距
+    const x2 = x1 + width;
+    // 在目标元素x水平轴的中点距
+    const xAlign = vertical + (height >> 1);
+    // y轴上距
+    const y1 = vertical;
+    // y轴下距
+    const y2 = y1 + height;
+    // 在目标元素y垂直轴的中点距
+    const yAlign = horizontal + (width >> 1);
+    // 画布x y中心点
+    const xCenter = ((parentWidth - width) >> 1) - targetLeft;
+    const yCenter = ((parentHeight - height) >> 1) - targetTop;
+
+    return {
+      xCenter,
+      yCenter,
+      xAlign,
+      x1,
+      x2,
+      yAlign,
+      y1,
+      y2,
+    };
+  }, []);
+
+  const setTargetData = useCallback(
+    (target: HTMLElement, clientX: number, clientY: number) => {
+      activeElem.current = target;
+      activeElem.current.dataset.isMoving = 'true';
+      activeElemBCR.current = target.getBoundingClientRect();
+
+      const { x, y } = activeElemBCR.current;
+      const { offsetLeft, offsetTop } = activeElem.current!;
+      const { x: parentX, y: parentY } =
+        refElem.current!.getBoundingClientRect();
+
+      setCoordinate(value => {
+        // 鼠标指针在目标元素的偏移量
+        value.shiftX = clientX - x;
+        value.shiftY = clientY - y;
+        // 目标初始位置
+        value.initailX = parentX + offsetLeft;
+        value.initailY = parentY + offsetTop;
+        return value;
+      });
+    },
+    []
+  );
+
   const onMoveing = useCallback(
     (event: MouseEvent) => {
       event.preventDefault();
       event.stopPropagation();
+      // 计算元素移动坐标
       const [x, y] = calcMoveingData(event.clientX, event.clientY);
-      callbackRef.current?.(calcAuxlineData(x, y));
+      getIsMovingCbRef.current?.(true);
+      getMouseCoordinateCbRef.current?.(x, y);
+      // 计算辅助线坐标
+      getAuxlineCbRef.current?.(calcAuxlineData(x, y));
+
       activeElem.current!.style.translate = `${x}px ${y}px`;
     },
     [calcMoveingData, calcAuxlineData]
@@ -128,12 +179,11 @@ export function useElementMovement() {
     (event: MouseEvent) => {
       event.preventDefault();
       event.stopPropagation();
-
       if (activeElem.current) {
         activeElem.current.dataset.isMoving = '';
         activeElem.current = null;
       }
-
+      getIsMovingCbRef.current?.(false);
       refElem.current!.removeEventListener('mousemove', onMoveing);
       refElem.current!.removeEventListener('mouseleave', onMoveEnd);
       refElem.current!.removeEventListener('mouseup', onMoveEnd);
@@ -148,24 +198,42 @@ export function useElementMovement() {
       event.stopPropagation();
 
       const { target, clientX, clientY } = event;
-
       // 通过事件冒泡获取获取是否为目标对象
-      if ((target as HTMLElement).dataset.isMoveingTarget !== 'true') {
+      if ((target as HTMLElement).dataset[tagetDatasetName] !== 'true') {
         return false;
       }
 
       setTargetData(target as HTMLElement, clientX, clientY);
-
+      // 包裹层元素绑定事件
       refElem.current!.addEventListener('mousemove', onMoveing);
       refElem.current!.addEventListener('mouseleave', onMoveEnd);
       refElem.current!.addEventListener('mouseup', onMoveEnd);
     },
-    [setTargetData, onMoveing, onMoveEnd]
+    [tagetDatasetName, setTargetData, onMoveing, onMoveEnd]
   );
+
+  const activeHandler = useCallback(
+    (ref: MutableRefObject<HTMLElement | null>) => {
+      if (!ref.current) return;
+      refElem.current = ref.current;
+    },
+    []
+  );
+
+  const getAuxlineData = useCallback((callback: AuxlineCb) => {
+    getAuxlineCbRef.current = callback;
+  }, []);
+
+  const getIsMoving = useCallback((cb: getIsMovingCb) => {
+    getIsMovingCbRef.current = cb;
+  }, []);
+  const getMouseCoordinate = useCallback((cb: MouseCoordinateCb) => {
+    getMouseCoordinateCbRef.current = cb;
+  }, []);
 
   useEffect(() => {
     if (refElem.current !== null) {
-      console.log('active');
+      console.log('active ');
       refElem.current.addEventListener('mousedown', onReadyToMove);
       return () => {
         refElem.current!.removeEventListener('mousedown', onReadyToMove);
@@ -174,5 +242,13 @@ export function useElementMovement() {
     }
   }, [refElem, onReadyToMove, onMoveing]);
 
-  return useMemo(() => ({ activeHandler, getAuxlineData }), [activeHandler, getAuxlineData]);
+  return useMemo(
+    () => ({
+      activeHandler,
+      getIsMoving,
+      getMouseCoordinate,
+      getAuxlineData,
+    }),
+    [activeHandler, getIsMoving, getMouseCoordinate, getAuxlineData]
+  );
 }

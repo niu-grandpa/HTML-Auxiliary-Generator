@@ -24,19 +24,18 @@
       cursor: grabbing;
     }
     .line {
-      width: 100%;
-      height: 1px;
       position: absolute;
-      background-color: coral;
       z-index: -9999;
+      display: none;
+      border: 2px dashed coral;
     }
 
     .vertial {
-      width: 1px;
       height: 100%;
       top: 0;
     }
     .horizontal {
+      width: 100%;
       left: 0;
     }
 
@@ -46,7 +45,10 @@
   </style>
   <body>
     <div class="box" data-id="dd">
-      <div style="width: 20%; height: 100px; border: 1px solid" data-is-moving-target="true">
+      <div
+        style="width: 20%; height: 100px; border: 1px solid"
+        data-is-moving-target="true"
+      >
         >按钮
       </div>
       <button data-is-moving-target="true">按钮</button>
@@ -82,8 +84,8 @@
 
       const { clientX, clientY } = e;
 
-      let x = clientX - fixX - shiftX - box.offsetLeft;
-      let y = clientY - fixY - shiftY;
+      let x = ~~(clientX - fixX - shiftX - box.offsetLeft);
+      let y = ~~(clientY - fixY - shiftY);
 
       if (x < -fixX) {
         x = -fixX;
@@ -102,22 +104,34 @@
         y = box.offsetHeight - (targetBCR.height + fixY);
         console.log('修正下边界');
       }
-      const xCenter = (box.offsetWidth >> 1) - (targetBCR.width >> 1);
-      const yCenter = (box.offsetHeight >> 1) - (targetBCR.height >> 1);
+      const xCenter = ((box.offsetWidth - targetBCR.width) >> 1) - fixX;
+      const yCenter = ((box.offsetHeight - targetBCR.height) >> 1) - fixY;
 
       targetElem.style.translate = `${x}px ${y}px`;
 
-      tp.style.left = x + fixX + (targetBCR.width >> 1) + 'px';
-      tp.style.height = y + fixY + 'px';
+      if (y >= yCenter) {
+        bt.style.left = x + fixX + (targetBCR.width >> 1) + 'px';
+        bt.style.top = y + fixY + targetBCR.height + 'px';
+        bt.style.display = 'block';
+        tp.style.display = '';
+      } else {
+        tp.style.left = x + fixX + (targetBCR.width >> 1) + 'px';
+        tp.style.height = y + fixY + 'px';
+        tp.style.display = 'block';
+        bt.style.display = '';
+      }
+      if (x >= xCenter) {
+        rt.style.top = y + fixY + (targetBCR.height >> 1) + 'px';
+        rt.style.left = x + fixX + targetBCR.width + 'px';
+        rt.style.display = 'block';
+        lf.style.display = '';
+      } else {
+        lf.style.top = y + fixY + (targetBCR.height >> 1) + 'px';
+        lf.style.width = x + fixX + 'px';
+        lf.style.display = 'block';
+        rt.style.display = '';
+      }
 
-      bt.style.left = x + fixX + (targetBCR.width >> 1) + 'px';
-      bt.style.top = y + fixY + targetBCR.height + 'px';
-
-      lf.style.top = y + fixY + (targetBCR.height >> 1) + 'px';
-      lf.style.width = x + fixX + 'px';
-
-      rt.style.top = y + fixY + (targetBCR.height >> 1) + 'px';
-      rt.style.left = x + fixX + targetBCR.width + 'px';
       document.querySelector('.auxline').style.display = 'block';
       /**
        * 辅助线计算公式

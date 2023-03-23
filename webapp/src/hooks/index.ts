@@ -1,1 +1,1 @@
-export { useElementMovement } from './useElementMovement';
+export { useElementMovement, type AuxlineData } from './useElementMovement';

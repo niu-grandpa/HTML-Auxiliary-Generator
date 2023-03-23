@@ -22,12 +22,11 @@
   height: 89vh;
   max-height: 89vh;
   border-radius: 4px;
-  overflow: auto;
 }
 
 .view-opts {
   position: relative;
-  overflow: auto;
+  overflow: hidden;
   background-color: @light-color;
   background-image: linear-gradient(@divider-color 1px, transparent 0),
     linear-gradient(90deg, @divider-color 1px, transparent 0),
@@ -35,21 +34,7 @@
     linear-gradient(90deg, @divider-color 1px, transparent 0);
   background-size: 15px 15px, 15px 15px;
 
-  &-magnifier {
-    width: 35px;
-    height: 120px;
-    padding: 10px 0;
-    position: absolute;
-    right: 20px;
-    bottom: 10px;
-    background-color: @light-color;
-    border-radius: 4px;
-    z-index: 10;
-    box-shadow: 3px 3px 10px #00000033;
-  }
-
   &-box {
-    position: relative;
     height: 100%;
     [data-is-moving='true'] {
       user-select: none;
@@ -58,21 +43,17 @@
   }
 
   &-auxline {
-    display: none;
     &-y,
     &-x {
       position: absolute;
-      background-color: #ffae59;
-      z-index: -9999;
+      border: 2px dashed #ffae59;
     }
     &-y {
-      width: 1px;
       height: 100%;
       top: 0;
     }
     &-x {
       width: 100%;
-      height: 1px;
       left: 0;
     }
   }
@@ -80,6 +61,7 @@
 
 .file-list {
   padding: 16px;
+  overflow: auto;
   color: @light-color;
   background-color: @layout-bgc2;
   .ant-tree-list,
