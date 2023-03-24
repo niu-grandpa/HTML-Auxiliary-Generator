@@ -24,7 +24,7 @@ export default function transform(node: VNode): string {
     // 文本节点
     if (type === NodeType.TEXT) {
       splicingTag(tag);
-      return currentLevelResult;
+      return '\n' + backspace + currentLevelResult;
     }
     // 自闭合标签，不用处理孩子内容
     if (SELF_CLOSING_TAG.includes(tag)) {
@@ -39,7 +39,7 @@ export default function transform(node: VNode): string {
       // 如果当前准备进行的递归在之前已进行过，则使用缓存结果避免重复递归
       const temp = Object.assign({}, child);
       // 避免key不同，而节点相同结果也相同，导致取缓存失败
-      temp.key = -1;
+      temp.key = 'cache';
       const jsonKey = JSON.stringify(temp);
       if (memo.has(jsonKey)) {
         template += memo.get(jsonKey);
@@ -65,28 +65,33 @@ function convertToStr(obj: {
 }): string {
   const { backspace, end, tag, close, props } = obj;
   const str = `${backspace}<${end ? '/' : ''}${tag}${close ? ' /' : ''}>`;
-  const res = addProps(str, props || null, end) + '\n';
+  const res = '\n' + addProps(str, props || null, end);
   return res;
 }
 
-function addProps(tag: string, props: VNode['props'], endTag?: boolean): string {
+function addProps(
+  tag: string,
+  props: VNode['props'],
+  endTag?: boolean
+): string {
   if (props === null || endTag) return tag;
 
-  const { attrs, style } = props;
+  const { id, style, className } = props;
   const isSelfClose = tag.endsWith(' />');
   const endPosi = tag.length - (isSelfClose ? 3 : 1);
 
   let res = tag.substring(0, endPosi);
 
-  if (attrs) {
-    for (const key in attrs) {
-      const value = attrs[key];
-      res += ` key="${value}";`;
-    }
+  if (id !== '') {
+    id && (res += ` id="${className}"`);
   }
-  if (style) {
+  if (className !== '') {
+    res += ` class="${className}"`;
+  }
+  if (style && Object.keys(style).length) {
     let inlineStyle = ' style=';
     for (const key in style) {
+      // @ts-ignore
       const value = style[key];
       inlineStyle += `"${getKebabCase2(key)}: ${value};"`;
     }

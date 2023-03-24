@@ -1,7 +1,7 @@
 import { type TreeDataNode } from 'antd';
 import { CreateNodeResult } from '../components/ModalCreateNode';
 import transform from './runtime-transform';
-import { createNodeKey, h, type VNode } from './utils';
+import { createDragVnode, createNodeKey, type VNode } from './utils';
 
 export const enum NodeType {
   CONTAINER,
@@ -31,11 +31,9 @@ function _generate_() {
       children: [],
       alias: alias || value,
       props: {
-        attrs: {
-          class: className,
-          id: identity,
-        },
-        style,
+        className: className || null,
+        id: identity || null,
+        style: style || null,
       },
       key: createNodeKey(),
     };
@@ -52,11 +50,19 @@ function _generate_() {
 
     const createVnode = (node: TreeDataNode): VNode => {
       // @ts-ignore
-      const { title, key, isLeaf, children, type } = node;
-      const vnode = h(type, title as string, null, [], key);
-      if (isLeaf || !children?.length) return vnode;
-      vnode.children = antTreeNodeToVNode(children as TreeDataNode[]);
-      return vnode;
+      const { title, key, isLeaf, children, type, props } = node;
+      const dragVnode = createDragVnode(
+        key as string,
+        type,
+        title as string,
+        props,
+        []
+      );
+
+      if (isLeaf || !children?.length) return dragVnode;
+
+      dragVnode.children = antTreeNodeToVNode(children as TreeDataNode[]);
+      return dragVnode;
     };
 
     let left = 0;

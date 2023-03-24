@@ -14,9 +14,7 @@ const Home: React.FC = () => {
   const [antTreeData, setAntTreeData] = useState<TreeDataNode[]>([]);
 
   useEffect(() => {
-    if (antTreeData.length) {
-      setVnodes(antTreeNodeToVNode(antTreeData));
-    }
+    setVnodes(antTreeNodeToVNode(antTreeData));
   }, [antTreeData]);
 
   useEffect(() => {
@@ -27,7 +25,12 @@ const Home: React.FC = () => {
     <Layout className='layout'>
       <Header>
         <section className='logo' />
-        <Menu theme='light' mode='horizontal' defaultSelectedKeys={['']} items={[]} />
+        <Menu
+          theme='light'
+          mode='horizontal'
+          defaultSelectedKeys={['']}
+          items={[]}
+        />
       </Header>
       <Content style={{ padding: '18px 38px 0 38px' }}>
         <Row gutter={[19, 19]}>
@@ -44,7 +47,8 @@ const Home: React.FC = () => {
         </Row>
       </Content>
       <Footer style={{ textAlign: 'center' }}>
-        HTML Auxiliary Generator ©{new Date().getFullYear()} Created by Ryan John
+        HTML Auxiliary Generator ©{new Date().getFullYear()} Created by Ryan
+        John
       </Footer>
     </Layout>
   );

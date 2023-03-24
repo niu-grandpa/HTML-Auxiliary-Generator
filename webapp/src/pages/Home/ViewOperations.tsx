@@ -1,4 +1,12 @@
-import { FC, memo, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  FC,
+  memo,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { DrawerStyleSettings } from '../../components';
 import core from '../../core';
 import { type VNode } from '../../core/utils';
@@ -8,30 +16,32 @@ type Props = {
   vnodes: VNode[];
 };
 
-const { buildHTMLString } = core;
+const { buildHTMLString, renderDragVnode } = core;
 
 /**视图操作区域 */
 const ViewOperations: FC<Props> = memo(({ vnodes }) => {
   const { activeHandler, getAuxlineData, getIsMoving, getMouseCoordinate } =
-    useElementMovement('isMovingTarget');
+    useElementMovement('isDragTarget');
 
-  const wrapper = useRef<HTMLElement>(null);
+  const wrapperElemRef = useRef<HTMLElement>(null);
 
   const [isMouseMove, setIsMouseMove] = useState(false);
   const [openDrawer, setOpenDrawer] = useState(false);
   const [htmlString, setHTMLString] = useState<string>('');
   const [auxlineData, setAuxlineData] = useState<AuxlineData>();
   const [coordinate, setCoordinate] = useState<number[]>([0, 0]);
+  const [dragNodes, setDragNodes] = useState<ReactNode[]>([]);
 
   getAuxlineData(setAuxlineData);
   getIsMoving(setIsMouseMove);
   getMouseCoordinate((x, y) => setCoordinate([x, y]));
 
   useEffect(() => {
-    activeHandler(wrapper);
-  }, [wrapper, activeHandler]);
+    activeHandler(wrapperElemRef);
+  }, [wrapperElemRef, activeHandler]);
 
   useEffect(() => {
+    setDragNodes(renderDragVnode(vnodes));
     setHTMLString(buildHTMLString(vnodes));
   }, [vnodes]);
 
@@ -83,15 +93,8 @@ const ViewOperations: FC<Props> = memo(({ vnodes }) => {
         onClose={() => setOpenDrawer(false)}
       />
       <section className='view-opts' onContextMenu={onCustomCtxMenu}>
-        <section ref={wrapper} className='view-opts-box'>
-          <div
-            style={{ width: '20%', height: 100, border: ' 1px solid red' }}
-            data-is-moving-target='true'
-          />
-          <button data-is-moving-target='true'>按钮</button>
-          <button data-is-moving-target='true'>按钮</button>
-          <button data-is-moving-target='true'>按钮</button>
-          <button data-is-moving-target='true'>按钮</button>
+        <section ref={wrapperElemRef} className='view-opts-box'>
+          {dragNodes}
           {auxlineData !== undefined && renderAuxline()}
         </section>
       </section>
