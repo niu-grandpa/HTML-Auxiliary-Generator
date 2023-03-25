@@ -1,6 +1,6 @@
 import { type TreeDataNode } from 'antd';
 import { CreateNodeResult } from '../components/ModalCreateNode';
-import transform from './runtime-transform';
+import { transform } from './runtime-transform';
 import { createDragVnode, createNodeKey, type VNode } from './utils';
 
 export const enum NodeType {
@@ -80,12 +80,7 @@ function _generate_() {
    * 根据vnode树构建html字符串
    */
   function buildHTMLString(vnodes: VNode[]): string {
-    let res = '';
-    for (const vnode of vnodes) {
-      res += transform(vnode);
-    }
-    console.log(res);
-
+    const res = transform(vnodes);
     return res;
   }
 

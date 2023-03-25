@@ -60,9 +60,9 @@ function _createElement(
     | null,
   children?: ReactNode[] | string
 ): ReactNode {
-  return createElement(
-    type,
-    { ...props, key, 'data-is-drag-target': true },
-    children
-  );
+  const dataset = {
+    'data-key': key,
+    'data-is-drag-target': true,
+  };
+  return createElement(type, { ...props, key, ...dataset }, children);
 }

@@ -1,5 +1,13 @@
 import { InfoCircleOutlined } from '@ant-design/icons';
-import { Input, InputNumber, message, Modal, Radio, Select, Space, Tooltip } from 'antd';
+import {
+  Input,
+  InputNumber,
+  message,
+  Modal,
+  Radio,
+  Select,
+  Tooltip,
+} from 'antd';
 import { cloneDeep, isEqual } from 'lodash';
 import { FC, memo, useCallback, useEffect, useRef, useState } from 'react';
 import { COMMON_TAGS } from '../assets';
@@ -14,6 +22,7 @@ export type CreateNodeResult = {
   alias: string;
   className: string;
   identity: string;
+  dataset: string;
 };
 
 type Props = Partial<{
@@ -39,10 +48,20 @@ const defaultData = {
   alias: '',
   className: '',
   identity: '',
+  dataset: '',
 };
 
 const ModalCreateNode: FC<Props> = memo(
-  ({ open, type, title, onChange, onCancel, hiddenTextType, disRepeat, disabledRadio }) => {
+  ({
+    open,
+    type,
+    title,
+    onChange,
+    onCancel,
+    hiddenTextType,
+    disRepeat,
+    disabledRadio,
+  }) => {
     const timer = useRef<any>(null);
 
     const [disabled, setDisabled] = useState(false);
@@ -120,7 +139,7 @@ const ModalCreateNode: FC<Props> = memo(
       },
       [onChange, handleCancel, changeData]
     );
-
+    // todo 编辑节点，属性没有改变
     const handleSubmit = useCallback(() => {
       const newData = cloneDeep(data);
       const { type, value } = newData;
@@ -134,7 +153,13 @@ const ModalCreateNode: FC<Props> = memo(
         return;
       }
       if (hasError(isEqual(value, ''), '请选择标签')) return;
-      if (hasError(!leaf && SELF_CLOSING_TAG.includes(value!), '自闭合元素不能作为容器')) return;
+      if (
+        hasError(
+          !leaf && SELF_CLOSING_TAG.includes(value!),
+          '自闭合元素不能作为容器'
+        )
+      )
+        return;
       callback(newData);
     }, [data, hasError, callback]);
 
@@ -169,44 +194,47 @@ const ModalCreateNode: FC<Props> = memo(
               onChange={handleSelectTag}
               placeholder='请选择元素...'
               optionFilterProp='label'
-              // @ts-ignore
-              filterOption={(input, option) => (option?.label ?? '').includes(input)}
+              filterOption={(input, option) =>
+                // @ts-ignore
+                (option?.label ?? '').includes(input)
+              }
             />
-            <Space style={{ margin: '16px 0' }}>
+            <InputNumber
+              disabled={disRepeat}
+              min={defaultData.repeat}
+              addonBefore='创建数量'
+              defaultValue={defaultData.repeat}
+              onChange={value => changeData('repeat', value)}
+            />
+            <Input
+              addonBefore='alias'
+              placeholder='显示在列表的别名'
+              onChange={({ target }) => changeData('alias', target.value)}
+            />
+            <Input
+              addonBefore='class'
+              placeholder='多个类名请用空格分隔'
+              onChange={({ target }) => changeData('className', target.value)}
+            />
+            <Input
+              addonBefore='identity'
+              placeholder='元素id名'
+              onChange={({ target }) => changeData('identity', target.value)}
+            />
+            <Tooltip title='例如: k1="v1" k2="v2"'>
               <Input
-                addonBefore='alias'
-                placeholder='列表显示的别名'
-                onChange={({ target }) => changeData('alias', target.value)}
+                addonBefore='dataset'
+                placeholder='多个属性请用空格分隔'
+                onChange={({ target }) => changeData('dataset', target.value)}
               />
-              <Tooltip title='批量创建节点'>
-                <InputNumber
-                  disabled={disRepeat}
-                  min={defaultData.repeat}
-                  addonBefore='重复数'
-                  defaultValue={defaultData.repeat}
-                  onChange={value => changeData('repeat', value)}
-                />
-              </Tooltip>
-            </Space>
-            <Space>
-              <Tooltip title='添加多个类名请用空格分隔'>
-                <Input
-                  addonBefore='class'
-                  placeholder='元素类名'
-                  onChange={({ target }) => changeData('className', target.value)}
-                />
-              </Tooltip>
-              <Input
-                addonBefore='identit'
-                placeholder='元素id'
-                onChange={({ target }) => changeData('identity', target.value)}
-              />
-            </Space>
+            </Tooltip>
           </section>
         )}
         {!disabledRadio && (
           <Radio.Group value={radioVal} onChange={handleChangeType}>
-            <Radio value={NodeType.CONTAINER} disabled={disabled || type === NodeType.TEXT}>
+            <Radio
+              value={NodeType.CONTAINER}
+              disabled={disabled || type === NodeType.TEXT}>
               <Tooltip title='允许在此节点下嵌套子节点'>容器节点</Tooltip>
             </Radio>
             <Radio value={NodeType.SINGLE} disabled={type === NodeType.TEXT}>
