@@ -1,4 +1,12 @@
-import { FC, memo, MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  FC,
+  memo,
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import '../assets/components/ContextMenu.less';
 
@@ -26,7 +34,12 @@ type Props = {
   onClick: (type: CTX_MENU_OPTS) => void;
 };
 
-type ItemsType = { text: string; type: CTX_MENU_OPTS; hidden?: boolean; disabled?: boolean };
+type ItemsType = {
+  text: string;
+  type: CTX_MENU_OPTS;
+  hidden?: boolean;
+  disabled?: boolean;
+};
 
 const ContextMenu: FC<Props> = memo(
   ({ x, y, open, isLeaf, isText, disPaste, onClick, onClose }) => {
@@ -48,12 +61,12 @@ const ContextMenu: FC<Props> = memo(
         {
           text: '添加文本...',
           type: CTX_MENU_OPTS.ADD_TEXT,
-          hidden: isText,
+          hidden: isLeaf,
         },
         {
           text: '样式配置...',
           type: CTX_MENU_OPTS.SET_STYLE,
-          hidden: isText,
+          hidden: isLeaf,
         },
         {
           text: '剪切',

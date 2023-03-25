@@ -84,6 +84,8 @@ function _generate_() {
     for (const vnode of vnodes) {
       res += transform(vnode);
     }
+    console.log(res);
+
     return res;
   }
 

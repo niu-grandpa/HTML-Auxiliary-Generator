@@ -21,8 +21,7 @@ function render(vnodes: VNode[]): ReactNode[] {
   const traverse = (vnodes: VNode[]) => {
     const len = vnodes.length;
     const reactNodes = Array<ReactNode>(len);
-
-    const createReactNode = (vnode: VNode): ReactNode => {
+    const getReactNode = (vnode: VNode): ReactNode => {
       const { type, key, tag, props, children } = vnode;
       let node: ReactNode = null;
       if (type === NodeType.TEXT) {
@@ -43,8 +42,8 @@ function render(vnodes: VNode[]): ReactNode[] {
     let h = len - 1;
 
     while (l <= h) {
-      reactNodes[l] = createReactNode(vnodes[l++]);
-      reactNodes[h] = createReactNode(vnodes[h--]);
+      reactNodes[l] = getReactNode(vnodes[l++]);
+      reactNodes[h] = getReactNode(vnodes[h--]);
     }
 
     return reactNodes;

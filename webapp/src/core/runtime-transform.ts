@@ -4,8 +4,6 @@ import { type VNode } from './utils';
 
 export const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
 
-const memo = new Map<string, string>();
-
 /**
  * 转换节点对象为HTML字符串模板
  * @param {object} node
@@ -35,18 +33,7 @@ export default function transform(node: VNode): string {
     splicingTag(convertToStr({ tag: tag, backspace, props }));
     // 处理父标签下嵌套的子标签
     for (const child of children) {
-      // 递归处理子节点对象。剪枝: 每次递归前先获取哈希表的缓存，
-      // 如果当前准备进行的递归在之前已进行过，则使用缓存结果避免重复递归
-      const temp = Object.assign({}, child);
-      // 避免key不同，而节点相同结果也相同，导致取缓存失败
-      temp.key = 'cache';
-      const jsonKey = JSON.stringify(temp);
-      if (memo.has(jsonKey)) {
-        template += memo.get(jsonKey);
-        continue;
-      }
-      const result = toHTMLString(child, tab + 1);
-      memo.set(jsonKey, result);
+      toHTMLString(child, tab + 1);
     }
     // 结束标签
     splicingTag(convertToStr({ tag, backspace, end: true }));
@@ -82,10 +69,10 @@ function addProps(
 
   let res = tag.substring(0, endPosi);
 
-  if (id !== '') {
-    id && (res += ` id="${className}"`);
+  if (id) {
+    id && (res += ` id="${id}"`);
   }
-  if (className !== '') {
+  if (className) {
     res += ` class="${className}"`;
   }
   if (style && Object.keys(style).length) {
@@ -98,5 +85,5 @@ function addProps(
     res += inlineStyle;
   }
 
-  return `${res}${isSelfClose ? ' /' : ''}>}`;
+  return `${res}${isSelfClose ? ' /' : ''}>`;
 }
