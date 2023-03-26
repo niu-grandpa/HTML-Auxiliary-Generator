@@ -1,5 +1,5 @@
 import { type TreeDataNode } from 'antd';
-import { CreateNodeResult } from '../components/ModalCreateNode';
+import { FormOfNodeValues } from '../components/ModalFormOfNodeItem';
 import { transform } from './runtime-transform';
 import { createDragVnode, createNodeKey, type VNode } from './utils';
 
@@ -16,14 +16,12 @@ export { generate, savedKeys };
 function _generate_() {
   /**
    * 创建antd tree节点
-   * @param tag
-   * @param isLeaf
-   * @returns
    */
   function createAntTreeNode(
-    data: CreateNodeResult & { style?: Partial<CSSStyleDeclaration> }
+    values: FormOfNodeValues & { style?: Partial<CSSStyleDeclaration> }
   ): TreeDataNode {
-    const { type, leaf, value, alias, className, identity, style } = data;
+    const { type, leaf, value, alias, className, identity, style, attributes } =
+      values;
     const node = {
       type,
       isLeaf: leaf,
@@ -31,9 +29,10 @@ function _generate_() {
       children: [],
       alias: alias || value,
       props: {
-        className: className || null,
         id: identity || null,
         style: style || null,
+        className: className || null,
+        attributes,
       },
       key: createNodeKey(),
     };
@@ -42,26 +41,20 @@ function _generate_() {
 
   /**
    * antd Tree节点转换为vnode
-   * @param {TreeDataNode[]} root
-   * @returns {VNode[]}
    */
   function antTreeNodeToVNode(root: TreeDataNode[]): VNode[] {
-    const vdoms = Array<VNode>(root.length);
+    const vnodes = Array<VNode>(root.length);
 
     const createVnode = (node: TreeDataNode): VNode => {
       // @ts-ignore
-      const { title, key, isLeaf, children, type, props } = node;
+      const { title, key, children, type, props } = node;
       const dragVnode = createDragVnode(
         key as string,
         type,
         title as string,
         props,
-        []
+        children?.length ? antTreeNodeToVNode(children as TreeDataNode[]) : []
       );
-
-      if (isLeaf || !children?.length) return dragVnode;
-
-      dragVnode.children = antTreeNodeToVNode(children as TreeDataNode[]);
       return dragVnode;
     };
 
@@ -69,11 +62,11 @@ function _generate_() {
     let right = root.length - 1;
 
     while (left <= right) {
-      vdoms[left] = createVnode(root[left++]);
-      vdoms[right] = createVnode(root[right--]);
+      vnodes[left] = createVnode(root[left++]);
+      vnodes[right] = createVnode(root[right--]);
     }
 
-    return vdoms;
+    return vnodes;
   }
 
   /**

@@ -24,9 +24,9 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { DrawerStyleSettings, ModalCreateNode } from '../../components';
+import { DrawerStyleSettings, ModalFormOfNode } from '../../components';
 import { ContextMenu, CTX_MENU_OPTS } from '../../components/ContextMenu';
-import { type CreateNodeResult } from '../../components/ModalCreateNode';
+import { FormOfNodeValues } from '../../components/ModalFormOfNodeItem';
 import core from '../../core';
 import { NodeType } from '../../core/runtime-generate';
 import { SELF_CLOSING_TAG } from '../../core/runtime-transform';
@@ -49,23 +49,22 @@ const nodeIcons = {
 
 const DirectoryTree: FC<Props> = memo(
   ({ fieldNames, selectedKey, onChange }) => {
-    const [mdlTitle, setMdlTitle] = useState('新建节点');
+    const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
+    const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
+
+    const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
+
+    const [copyNode, setCopyNode] = useState<TreeDataNode | null>(null);
+    const [selectedNode, setSelectedNode] = useState<TreeDataNode | null>(null);
+    const [nodeInitValues, setNodeInitValues] = useState<FormOfNodeValues>();
+
     const [isLeaf, setIsLeaf] = useState(false);
     const [isText, setIsText] = useState(false);
     const [disPaste, setDisPaste] = useState(true);
-    const [openMdl, setOpenModal] = useState(false);
-    const [isEditTag, setIsEditTag] = useState(false);
-    const [disRepeat, setDisRepeat] = useState(false);
+    const [isEdit, setIsEdit] = useState(false);
     const [openDrawer, setOpenDrawer] = useState(false);
-    const [hiddenTextType, sethCText] = useState(false);
     const [openCtxMenu, setOpenCtxMenu] = useState(false);
-    const [disabledRadio, setDisabledRadio] = useState(false);
-    const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
-    const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
-    const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
-    const [copyNode, setCopyNode] = useState<TreeDataNode>();
-    const [selectedNode, setSelectedNode] = useState<TreeDataNode>();
-    const [createType, setCreateType] = useState<NodeType>(NodeType.CONTAINER);
+    const [openModalForm, setOpenModalForm] = useState(false);
 
     useEffect(() => {
       onChange(treeData, selectedKeys);
@@ -76,54 +75,51 @@ const DirectoryTree: FC<Props> = memo(
       else setDisPaste(false);
     }, [copyNode, isLeaf]);
 
+    useEffect(() => {
+      if (selectedNode !== null) {
+        // @ts-ignore
+        const { type, title, isLeaf, alias, props } = selectedNode;
+        const { id, className, attributes } = props;
+        setNodeInitValues({
+          type,
+          value: `${title}`,
+          leaf: isLeaf!,
+          alias,
+          repeat: 1,
+          identity: id,
+          className,
+          attributes,
+        });
+      }
+    }, [selectedNode]);
+
     const initState = useCallback(() => {
-      hiddenTextType && sethCText(false);
       isText && setIsText(false);
       isLeaf && setIsLeaf(false);
-      isEditTag && setIsEditTag(false);
-      copyNode && setCopyNode(undefined);
-      disRepeat && setDisRepeat(false);
-      disabledRadio && setDisabledRadio(false);
-      mdlTitle && setMdlTitle('新建节点');
-      createType > 0 && setCreateType(NodeType.CONTAINER);
-    }, [
-      createType,
-      isText,
-      hiddenTextType,
-      mdlTitle,
-      isEditTag,
-      disRepeat,
-      isLeaf,
-      copyNode,
-      disabledRadio,
-    ]);
+      isEdit && setIsEdit(false);
+      copyNode && setCopyNode(null);
+    }, [isText, isEdit, isLeaf, copyNode]);
 
     const handleOpenMdl = useCallback(
       (leaf?: boolean) => {
-        // @ts-ignore
-        if (selectedNode && isEqual(selectedNode['type'], NodeType.TEXT)) {
-          message.info('文本内容无法被增添节点');
-          return;
-        }
         if (!isEqual(leaf, undefined)) {
           setIsLeaf(leaf!);
-          setCreateType(leaf ? NodeType.SINGLE : NodeType.CONTAINER);
         }
-        setOpenModal(true);
+        setOpenModalForm(true);
         setSelectedNode(selectedNode);
       },
       [selectedNode]
     );
 
-    const handleCloseMdl = useCallback(() => {
+    const handleCloseModal = useCallback(() => {
       initState();
-      setOpenModal(false);
+      setOpenModalForm(false);
     }, [initState]);
 
-    const createNode = useCallback((data: CreateNodeResult) => {
+    const createNode = useCallback((values: FormOfNodeValues) => {
       // todo 样式
-      const node = createAntTreeNode(data);
-      node.icon = nodeIcons[data.type];
+      const node = createAntTreeNode(values);
+      node.icon = nodeIcons[values.type];
       return node;
     }, []);
 
@@ -131,60 +127,53 @@ const DirectoryTree: FC<Props> = memo(
       (
         root: TreeDataNode[],
         node: TreeDataNode,
-        { value, alias }: CreateNodeResult
+        { value, alias, className, identity, attributes }: FormOfNodeValues
       ) => {
         node.title = value;
         // @ts-ignore
         node.alias = alias || value;
+        // @ts-ignore
+        node.props = {
+          id: identity,
+          className,
+          attributes,
+        };
         return updateAntTree(root, node);
       },
       []
     );
 
     const updateNode = useCallback(
-      (root: TreeDataNode[], data: CreateNodeResult, target: TreeDataNode) => {
-        const { value: tag } = data;
+      (
+        root: TreeDataNode[],
+        values: FormOfNodeValues,
+        target: TreeDataNode
+      ) => {
+        const { value: tag } = values;
         // 1.修改节点标签
-        if (isEqual(isEditTag, true)) {
+        if (isEqual(isEdit, true)) {
           if (target.children?.length && SELF_CLOSING_TAG.includes(tag)) {
             confirm({
               title: '警告',
               content: '自闭合元素不能作为容器，会清空该节点下的子节点',
               onOk() {
                 target.children!.length = 0;
-                return editNode(root, target, data);
+                return editNode(root, target, values);
               },
             });
+          } else {
+            return editNode(root, target, values);
           }
-          return editNode(root, target, data);
         }
         // 2.新增节点
-        target!.children?.push(createNode(data));
+        target!.children?.push(createNode(values));
         return updateAntTree(root, target);
       },
-      [isEditTag, editNode, createNode]
+      [isEdit, editNode, createNode]
     );
 
     const onClearSelectedNode = useCallback(() => {
-      setSelectedNode(undefined);
-    }, []);
-
-    const onCreateSinlge = useCallback(() => {
-      setOpenModal(true);
-      setCreateType(NodeType.SINGLE);
-      setMdlTitle('新建单节点');
-    }, []);
-
-    const onCreateContainer = useCallback(() => {
-      setOpenModal(true);
-      setCreateType(NodeType.CONTAINER);
-      setMdlTitle('新建容器节点');
-    }, []);
-
-    const onAddText = useCallback(() => {
-      setOpenModal(true);
-      setMdlTitle('添加文本内容');
-      setCreateType(NodeType.TEXT);
+      setSelectedNode(null);
     }, []);
 
     const onSetStyle = useCallback(() => {
@@ -244,16 +233,12 @@ const DirectoryTree: FC<Props> = memo(
       [onClearSelectedNode, treeData]
     );
 
-    const onEditNode = useCallback(() => {
-      sethCText(true);
-      setOpenModal(true);
-      setIsEditTag(true);
-      setDisRepeat(true);
-      setDisabledRadio(true);
-      setMdlTitle('编辑节点');
+    const handleClickNode = useCallback((keys: Key[], info: any) => {
+      setSelectedKeys(keys);
+      setSelectedNode(info.selectedNodes[0]);
     }, []);
 
-    const handleOpenCtxMenu = useCallback((info: any) => {
+    const handleRightClick = useCallback((info: any) => {
       const { event, node } = info;
       const { clientX, clientY } = event as MouseEvent;
       setSelectedNode(node);
@@ -263,17 +248,17 @@ const DirectoryTree: FC<Props> = memo(
       setCtxMenuPosi({ x: clientX, y: clientY + 10 });
     }, []);
 
-    const handleCtxClick = useCallback(
+    const handleCtxItemClick = useCallback(
       (value: CTX_MENU_OPTS) => {
         switch (value) {
           case CTX_MENU_OPTS.NEW_LEAF:
-            onCreateSinlge();
+            setOpenModalForm(true);
             break;
           case CTX_MENU_OPTS.NEW_NON_LEAF:
-            onCreateContainer();
+            setOpenModalForm(true);
             break;
           case CTX_MENU_OPTS.ADD_TEXT:
-            onAddText();
+            setOpenModalForm(true);
             break;
           case CTX_MENU_OPTS.SET_STYLE:
             onSetStyle();
@@ -288,7 +273,8 @@ const DirectoryTree: FC<Props> = memo(
             onPasteNode(copyNode!, selectedNode!);
             break;
           case CTX_MENU_OPTS.EDIT_TAG:
-            onEditNode();
+            setOpenModalForm(true);
+            setIsEdit(true);
             break;
           case CTX_MENU_OPTS.REMOVE:
             onDeleteNode(selectedNode!);
@@ -299,35 +285,26 @@ const DirectoryTree: FC<Props> = memo(
       [
         copyNode,
         selectedNode,
-        onAddText,
         onCopyNode,
-        onCreateContainer,
-        onCreateSinlge,
         onCutNode,
         onDeleteNode,
         onPasteNode,
-        onEditNode,
         onSetStyle,
       ]
     );
 
-    const handleClickNode = useCallback((keys: Key[], info: any) => {
-      setSelectedKeys(keys);
-      setSelectedNode(info.selectedNodes[0]);
-    }, []);
-
-    const handleChangeTree = useCallback(
-      (res: CreateNodeResult) => {
+    const handleFinish = useCallback(
+      (values: FormOfNodeValues) => {
         const target = cloneDeep(selectedNode)!;
-        let { repeat } = res;
+        let { repeat } = values;
         let newData: TreeDataNode[] = cloneDeep(treeData);
         while (repeat--) {
           // 没有选中任何节点进行创建，说明是要创建根节点
           if (!target) {
-            newData.push(createNode(res));
+            newData.push(createNode(values));
             continue;
           }
-          newData = updateNode(newData, res, target)!;
+          newData = updateNode(newData, values, target)!;
         }
         setTreeData(newData);
         initState();
@@ -345,13 +322,12 @@ const DirectoryTree: FC<Props> = memo(
 
     return (
       <>
-        <ModalCreateNode
-          open={openMdl}
-          title={mdlTitle}
-          type={createType}
-          onCancel={handleCloseMdl}
-          onChange={handleChangeTree}
-          {...{ disRepeat, disabledRadio, hiddenTextType }}
+        <ModalFormOfNode
+          edit={isEdit}
+          open={openModalForm}
+          onCancel={handleCloseModal}
+          defaultValues={nodeInitValues}
+          onValuesChange={handleFinish}
         />
         <section className='file-list' onContextMenu={e => e.preventDefault()}>
           <Row>
@@ -393,12 +369,12 @@ const DirectoryTree: FC<Props> = memo(
                 draggable={{ icon: false }}
                 onSelect={handleClickNode}
                 selectedKeys={[selectedKey]}
-                onRightClick={handleOpenCtxMenu}
+                onRightClick={handleRightClick}
               />
               <ContextMenu
                 open={openCtxMenu}
                 onClose={onClearSelectedNode}
-                onClick={handleCtxClick}
+                onClick={handleCtxItemClick}
                 {...{ ...ctxMenuPosi, isLeaf, isText, disPaste }}
               />
               <DrawerStyleSettings

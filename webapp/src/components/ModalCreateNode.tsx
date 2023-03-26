@@ -139,15 +139,13 @@ const ModalCreateNode: FC<Props> = memo(
       },
       [onChange, handleCancel, changeData]
     );
-    // todo 编辑节点，属性没有改变
+    // todo 编辑节点，属性没有改变, 加到 props 里
     const handleSubmit = useCallback(() => {
       const newData = cloneDeep(data);
       const { type, value } = newData;
       const isText = isEqual(type, NodeType.TEXT);
       const leaf = isEqual(type, NodeType.SINGLE) || isText;
-
       newData.leaf = leaf;
-
       if (isText) {
         callback(newData);
         return;

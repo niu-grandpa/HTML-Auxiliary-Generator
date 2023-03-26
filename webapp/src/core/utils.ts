@@ -12,6 +12,7 @@ export type VNode = {
     id: string;
     className: string;
     style: CSSProperties;
+    attributes: { name: string; value: string }[];
   } | null;
 };
 

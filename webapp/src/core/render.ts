@@ -21,6 +21,7 @@ function render(vnodes: VNode[]): ReactNode[] {
   const traverse = (vnodes: VNode[]) => {
     const len = vnodes.length;
     const reactNodes = Array<ReactNode>(len);
+
     const getReactNode = (vnode: VNode): ReactNode => {
       const { type, key, tag, props, children } = vnode;
       let node: ReactNode = null;
@@ -28,10 +29,20 @@ function render(vnodes: VNode[]): ReactNode[] {
         const text = tag;
         node = text;
       } else {
+        const { id, className, style, attributes } = props!;
+        const _props = {
+          id,
+          style,
+          className,
+        };
+        for (const { name, value } of attributes) {
+          // @ts-ignore
+          _props[name] = value;
+        }
         node = _createElement(
           key,
           tag,
-          props,
+          _props,
           children.length ? traverse(children) : undefined
         );
       }

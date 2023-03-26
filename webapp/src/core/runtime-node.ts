@@ -1,18 +1,32 @@
 import { TreeDataNode } from 'antd';
 
+function createIndexMap(source: unknown[]) {
+  const map = new Map<unknown, number>();
+  for (let i = 0; i < source.length; i++) {
+    map.set(source[i], i);
+  }
+  return map;
+}
+
 /**
  * 对结构列表的某个节点单独修改时，需要将其更新回源对象列表中
  * @param root
  * @param node
  * @returns
  */
-export function updateAntTree(root: TreeDataNode[], node: TreeDataNode): TreeDataNode[] {
+export function updateAntTree(
+  root: TreeDataNode[],
+  node: TreeDataNode
+): TreeDataNode[] {
   const oldNode = findNode(root, node);
   oldNode && patchNode(oldNode, node);
   return root;
 }
 
-function findNode(root: TreeDataNode[], node: TreeDataNode): TreeDataNode | undefined {
+function findNode(
+  root: TreeDataNode[],
+  node: TreeDataNode
+): TreeDataNode | undefined {
   let left = 0;
   let right = root.length - 1;
   while (left <= right) {
@@ -65,6 +79,10 @@ function patchNode(n1: TreeDataNode, n2: TreeDataNode) {
     // @ts-ignore
     n1.alias = n2.alias;
   }
+  // @ts-ignore
+  if (n1.props !== n2.props) {
+    patchProps(n1, n2);
+  }
   const oldChildren = n1.children!;
   const newChildren = n2.children!;
   if (oldChildren.length !== newChildren.length) {
@@ -114,4 +132,27 @@ function patchChildren(c1: TreeDataNode[], c2: TreeDataNode[]) {
   return c1;
 }
 
-function patchProps() {}
+function patchProps(n1: TreeDataNode, n2: TreeDataNode) {
+  // @ts-ignore
+  const oldProps = n1.props;
+  // @ts-ignore
+  const newProps = n2.props;
+  for (const key in oldProps) {
+    const oldValue = oldProps[key];
+    const newValue = newProps[key];
+    //  attributes属性 -> [{ name:string, value: string }, ...]
+    if (Array.isArray(oldValue) && Array.isArray(newValue)) {
+      const oldAttrs = oldValue;
+      const newAttrs = newValue;
+      if (!oldAttrs.length && newAttrs.length) {
+        oldProps[key] = newAttrs;
+      } else if (oldAttrs.length && !newAttrs.length) {
+        oldProps[key] = [];
+      } else {
+        const maxLen = Math.max(oldAttrs.length, newAttrs.length);
+      }
+    } else if (oldValue !== newValue) {
+      oldProps[key] = newValue;
+    }
+  }
+}
