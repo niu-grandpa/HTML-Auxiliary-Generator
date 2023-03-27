@@ -22,19 +22,22 @@ function _generate_() {
   ): TreeDataNode {
     const { type, leaf, value, alias, className, identity, style, attributes } =
       values;
-    const node = {
+    const extra = {
       type,
+      alias: alias || value,
+      props: {
+        id: identity || undefined,
+        className: className || undefined,
+        attributes: attributes || [],
+        style: { ...style, display: 'inline-block' },
+      },
+    };
+    const node = {
       isLeaf: leaf,
       title: value,
       children: [],
-      alias: alias || value,
-      props: {
-        id: identity || null,
-        style: style || null,
-        className: className || null,
-        attributes,
-      },
       key: createNodeKey(),
+      ...extra,
     };
     return node;
   }
@@ -74,6 +77,7 @@ function _generate_() {
    */
   function buildHTMLString(vnodes: VNode[]): string {
     const res = transform(vnodes);
+    console.log(res);
     return res;
   }
 

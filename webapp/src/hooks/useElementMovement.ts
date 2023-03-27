@@ -198,6 +198,7 @@ export function useElementMovement(
       event.stopPropagation();
 
       const { target, clientX, clientY } = event;
+
       // 通过事件冒泡获取获取是否为目标对象
       if ((target as HTMLElement).dataset[tagetDatasetName] !== 'true') {
         return false;

@@ -26,6 +26,7 @@ import {
 } from 'react';
 import { DrawerStyleSettings, ModalFormOfNode } from '../../components';
 import { ContextMenu, CTX_MENU_OPTS } from '../../components/ContextMenu';
+import { __defaultValues } from '../../components/ModalFormOfNode';
 import { FormOfNodeValues } from '../../components/ModalFormOfNodeItem';
 import core from '../../core';
 import { NodeType } from '../../core/runtime-generate';
@@ -56,7 +57,8 @@ const DirectoryTree: FC<Props> = memo(
 
     const [copyNode, setCopyNode] = useState<TreeDataNode | null>(null);
     const [selectedNode, setSelectedNode] = useState<TreeDataNode | null>(null);
-    const [nodeInitValues, setNodeInitValues] = useState<FormOfNodeValues>();
+    const [nodeInitValues, setNodeInitValues] =
+      useState<FormOfNodeValues>(__defaultValues);
 
     const [isLeaf, setIsLeaf] = useState(false);
     const [isText, setIsText] = useState(false);
@@ -103,7 +105,17 @@ const DirectoryTree: FC<Props> = memo(
     const handleOpenMdl = useCallback(
       (leaf?: boolean) => {
         if (!isEqual(leaf, undefined)) {
-          setIsLeaf(leaf!);
+          const isl = isEqual(leaf, true);
+          setIsLeaf(isl);
+          setNodeInitValues(v => {
+            v!.type = isl ? NodeType.SINGLE : NodeType.CONTAINER;
+            return v;
+          });
+        } else {
+          setNodeInitValues(v => {
+            v!.type = NodeType.CONTAINER;
+            return v;
+          });
         }
         setOpenModalForm(true);
         setSelectedNode(selectedNode);
@@ -248,17 +260,25 @@ const DirectoryTree: FC<Props> = memo(
       setCtxMenuPosi({ x: clientX, y: clientY + 10 });
     }, []);
 
+    const crea = useCallback((type: NodeType) => {
+      setOpenModalForm(true);
+      setNodeInitValues(v => {
+        v!.type = type;
+        return v;
+      });
+    }, []);
+
     const handleCtxItemClick = useCallback(
       (value: CTX_MENU_OPTS) => {
         switch (value) {
           case CTX_MENU_OPTS.NEW_LEAF:
-            setOpenModalForm(true);
+            crea(NodeType.SINGLE);
             break;
           case CTX_MENU_OPTS.NEW_NON_LEAF:
-            setOpenModalForm(true);
+            crea(NodeType.CONTAINER);
             break;
           case CTX_MENU_OPTS.ADD_TEXT:
-            setOpenModalForm(true);
+            crea(NodeType.TEXT);
             break;
           case CTX_MENU_OPTS.SET_STYLE:
             onSetStyle();
@@ -283,6 +303,7 @@ const DirectoryTree: FC<Props> = memo(
         setOpenCtxMenu(false);
       },
       [
+        crea,
         copyNode,
         selectedNode,
         onCopyNode,

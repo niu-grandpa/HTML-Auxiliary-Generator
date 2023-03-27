@@ -1,6 +1,6 @@
 import { TreeDataNode } from 'antd';
 
-function createIndexMap(source: unknown[]) {
+function createIndexMap(source: unknown[]): Map<unknown, number> {
   const map = new Map<unknown, number>();
   for (let i = 0; i < source.length; i++) {
     map.set(source[i], i);
@@ -109,13 +109,14 @@ function patchChildren(c1: TreeDataNode[], c2: TreeDataNode[]) {
     c1.push(...c2.slice(oldLen, newLen));
   } // 4.删除节点
   else if (oldLen > newLen) {
+    const idxMap = createIndexMap(c1);
     let l = 0;
     let h = oldLen - 1;
     while (l <= h) {
       const leftChild = c1[l++];
       const rightChild = c1[h++];
       if (!c2.includes(leftChild) || !c2.includes(rightChild)) {
-        const targetIdx = c1.indexOf(leftChild || rightChild);
+        const targetIdx = idxMap.get(leftChild || rightChild)!;
         c1.splice(targetIdx, 1);
         break;
       }
@@ -140,19 +141,21 @@ function patchProps(n1: TreeDataNode, n2: TreeDataNode) {
   for (const key in oldProps) {
     const oldValue = oldProps[key];
     const newValue = newProps[key];
+    oldProps[key] = newValue;
     //  attributes属性 -> [{ name:string, value: string }, ...]
-    if (Array.isArray(oldValue) && Array.isArray(newValue)) {
-      const oldAttrs = oldValue;
-      const newAttrs = newValue;
-      if (!oldAttrs.length && newAttrs.length) {
-        oldProps[key] = newAttrs;
-      } else if (oldAttrs.length && !newAttrs.length) {
-        oldProps[key] = [];
-      } else {
-        const maxLen = Math.max(oldAttrs.length, newAttrs.length);
-      }
-    } else if (oldValue !== newValue) {
-      oldProps[key] = newValue;
-    }
+    // if (Array.isArray(oldValue) && Array.isArray(newValue)) {
+    //   const oldAttrs = oldValue;
+    //   const newAttrs = newValue;
+    //   if (!oldAttrs.length && newAttrs.length) {
+    //     oldProps[key] = newAttrs;
+    //   } else if (oldAttrs.length && !newAttrs.length) {
+    //     oldProps[key] = [];
+    //   } else {
+    //     const indexMap = createIndexMap(oldAttrs);
+    // todo
+    //   }
+    // } else if (oldValue !== newValue) {
+    //   oldProps[key] = newValue;
+    // }
   }
 }

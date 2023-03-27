@@ -6,58 +6,75 @@ export const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
 
 export function transform(dragVnodes: VNode[]): string {
   const html: string[] = [];
-  toArrayOfStrings(dragVnodes, html, html.slice());
-  return formatHtml(html);
+  toHTMLStrings(dragVnodes, html, 0, 2);
+  return html.join('');
 }
 
-function toArrayOfStrings(
+function toHTMLStrings(
   dragVnodes: VNode[],
-  res: string[],
-  temp: string[]
+  html: string[],
+  space: number,
+  indentation: number
 ): string[] {
+  const addNewline = () => {
+    html.push('\n');
+  };
+  const processingProps = (
+    startTag: string,
+    props: VNode['props'],
+    len: number,
+    selfClose: boolean
+  ) => {
+    const { style, className, id, attributes } = props!;
+    // <div> -> <div , <input /> -> <input
+    startTag = startTag.substring(0, len);
+    if (id) startTag += ` id="${id}"`;
+    if (className) startTag += ` class="${className}"`;
+    if (style && Object.keys(style).length) {
+      let inline = ' style=';
+      for (const key in style) {
+        // @ts-ignore
+        const value = style[key];
+        inline += `"${getKebabCase2(key)}: ${value}"; `;
+      }
+      startTag += inline.trimEnd();
+    }
+    if (attributes.length) {
+      for (const { name, value } of attributes) {
+        startTag += ` ${name}="${value}"`;
+      }
+    }
+    startTag += `${selfClose ? ' />' : '>'}`;
+    return startTag;
+  };
+
   for (const node of dragVnodes) {
     const { type, tag, props, children } = node;
+    const whiteSpace = ' '.repeat(space);
     if (type === NodeType.TEXT) {
-      temp.push(tag);
+      html.push(`${whiteSpace}${tag}`);
+      addNewline();
       continue;
     }
     const isSelfClose = SELF_CLOSING_TAG.includes(tag);
-    temp.push(`${isSelfClose ? `<${tag} />` : `<${tag}>`}`);
+    let startTag = '';
+    let endTag = '';
+    startTag = isSelfClose ? `<${tag} />` : `<${tag}>`;
     if (props !== null) {
-      const { style, className, id, attributes } = props;
-      // <div> -> <div , <input /> -> <input
-      let startTag = temp.pop()!.substring(0, tag.length + 1);
-      if (id) {
-        startTag += ` id="${id}"`;
-      }
-      if (className) {
-        startTag += ` class="${className}"`;
-      }
-      if (style && Object.keys(style).length) {
-        let inline = ' style=';
-        for (const key in style) {
-          // @ts-ignore
-          const value = style[key];
-          inline += `${getKebabCase2(key)}=" ${value}"; `;
-        }
-        startTag += inline.trimEnd();
-      }
-      if (attributes.length) {
-        for (const { name, value } of attributes) {
-          startTag += ` ${name}="${value}"`;
-        }
-      }
-      startTag += `${isSelfClose ? ' />' : '>'}`;
-      temp.push(startTag);
+      startTag = processingProps(startTag, props, tag.length + 1, isSelfClose);
     }
-    if (children.length) toArrayOfStrings(children, res.slice(), temp);
-    if (!isSelfClose) temp.push(`</${tag}>`);
+    html.push(`${whiteSpace}${startTag}`);
+    if (isSelfClose) {
+      addNewline();
+      continue;
+    }
+    if (children.length) {
+      addNewline();
+      toHTMLStrings(children, html, space + indentation, indentation);
+    }
+    endTag = `${children.length ? whiteSpace : ''}</${tag}>`;
+    html.push(endTag);
+    addNewline();
   }
-  res.push(temp.join(''));
-  return res;
-}
-
-function formatHtml(html: string[]) {
-  console.log(html.join(''));
-  return '';
+  return html;
 }

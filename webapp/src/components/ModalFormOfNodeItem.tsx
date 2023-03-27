@@ -13,6 +13,7 @@ import { useForm } from 'antd/es/form/Form';
 import { FC, memo, useCallback, useEffect, useState } from 'react';
 import { NodeType } from '../core/runtime-generate';
 import { SELF_CLOSING_TAG } from '../core/runtime-transform';
+import { __defaultValues } from './ModalFormOfNode';
 
 export type FormOfNodeValues = {
   value: string;
@@ -42,6 +43,12 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
     );
     const [isSelfCloseTag, setIsSCTag] = useState(false);
     const [nodeType, setNodeType] = useState<NodeType>(initialValues!.type);
+
+    useEffect(() => {
+      if (!edit) {
+        form.setFieldsValue({ ...__defaultValues, type: initialValues!.type });
+      }
+    }, [edit, form, initialValues]);
 
     useEffect(() => {
       if (initialValues?.value === initialValues?.alias) {
@@ -77,13 +84,23 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
 
     const handleFinish = useCallback(
       (values: FormOfNodeValues) => {
-        if (!values.value) {
+        if (nodeType !== NodeType.TEXT && !values.value) {
           message.error('标签不能为空');
           return;
         }
-        onFinish?.(values);
+        if (nodeType === NodeType.TEXT) {
+          const obj = {
+            ...__defaultValues,
+            // @ts-ignore
+            value: values.text,
+            type: values.type,
+          };
+          onFinish?.(obj);
+        } else {
+          onFinish?.(values);
+        }
       },
-      [onFinish]
+      [onFinish, nodeType]
     );
 
     return (

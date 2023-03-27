@@ -14,7 +14,7 @@ type Props = {
   onValuesChange: (values: FormOfNodeValues) => void;
 };
 
-const __defaultValues: FormOfNodeValues = {
+export const __defaultValues: FormOfNodeValues = {
   value: '',
   leaf: false,
   type: NodeType.CONTAINER,
@@ -31,7 +31,9 @@ const ModalFormOfNode: FC<Partial<Props>> = memo(
       useState<FormOfNodeValues>(__defaultValues);
 
     useEffect(() => {
-      if (defaultValues) setInitialValues(defaultValues);
+      if (defaultValues) {
+        setInitialValues(defaultValues);
+      }
     }, [defaultValues]);
 
     const handleCancel = useCallback(() => {
