@@ -23,11 +23,10 @@ function render(vnodes: VNode[]): ReactNode[] {
     const reactNodes = Array<ReactNode>(len);
 
     const getReactNode = (vnode: VNode): ReactNode => {
-      const { type, key, tag, props, children } = vnode;
+      const { type, key, tag, props, children, content } = vnode;
       let node: ReactNode = null;
       if (type === NodeType.TEXT) {
-        const text = tag;
-        node = text;
+        node = content;
       } else {
         const { id, className, style, attributes } = props!;
         const _props = {
@@ -39,12 +38,7 @@ function render(vnodes: VNode[]): ReactNode[] {
           // @ts-ignore
           _props[name] = value;
         }
-        node = _createElement(
-          key,
-          tag,
-          _props,
-          children.length ? traverse(children) : undefined
-        );
+        node = _createElement(key, tag, _props, traverse(children));
       }
       return node;
     };

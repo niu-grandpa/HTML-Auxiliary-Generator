@@ -20,11 +20,21 @@ function _generate_() {
   function createAntTreeNode(
     values: FormOfNodeValues & { style?: Partial<CSSStyleDeclaration> }
   ): TreeDataNode {
-    const { type, leaf, value, alias, className, identity, style, attributes } =
-      values;
+    const {
+      type,
+      leaf,
+      value,
+      alias,
+      className,
+      identity,
+      style,
+      attributes,
+      content,
+    } = values;
     const extra = {
       type,
-      alias: alias || value,
+      content,
+      alias: alias || value || content,
       props: {
         id: identity || undefined,
         className: className || undefined,
@@ -32,9 +42,10 @@ function _generate_() {
         style: { ...style, display: 'inline-block' },
       },
     };
+
     const node = {
       isLeaf: leaf,
-      title: value,
+      title: type === NodeType.TEXT ? content : value,
       children: [],
       key: createNodeKey(),
       ...extra,
@@ -50,11 +61,12 @@ function _generate_() {
 
     const createVnode = (node: TreeDataNode): VNode => {
       // @ts-ignore
-      const { title, key, children, type, props } = node;
+      const { title, key, children, type, props, content } = node;
       const dragVnode = createDragVnode(
         key as string,
         type,
         title as string,
+        content,
         props,
         children?.length ? antTreeNodeToVNode(children as TreeDataNode[]) : []
       );

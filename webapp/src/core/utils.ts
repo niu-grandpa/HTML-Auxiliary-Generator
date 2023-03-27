@@ -8,6 +8,7 @@ export type VNode = {
   tag: string;
   // antd Tree组件的数据结构决定了children不存在是字符串的情况
   children: VNode[];
+  content: string;
   props: {
     id: string;
     className: string;
@@ -41,6 +42,7 @@ export function createDragVnode(
   key: string,
   type: NodeType,
   tag: string,
+  content: string,
   props: VNode['props'],
   children: VNode[]
 ): VNode {
@@ -48,6 +50,7 @@ export function createDragVnode(
     key,
     type,
     tag,
+    content,
     props,
     children,
   };

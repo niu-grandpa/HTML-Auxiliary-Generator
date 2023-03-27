@@ -114,6 +114,13 @@ const ContextMenu: FC<Props> = memo(
       setTranslate(`translate(${x}px,${y}px)`);
     }, [x, y, open]);
 
+    useEffect(() => {
+      window.addEventListener('resize', handleClose);
+      return () => {
+        window.removeEventListener('resize', handleClose);
+      };
+    }, [handleClose]);
+
     return (
       <div
         className='ctx-menu-overlay'

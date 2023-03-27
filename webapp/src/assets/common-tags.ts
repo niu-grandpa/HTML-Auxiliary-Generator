@@ -268,6 +268,10 @@ const COMMON_TAGS: DefaultOptionType[] = [
         label: 'audio',
         value: 'audio',
       },
+      {
+        label: 'progress',
+        value: 'progress',
+      },
     ],
   },
   {

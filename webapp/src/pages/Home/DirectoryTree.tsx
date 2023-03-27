@@ -80,10 +80,11 @@ const DirectoryTree: FC<Props> = memo(
     useEffect(() => {
       if (selectedNode !== null) {
         // @ts-ignore
-        const { type, title, isLeaf, alias, props } = selectedNode;
+        const { type, title, isLeaf, alias, props, content } = selectedNode;
         const { id, className, attributes } = props;
         setNodeInitValues({
           type,
+          content,
           value: `${title}`,
           leaf: isLeaf!,
           alias,
@@ -135,15 +136,29 @@ const DirectoryTree: FC<Props> = memo(
       return node;
     }, []);
 
+    // 容器有附带有文本内容要单独创建一个文本节点
+    const createContent = useCallback(
+      (type: NodeType, content: string) => {
+        if (type === NodeType.TEXT) return null;
+        return createNode({
+          ...__defaultValues,
+          type: NodeType.TEXT,
+          leaf: true,
+          content,
+        });
+      },
+      [createNode]
+    );
+
     const editNode = useCallback(
-      (
-        root: TreeDataNode[],
-        node: TreeDataNode,
-        { value, alias, className, identity, attributes }: FormOfNodeValues
-      ) => {
+      (root: TreeDataNode[], node: TreeDataNode, values: FormOfNodeValues) => {
+        const { value, alias, className, identity, attributes, content } =
+          values;
         node.title = value;
         // @ts-ignore
-        node.alias = alias || value;
+        node.content = content;
+        // @ts-ignore
+        node.alias = alias || value || content;
         // @ts-ignore
         node.props = {
           id: identity,
@@ -161,7 +176,7 @@ const DirectoryTree: FC<Props> = memo(
         values: FormOfNodeValues,
         target: TreeDataNode
       ) => {
-        const { value: tag } = values;
+        const { value: tag, content, type } = values;
         // 1.修改节点标签
         if (isEqual(isEdit, true)) {
           if (target.children?.length && SELF_CLOSING_TAG.includes(tag)) {
@@ -178,10 +193,13 @@ const DirectoryTree: FC<Props> = memo(
           }
         }
         // 2.新增节点
-        target!.children?.push(createNode(values));
+        const n = createNode(values);
+        const text = createContent(type, content);
+        !isEqual(text, null) && n.children?.push(text!);
+        target!.children?.push(n);
         return updateAntTree(root, target);
       },
-      [isEdit, editNode, createNode]
+      [isEdit, editNode, createNode, createContent]
     );
 
     const onClearSelectedNode = useCallback(() => {
@@ -317,12 +335,15 @@ const DirectoryTree: FC<Props> = memo(
     const handleFinish = useCallback(
       (values: FormOfNodeValues) => {
         const target = cloneDeep(selectedNode)!;
-        let { repeat } = values;
+        let { repeat, content, type } = values;
         let newData: TreeDataNode[] = cloneDeep(treeData);
         while (repeat--) {
           // 没有选中任何节点进行创建，说明是要创建根节点
           if (!target) {
-            newData.push(createNode(values));
+            const n = createNode(values);
+            const text = createContent(type, content);
+            !isEqual(text, null) && n.children?.push(text!);
+            newData.push(n);
             continue;
           }
           newData = updateNode(newData, values, target)!;
@@ -337,6 +358,7 @@ const DirectoryTree: FC<Props> = memo(
         createNode,
         updateNode,
         initState,
+        createContent,
         onClearSelectedNode,
       ]
     );

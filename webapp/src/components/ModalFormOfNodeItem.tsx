@@ -6,11 +6,13 @@ import {
   InputNumber,
   message,
   Radio,
+  Select,
   Space,
   Tooltip,
 } from 'antd';
 import { useForm } from 'antd/es/form/Form';
 import { FC, memo, useCallback, useEffect, useState } from 'react';
+import { COMMON_TAGS } from '../assets';
 import { NodeType } from '../core/runtime-generate';
 import { SELF_CLOSING_TAG } from '../core/runtime-transform';
 import { __defaultValues } from './ModalFormOfNode';
@@ -18,6 +20,7 @@ import { __defaultValues } from './ModalFormOfNode';
 export type FormOfNodeValues = {
   value: string;
   leaf: boolean;
+  content: string;
   type: NodeType;
   repeat: number;
   alias: string;
@@ -85,15 +88,15 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
     const handleFinish = useCallback(
       (values: FormOfNodeValues) => {
         if (nodeType !== NodeType.TEXT && !values.value) {
-          message.error('标签不能为空');
+          message.error('请选择元素');
           return;
         }
         if (nodeType === NodeType.TEXT) {
           const obj = {
             ...__defaultValues,
             // @ts-ignore
-            value: values.text,
             type: values.type,
+            content: values.content,
           };
           onFinish?.(obj);
         } else {
@@ -112,12 +115,22 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
         onFinish={handleFinish}
         onValuesChange={handleValuesChange}>
         {isTextType ? (
-          <Form.Item label='内容' name='text' style={{ width: 455 }}>
+          <Form.Item label='内容' name='content' style={{ width: 455 }}>
             <Input.TextArea />
           </Form.Item>
         ) : (
-          <Form.Item label='标签' name='value' style={{ width: 455 }}>
-            <Input placeholder='元素标签名请符合浏览器规范' />
+          <Form.Item label='预置元素' name='value'>
+            <Select
+              showSearch
+              allowClear
+              style={{ width: '60%' }}
+              placeholder='常用html标签供选择'
+              optionFilterProp='children'
+              filterOption={(input, option) =>
+                ((option?.label ?? '') as string).includes(input)
+              }
+              options={COMMON_TAGS}
+            />
           </Form.Item>
         )}
         <Form.Item name='type'>
@@ -171,6 +184,9 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
                 </Form.Item>
               </Space>
             </Form.Item>
+            <Form.Item name='content'>
+              <Input.TextArea placeholder='添加文本内容' />
+            </Form.Item>
             <Form.List name='attributes'>
               {(fields, { add, remove }) => (
                 <>
@@ -182,13 +198,13 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
                   {fields.map(({ key, name, ...restField }) => (
                     <Space align='baseline' {...{ key }}>
                       <Form.Item
-                        label='属性名'
+                        label='属性'
                         name={[name, 'name']}
                         {...restField}>
                         <Input placeholder='属性名' />
                       </Form.Item>
                       <Form.Item
-                        label='属性值'
+                        label='属值'
                         name={[name, 'value']}
                         {...restField}>
                         <Input placeholder='属性值' />

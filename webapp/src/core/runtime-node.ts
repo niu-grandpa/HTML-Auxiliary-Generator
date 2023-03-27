@@ -80,6 +80,11 @@ function patchNode(n1: TreeDataNode, n2: TreeDataNode) {
     n1.alias = n2.alias;
   }
   // @ts-ignore
+  if (n1.content !== n2.content) {
+    // @ts-ignore
+    n1.content = n2.content;
+  }
+  // @ts-ignore
   if (n1.props !== n2.props) {
     patchProps(n1, n2);
   }

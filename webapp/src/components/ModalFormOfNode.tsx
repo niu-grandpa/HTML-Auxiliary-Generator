@@ -20,6 +20,7 @@ export const __defaultValues: FormOfNodeValues = {
   type: NodeType.CONTAINER,
   repeat: 1,
   alias: '',
+  content: '',
   className: '',
   identity: '',
   attributes: [],
