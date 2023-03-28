@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import '../assets/components/ContextMenu.less';
+import { NodeType } from '../core/runtime-generate';
 
 export const enum CTX_MENU_OPTS {
   NEW_LEAF,
@@ -26,8 +27,7 @@ type Props = {
   x: number;
   y: number;
   open: boolean;
-  isText: boolean;
-  isLeaf: boolean;
+  nodeType: NodeType;
   /**禁用粘贴 */
   disPaste: boolean;
   onClose: () => void;
@@ -42,31 +42,29 @@ type ItemsType = {
 };
 
 const ContextMenu: FC<Props> = memo(
-  ({ x, y, open, isLeaf, isText, disPaste, onClick, onClose }) => {
+  ({ x, y, open, nodeType, disPaste, onClick, onClose }) => {
     const [display, setDisplay] = useState('none');
     const [translate, setTranslate] = useState('');
+
+    const isText = useMemo(() => nodeType === NodeType.TEXT, [nodeType]);
+    const isLeaf = useMemo(() => nodeType !== NodeType.CONTAINER, [nodeType]);
 
     const items: ItemsType[] = useMemo(
       () => [
         {
-          text: '新建单节点...',
-          type: CTX_MENU_OPTS.NEW_LEAF,
-          hidden: isLeaf,
-        },
-        {
-          text: '新建容器节点...',
+          text: '新建容器...',
           type: CTX_MENU_OPTS.NEW_NON_LEAF,
           hidden: isLeaf,
         },
         {
-          text: '添加文本...',
+          text: '新建文本...',
           type: CTX_MENU_OPTS.ADD_TEXT,
           hidden: isLeaf,
         },
         {
           text: '样式配置...',
           type: CTX_MENU_OPTS.SET_STYLE,
-          hidden: isLeaf,
+          hidden: isText,
         },
         {
           text: '剪切',
@@ -79,12 +77,11 @@ const ContextMenu: FC<Props> = memo(
         {
           text: '粘贴',
           type: CTX_MENU_OPTS.PASTE,
-          disabled: disPaste,
+          disabled: disPaste || isLeaf || isText,
         },
         {
           text: '编辑...',
           type: CTX_MENU_OPTS.EDIT_TAG,
-          hidden: isText,
         },
         {
           text: '删除',

@@ -44,37 +44,34 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
     const [isTextType, setIsTextType] = useState(
       initialValues?.type === NodeType.TEXT
     );
-    const [isSelfCloseTag, setIsSCTag] = useState(false);
+    const [isSingle, setIsSingle] = useState(false);
     const [nodeType, setNodeType] = useState<NodeType>(initialValues!.type);
 
     useEffect(() => {
-      if (!edit) {
-        form.setFieldsValue({ ...__defaultValues, type: initialValues!.type });
-      }
-    }, [edit, form, initialValues]);
-
-    useEffect(() => {
-      if (initialValues?.value === initialValues?.alias) {
-        form.setFieldsValue({ alias: '' });
-      }
-    }, [form, initialValues?.alias, initialValues?.value]);
-
-    useEffect(() => {
+      setIsSingle(initialValues?.type === NodeType.SINGLE);
       setIsTextType(initialValues?.type === NodeType.TEXT);
     }, [initialValues?.type]);
 
     useEffect(() => {
-      setIsSCTag(SELF_CLOSING_TAG.includes(initialValues?.value || ''));
-    }, [initialValues?.value]);
+      if (!edit) {
+        form.setFieldsValue({ ...__defaultValues, type: initialValues!.type });
+      } else {
+        let alias = initialValues?.alias;
+        if (initialValues?.value === initialValues?.alias) {
+          alias = '';
+        }
+        form.setFieldsValue({ ...initialValues, alias });
+      }
+    }, [edit, form, initialValues]);
 
     const handleValuesChange = useCallback(
       (_: any, { value, type }: FormOfNodeValues) => {
         if (SELF_CLOSING_TAG.includes(value)) {
-          setIsSCTag(true);
+          setIsSingle(true);
           setNodeType(NodeType.SINGLE);
           form.setFieldsValue({ type: NodeType.SINGLE });
         } else {
-          setIsSCTag(false);
+          setIsSingle(false);
           const restType = edit ? initialValues!.type : type;
           setNodeType(restType);
           form.setFieldsValue({ type: restType });
@@ -95,7 +92,7 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
           const obj = {
             ...__defaultValues,
             // @ts-ignore
-            type: values.type,
+            type: NodeType.TEXT,
             content: values.content,
           };
           onFinish?.(obj);
@@ -134,25 +131,18 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
           </Form.Item>
         )}
         <Form.Item name='type'>
-          <Radio.Group value={nodeType} disabled={edit}>
-            <Tooltip title='允许在此节点下嵌套子节点'>
+          <Radio.Group disabled={edit} value={isSingle ? undefined : nodeType}>
+            <Tooltip title='作为容器添加其他节点'>
               <Radio
                 value={NodeType.CONTAINER}
                 disabled={
-                  initialValues?.type === NodeType.TEXT || isSelfCloseTag
+                  isSingle || (edit && initialValues?.type === NodeType.TEXT)
                 }>
                 容器节点
               </Radio>
             </Tooltip>
-            <Tooltip title='无法嵌套除了文本外的节点'>
-              <Radio
-                value={NodeType.SINGLE}
-                disabled={initialValues?.type === NodeType.TEXT}>
-                单独节点
-              </Radio>
-            </Tooltip>
-            <Tooltip title='用于添加一段文本内容'>
-              <Radio value={NodeType.TEXT} disabled={isSelfCloseTag}>
+            <Tooltip title='单纯文本内容没有元素包裹'>
+              <Radio value={NodeType.TEXT} disabled={isSingle}>
                 文本节点
               </Radio>
             </Tooltip>
@@ -184,9 +174,11 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
                 </Form.Item>
               </Space>
             </Form.Item>
-            <Form.Item name='content'>
-              <Input.TextArea placeholder='添加文本内容' />
-            </Form.Item>
+            {!isSingle && (
+              <Form.Item name='content'>
+                <Input.TextArea placeholder='添加文本内容' />
+              </Form.Item>
+            )}
             <Form.List name='attributes'>
               {(fields, { add, remove }) => (
                 <>

@@ -2,7 +2,6 @@ import {
   createElement,
   InputHTMLAttributes,
   type ClassAttributes,
-  type Key,
   type ReactNode,
 } from 'react';
 import { NodeType } from './runtime-generate';
@@ -23,22 +22,21 @@ function render(vnodes: VNode[]): ReactNode[] {
     const reactNodes = Array<ReactNode>(len);
 
     const getReactNode = (vnode: VNode): ReactNode => {
-      const { type, key, tag, props, children, content } = vnode;
+      const { key, type, tag, props, children, content } = vnode;
       let node: ReactNode = null;
       if (type === NodeType.TEXT) {
         node = content;
       } else {
-        const { id, className, style, attributes } = props!;
-        const _props = {
-          id,
-          style,
-          className,
-        };
-        for (const { name, value } of attributes) {
-          // @ts-ignore
+        const _props: Record<string, any> = { ...props, attributes: null };
+        for (const { name, value } of props!.attributes) {
           _props[name] = value;
         }
-        node = _createElement(key, tag, _props, traverse(children));
+        node = _createElement(
+          key,
+          tag,
+          _props,
+          type === NodeType.SINGLE ? undefined : traverse(children)
+        );
       }
       return node;
     };
@@ -58,16 +56,12 @@ function render(vnodes: VNode[]): ReactNode[] {
 }
 
 function _createElement(
-  key: Key,
+  key: string,
   type: string,
   props?:
     | ((InputHTMLAttributes<HTMLElement> & ClassAttributes<HTMLElement>) | null)
     | null,
   children?: ReactNode[] | string
 ): ReactNode {
-  const dataset = {
-    'data-key': key,
-    'data-is-drag-target': true,
-  };
-  return createElement(type, { ...props, key, ...dataset }, children);
+  return createElement(type, { ...props, key }, children);
 }

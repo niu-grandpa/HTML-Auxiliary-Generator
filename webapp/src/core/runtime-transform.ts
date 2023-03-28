@@ -22,7 +22,7 @@ function toHTMLStrings(
   const addContent = (s: string) => {
     html.push(s);
   };
-  const processingProps = (
+  const processNode = (
     startTag: string,
     props: VNode['props'],
     len: number,
@@ -51,23 +51,24 @@ function toHTMLStrings(
     return startTag;
   };
 
+  const whiteSpace = ' '.repeat(space);
+
   for (const node of dragVnodes) {
     const { type, tag, props, children, content } = node;
-    const whiteSpace = ' '.repeat(space);
     if (type === NodeType.TEXT) {
       addContent(`${whiteSpace}${content}`);
       addNewline();
       continue;
     }
-    const isSelfClose = SELF_CLOSING_TAG.includes(tag);
+    const isSingle = type === NodeType.SINGLE;
     let startTag = '';
     let endTag = '';
-    startTag = isSelfClose ? `<${tag} />` : `<${tag}>`;
+    startTag = isSingle ? `<${tag} />` : `<${tag}>`;
     if (props !== null) {
-      startTag = processingProps(startTag, props, tag.length + 1, isSelfClose);
+      startTag = processNode(startTag, props, tag.length + 1, isSingle);
     }
     addContent(`${whiteSpace}${startTag}`);
-    if (isSelfClose) {
+    if (isSingle) {
       addNewline();
       continue;
     }

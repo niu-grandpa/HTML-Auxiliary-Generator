@@ -11,6 +11,7 @@ import {
   message,
   Modal,
   Row,
+  Tooltip,
   Tree,
   type TreeDataNode,
 } from 'antd';
@@ -53,17 +54,15 @@ const DirectoryTree: FC<Props> = memo(
     const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
     const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
 
+    const [nodeInitValues, setNodeInitValues] =
+      useState<FormOfNodeValues>(__defaultValues);
     const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
 
     const [copyNode, setCopyNode] = useState<TreeDataNode | null>(null);
     const [selectedNode, setSelectedNode] = useState<TreeDataNode | null>(null);
-    const [nodeInitValues, setNodeInitValues] =
-      useState<FormOfNodeValues>(__defaultValues);
 
-    const [isLeaf, setIsLeaf] = useState(false);
-    const [isText, setIsText] = useState(false);
-    const [disPaste, setDisPaste] = useState(true);
     const [isEdit, setIsEdit] = useState(false);
+    const [disPaste, setDisPaste] = useState(true);
     const [openDrawer, setOpenDrawer] = useState(false);
     const [openCtxMenu, setOpenCtxMenu] = useState(false);
     const [openModalForm, setOpenModalForm] = useState(false);
@@ -73,9 +72,8 @@ const DirectoryTree: FC<Props> = memo(
     }, [treeData, onChange, selectedKeys]);
 
     useEffect(() => {
-      if (!copyNode || isLeaf) setDisPaste(true);
-      else setDisPaste(false);
-    }, [copyNode, isLeaf]);
+      setDisPaste(isEqual(copyNode, null));
+    }, [copyNode]);
 
     useEffect(() => {
       if (selectedNode !== null) {
@@ -97,27 +95,15 @@ const DirectoryTree: FC<Props> = memo(
     }, [selectedNode]);
 
     const initState = useCallback(() => {
-      isText && setIsText(false);
-      isLeaf && setIsLeaf(false);
       isEdit && setIsEdit(false);
-      copyNode && setCopyNode(null);
-    }, [isText, isEdit, isLeaf, copyNode]);
+    }, [isEdit]);
 
     const handleOpenMdl = useCallback(
-      (leaf?: boolean) => {
-        if (!isEqual(leaf, undefined)) {
-          const isl = isEqual(leaf, true);
-          setIsLeaf(isl);
-          setNodeInitValues(v => {
-            v!.type = isl ? NodeType.SINGLE : NodeType.CONTAINER;
-            return v;
-          });
-        } else {
-          setNodeInitValues(v => {
-            v!.type = NodeType.CONTAINER;
-            return v;
-          });
-        }
+      (type?: NodeType) => {
+        setNodeInitValues(v => {
+          v!.type = !isEqual(type, undefined) ? type! : NodeType.CONTAINER;
+          return v;
+        });
         setOpenModalForm(true);
         setSelectedNode(selectedNode);
       },
@@ -136,23 +122,25 @@ const DirectoryTree: FC<Props> = memo(
       return node;
     }, []);
 
-    // 容器有附带有文本内容要单独创建一个文本节点
-    const createContent = useCallback(
-      (type: NodeType, content: string) => {
-        if (type === NodeType.TEXT) return null;
-        return createNode({
+    // 添加节点附带的额外文本内容
+    const processNodeContent = useCallback(
+      (node: TreeDataNode, type: NodeType, content: string) => {
+        if (type === NodeType.TEXT || !content) return node;
+        const textNode = createNode({
           ...__defaultValues,
           type: NodeType.TEXT,
           leaf: true,
           content,
         });
+        node.children?.push(textNode);
+        return node;
       },
       [createNode]
     );
 
     const editNode = useCallback(
       (root: TreeDataNode[], node: TreeDataNode, values: FormOfNodeValues) => {
-        const { value, alias, className, identity, attributes, content } =
+        const { type, value, alias, className, identity, attributes, content } =
           values;
         node.title = value;
         // @ts-ignore
@@ -165,9 +153,9 @@ const DirectoryTree: FC<Props> = memo(
           className,
           attributes,
         };
-        return updateAntTree(root, node);
+        return updateAntTree(root, processNodeContent(node, type, content));
       },
-      []
+      [processNodeContent]
     );
 
     const updateNode = useCallback(
@@ -193,13 +181,11 @@ const DirectoryTree: FC<Props> = memo(
           }
         }
         // 2.新增节点
-        const n = createNode(values);
-        const text = createContent(type, content);
-        !isEqual(text, null) && n.children?.push(text!);
+        const n = processNodeContent(createNode(values), type, content);
         target!.children?.push(n);
         return updateAntTree(root, target);
       },
-      [isEdit, editNode, createNode, createContent]
+      [isEdit, editNode, createNode, processNodeContent]
     );
 
     const onClearSelectedNode = useCallback(() => {
@@ -273,8 +259,6 @@ const DirectoryTree: FC<Props> = memo(
       const { clientX, clientY } = event as MouseEvent;
       setSelectedNode(node);
       setOpenCtxMenu(true);
-      setIsLeaf(node.isLeaf);
-      setIsText(isEqual(node.type, NodeType.TEXT));
       setCtxMenuPosi({ x: clientX, y: clientY + 10 });
     }, []);
 
@@ -289,9 +273,6 @@ const DirectoryTree: FC<Props> = memo(
     const handleCtxItemClick = useCallback(
       (value: CTX_MENU_OPTS) => {
         switch (value) {
-          case CTX_MENU_OPTS.NEW_LEAF:
-            crea(NodeType.SINGLE);
-            break;
           case CTX_MENU_OPTS.NEW_NON_LEAF:
             crea(NodeType.CONTAINER);
             break;
@@ -340,10 +321,8 @@ const DirectoryTree: FC<Props> = memo(
         while (repeat--) {
           // 没有选中任何节点进行创建，说明是要创建根节点
           if (!target) {
-            const n = createNode(values);
-            const text = createContent(type, content);
-            !isEqual(text, null) && n.children?.push(text!);
-            newData.push(n);
+            const node = processNodeContent(createNode(values), type, content);
+            newData.push(node);
             continue;
           }
           newData = updateNode(newData, values, target)!;
@@ -358,7 +337,7 @@ const DirectoryTree: FC<Props> = memo(
         createNode,
         updateNode,
         initState,
-        createContent,
+        processNodeContent,
         onClearSelectedNode,
       ]
     );
@@ -378,20 +357,24 @@ const DirectoryTree: FC<Props> = memo(
               结构管理(工作区)
             </Col>
             <Col span={3}>
-              <Button
-                onClick={() => handleOpenMdl(true)}
-                size='small'
-                ghost
-                icon={<FileAddOutlined />}
-              />
+              <Tooltip title='新建文本内容'>
+                <Button
+                  onClick={() => handleOpenMdl(NodeType.TEXT)}
+                  size='small'
+                  ghost
+                  icon={<FileAddOutlined />}
+                />
+              </Tooltip>
             </Col>
             <Col span={3}>
-              <Button
-                onClick={() => handleOpenMdl(false)}
-                size='small'
-                ghost
-                icon={<FolderAddOutlined />}
-              />
+              <Tooltip title='新建容器'>
+                <Button
+                  onClick={() => handleOpenMdl(NodeType.CONTAINER)}
+                  size='small'
+                  ghost
+                  icon={<FolderAddOutlined />}
+                />
+              </Tooltip>
             </Col>
           </Row>
           <hr style={{ marginTop: 10, marginBottom: 16 }} />
@@ -406,7 +389,7 @@ const DirectoryTree: FC<Props> = memo(
             <>
               <Tree
                 showIcon
-                blockNode
+                showLine
                 defaultExpandAll
                 {...{ treeData, fieldNames }}
                 draggable={{ icon: false }}
@@ -418,7 +401,8 @@ const DirectoryTree: FC<Props> = memo(
                 open={openCtxMenu}
                 onClose={onClearSelectedNode}
                 onClick={handleCtxItemClick}
-                {...{ ...ctxMenuPosi, isLeaf, isText, disPaste }}
+                nodeType={nodeInitValues.type}
+                {...{ ...ctxMenuPosi, disPaste }}
               />
               <DrawerStyleSettings
                 open={openDrawer}

@@ -20,9 +20,9 @@ function _generate_() {
   function createAntTreeNode(
     values: FormOfNodeValues & { style?: Partial<CSSStyleDeclaration> }
   ): TreeDataNode {
+    const key = createNodeKey();
     const {
       type,
-      leaf,
       value,
       alias,
       className,
@@ -34,20 +34,22 @@ function _generate_() {
     const extra = {
       type,
       content,
-      alias: alias || value || content,
+      // 由于leaf节点添加的内容不显示下级，因此通过标题显示出来
+      alias: type === NodeType.TEXT ? content : alias || value || content,
       props: {
         id: identity || undefined,
         className: className || undefined,
         attributes: attributes || [],
         style: { ...style, display: 'inline-block' },
+        'data-key': key,
+        'data-is-drag-target': true,
       },
     };
-
     const node = {
-      isLeaf: leaf,
+      isLeaf: type === NodeType.TEXT || type === NodeType.SINGLE,
       title: type === NodeType.TEXT ? content : value,
       children: [],
-      key: createNodeKey(),
+      key,
       ...extra,
     };
     return node;
