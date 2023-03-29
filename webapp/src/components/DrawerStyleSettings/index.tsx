@@ -1,8 +1,10 @@
 import { Drawer, Form, Space } from 'antd';
-import { FC, memo, useCallback, useEffect, useRef, useState } from 'react';
+import { FC, memo, useCallback, useState } from 'react';
 import FormItemOfSizeType from './FormItemOfSizeType';
 
 import '../../assets/components/DrawerStyleSettings.less';
+import FormItemOfSelectType from './FormItemOfSelectType';
+import FormItemOfTextType from './FormItemOfTextType';
 
 export type StyleFormValues = {};
 
@@ -21,62 +23,7 @@ const FormSpaceItem = memo(({ children }: { children: JSX.Element[] }) => (
 
 const DrawerStyleSettings: FC<Partial<Props>> = memo(
   ({ open, onClose, onChange, initialValues }) => {
-    const sizeCategory = useRef([
-      {
-        label: '宽度',
-        name: 'width',
-      },
-      {
-        label: '高度',
-        name: 'height',
-      },
-      {
-        label: '(内)上边距',
-        name: 'paddingTop',
-      },
-      {
-        label: '(内)下边距',
-        name: 'paddingBottom',
-      },
-      {
-        label: '(内)左边距',
-        name: 'paddingLeft',
-      },
-      {
-        label: '(内)右边距',
-        name: 'paddingRight',
-      },
-      {
-        label: '(外)上边距',
-        name: 'marginTop',
-      },
-      {
-        label: '(外)下边距',
-        name: 'marginBottom',
-      },
-      {
-        label: '(外)左边距',
-        name: 'marginLeft',
-      },
-      {
-        label: '(外)右边距',
-        name: 'marginRight',
-      },
-    ]);
-
     const [sizeUnit, setSizeUnit] = useState<Record<string, string>>({});
-
-    const setDefaultSizeUnit = useCallback(() => {
-      const obj: Record<string, string> = {};
-      sizeCategory.current.forEach(({ name }) => {
-        obj[name] = 'px';
-      });
-      setSizeUnit(obj);
-    }, []);
-
-    useEffect(() => {
-      setDefaultSizeUnit();
-    }, [setDefaultSizeUnit]);
 
     const handleUnitChange = useCallback((name: string, val: string) => {
       const obj: Record<string, string> = {};
@@ -93,7 +40,6 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
         placement='left'
         {...{ open, onClose }}
         title='样式风格调整'
-        mask={false}
         bodyStyle={{ overflowX: 'hidden' }}>
         <Form
           className='dss-form'
@@ -103,9 +49,205 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
           layout='inline'
           {...{ initialValues }}
           onValuesChange={handleValuesChange}>
+          <FormItemOfSelectType
+            items={[
+              {
+                label: 'display',
+                name: 'display',
+                options: [
+                  'none',
+                  'inline',
+                  'block',
+                  'inline-block',
+                  'flex',
+                  'inline-flex',
+                  'grid',
+                  'inline-grid',
+                  'table',
+                  'inline-table',
+                  'list-item',
+                  'inherit',
+                ],
+              },
+              {
+                label: 'position',
+                name: 'position',
+                options: [
+                  'static ',
+                  'relative ',
+                  'absolute ',
+                  'sticky ',
+                  'fixed',
+                ],
+              },
+            ]}
+          />
           <FormItemOfSizeType
-            items={sizeCategory.current}
+            items={[
+              {
+                label: '宽度',
+                name: 'width',
+              },
+              {
+                label: '高度',
+                name: 'height',
+              },
+              {
+                label: '行高',
+                name: 'lineHeight',
+              },
+              {
+                label: '文字大小',
+                name: 'fontSize',
+              },
+              {
+                label: '字间距离',
+                name: 'letterSpacing',
+              },
+              {
+                label: '单词间距',
+                name: 'wordSpacing',
+              },
+            ]}
             onUnitChange={handleUnitChange}
+          />
+          <FormItemOfTextType
+            items={[
+              {
+                label: '外边距',
+                name: 'margin',
+              },
+              {
+                label: '内边距',
+                name: 'padding',
+              },
+            ]}
+          />
+          <FormItemOfSizeType
+            items={[
+              {
+                label: 'margin-top',
+                name: 'marginTop',
+              },
+              {
+                label: 'padding-top',
+                name: 'paddingTop',
+              },
+              {
+                label: 'margin-right',
+                name: 'marginRight',
+              },
+              {
+                label: 'padding-right',
+                name: 'paddingRight',
+              },
+              {
+                label: 'margin-bottom',
+                name: 'marginBottom',
+              },
+              {
+                label: 'padding-bottom',
+                name: 'paddingBottom',
+              },
+              {
+                label: 'margin-left',
+                name: 'marginLeft',
+              },
+              {
+                label: 'padding-left',
+                name: 'paddingLeft',
+              },
+            ]}
+            onUnitChange={handleUnitChange}
+          />
+          <FormItemOfTextType
+            items={[
+              {
+                label: '边框',
+                name: 'border',
+              },
+              {
+                label: 'border-top',
+                name: 'border',
+              },
+              {
+                label: 'border-right',
+                name: 'border',
+              },
+              {
+                label: 'border-bottom',
+                name: 'border',
+              },
+              {
+                label: 'border-left',
+                name: 'border',
+              },
+              {
+                label: '字体颜色',
+                name: 'color',
+              },
+              {
+                label: '字体类型',
+                name: 'font-family',
+              },
+              {
+                label: '背景',
+                name: 'background',
+              },
+            ]}
+          />
+          <FormItemOfSelectType
+            items={[
+              {
+                label: 'visibility',
+                name: 'visibility',
+                options: ['hidden', 'visible', 'collapse'],
+              },
+              {
+                label: 'vertical-align',
+                name: 'verticalAlign',
+                options: ['top', 'bottom', 'middle', 'text-top', 'text-bottom'],
+              },
+              {
+                label: 'overflow',
+                name: 'overflow',
+                options: ['auto', 'scroll', 'hidden', 'visible'],
+              },
+              {
+                label: 'overflow-x',
+                name: 'overflowX',
+                options: ['auto', 'scroll', 'hidden', 'visible'],
+              },
+              {
+                label: 'overflow-y',
+                name: 'overflowY',
+                options: ['auto', 'scroll', 'hidden', 'visible'],
+              },
+              {
+                label: '鼠标光标',
+                name: 'cursor',
+                options: [
+                  'default',
+                  'auto',
+                  'crosshair',
+                  'pointer',
+                  'move',
+                  'e-resize',
+                  'ne-resize',
+                  'nw-resize',
+                  'n-resize',
+                  's-resize',
+                  'se-resize',
+                  'sw-resize',
+                  'w-resize',
+                  'text',
+                  'wait',
+                  'help',
+                  'not-allowed',
+                  'no-drop',
+                ],
+              },
+            ]}
           />
         </Form>
       </Drawer>

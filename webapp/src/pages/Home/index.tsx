@@ -1,4 +1,4 @@
-import { Col, Layout, Menu, Row, TreeDataNode } from 'antd';
+import { Col, Layout, Row, TreeDataNode } from 'antd';
 import React, { useEffect, useState } from 'react';
 import core from '../../core';
 import { type VNode } from '../../core/utils';
@@ -25,12 +25,6 @@ const Home: React.FC = () => {
     <Layout className='layout'>
       <Header>
         <section className='logo' />
-        <Menu
-          theme='light'
-          mode='horizontal'
-          defaultSelectedKeys={['']}
-          items={[]}
-        />
       </Header>
       <Content style={{ padding: '18px 38px 0 38px' }}>
         <Row gutter={[19, 19]}>
