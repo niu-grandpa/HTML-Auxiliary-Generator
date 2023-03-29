@@ -2,7 +2,7 @@ import { Drawer, Form, Space } from 'antd';
 import { FC, memo, useCallback, useEffect, useRef, useState } from 'react';
 import FormItemOfSizeType from './FormItemOfSizeType';
 
-import '../assets/components/DrawerStyleSettings.less';
+import '../../assets/components/DrawerStyleSettings.less';
 
 export type StyleFormValues = {};
 

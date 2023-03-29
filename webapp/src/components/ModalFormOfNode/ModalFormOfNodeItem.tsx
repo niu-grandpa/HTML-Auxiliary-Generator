@@ -11,11 +11,11 @@ import {
   Tooltip,
 } from 'antd';
 import { useForm } from 'antd/es/form/Form';
-import { FC, memo, useCallback, useEffect, useState } from 'react';
-import { COMMON_TAGS } from '../assets';
-import { NodeType } from '../core/runtime-generate';
-import { SELF_CLOSING_TAG } from '../core/runtime-transform';
-import { __defaultValues } from './ModalFormOfNode';
+import { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { __defaultValues } from '.';
+import { COMMON_TAGS } from '../../assets';
+import { NodeType } from '../../core/runtime-generate';
+import { SELF_CLOSING_TAG } from '../../core/runtime-transform';
 
 export type FormOfNodeValues = {
   value: string;
@@ -46,6 +46,15 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
     );
     const [isSingle, setIsSingle] = useState(false);
     const [nodeType, setNodeType] = useState<NodeType>(initialValues!.type);
+
+    const disContainerType = useMemo(
+      () => isSingle || (edit && initialValues?.type === NodeType.TEXT),
+      [isSingle, edit, initialValues?.type]
+    );
+    const hiddenContentInput = useMemo(
+      () => !isSingle && !edit,
+      [edit, isSingle]
+    );
 
     useEffect(() => {
       setIsSingle(initialValues?.type === NodeType.SINGLE);
@@ -133,11 +142,7 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
         <Form.Item name='type'>
           <Radio.Group disabled={edit} value={isSingle ? undefined : nodeType}>
             <Tooltip title='作为容器添加其他节点'>
-              <Radio
-                value={NodeType.CONTAINER}
-                disabled={
-                  isSingle || (edit && initialValues?.type === NodeType.TEXT)
-                }>
+              <Radio value={NodeType.CONTAINER} disabled={disContainerType}>
                 容器节点
               </Radio>
             </Tooltip>
@@ -174,7 +179,7 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
                 </Form.Item>
               </Space>
             </Form.Item>
-            {!isSingle && (
+            {hiddenContentInput && (
               <Form.Item name='content'>
                 <Input.TextArea placeholder='添加文本内容' />
               </Form.Item>

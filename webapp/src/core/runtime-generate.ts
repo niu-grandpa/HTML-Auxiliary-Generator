@@ -1,5 +1,5 @@
 import { type TreeDataNode } from 'antd';
-import { FormOfNodeValues } from '../components/ModalFormOfNodeItem';
+import { FormOfNodeValues } from '../components/ModalFormOfNode/ModalFormOfNodeItem';
 import { transform } from './runtime-transform';
 import { createDragVnode, createNodeKey, type VNode } from './utils';
 

@@ -28,7 +28,7 @@ import {
 import { DrawerStyleSettings, ModalFormOfNode } from '../../components';
 import { ContextMenu, CTX_MENU_OPTS } from '../../components/ContextMenu';
 import { __defaultValues } from '../../components/ModalFormOfNode';
-import { FormOfNodeValues } from '../../components/ModalFormOfNodeItem';
+import { FormOfNodeValues } from '../../components/ModalFormOfNode/ModalFormOfNodeItem';
 import core from '../../core';
 import { NodeType } from '../../core/runtime-generate';
 import { SELF_CLOSING_TAG } from '../../core/runtime-transform';
@@ -63,7 +63,7 @@ const DirectoryTree: FC<Props> = memo(
 
     const [isEdit, setIsEdit] = useState(false);
     const [disPaste, setDisPaste] = useState(true);
-    const [openDrawer, setOpenDrawer] = useState(false);
+    const [openDrawer, setOpenDrawer] = useState(true);
     const [openCtxMenu, setOpenCtxMenu] = useState(false);
     const [openModalForm, setOpenModalForm] = useState(false);
 

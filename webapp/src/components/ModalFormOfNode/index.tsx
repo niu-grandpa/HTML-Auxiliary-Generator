@@ -1,6 +1,6 @@
 import { Button, Modal, Space } from 'antd';
 import { FC, memo, useCallback, useEffect, useState } from 'react';
-import { NodeType } from '../core/runtime-generate';
+import { NodeType } from '../../core/runtime-generate';
 import {
   ModalFormOfNodeItem,
   type FormOfNodeValues,
