@@ -34,7 +34,7 @@ import { NodeType } from '../../core/runtime-generate';
 import { SELF_CLOSING_TAG } from '../../core/runtime-transform';
 
 type Props = {
-  selectedKey: number;
+  selectedKey: string;
   onChange: (node: TreeDataNode[], selectedKey: Key[]) => void;
   fieldNames: Partial<{ title: string; key: string; children: string }>;
 };
@@ -63,9 +63,13 @@ const DirectoryTree: FC<Props> = memo(
 
     const [isEdit, setIsEdit] = useState(false);
     const [disPaste, setDisPaste] = useState(true);
-    const [openDrawer, setOpenDrawer] = useState(true);
+    const [openDrawer, setOpenDrawer] = useState(false);
     const [openCtxMenu, setOpenCtxMenu] = useState(false);
     const [openModalForm, setOpenModalForm] = useState(false);
+
+    useEffect(() => {
+      setSelectedKeys([selectedKey]);
+    }, [selectedKey]);
 
     useEffect(() => {
       onChange(treeData, selectedKeys);
@@ -76,7 +80,7 @@ const DirectoryTree: FC<Props> = memo(
     }, [copyNode]);
 
     useEffect(() => {
-      if (selectedNode !== null) {
+      if (!isEqual(selectedNode, null) && !isEqual(selectedNode, undefined)) {
         // @ts-ignore
         const { type, title, isLeaf, alias, props, content } = selectedNode;
         const { id, className, attributes } = props;
@@ -390,27 +394,27 @@ const DirectoryTree: FC<Props> = memo(
               <Tree
                 showIcon
                 showLine
+                blockNode
                 defaultExpandAll
-                {...{ treeData, fieldNames }}
+                {...{ treeData, fieldNames, selectedKeys }}
                 draggable={{ icon: false }}
                 onSelect={handleClickNode}
-                selectedKeys={[selectedKey]}
                 onRightClick={handleRightClick}
-              />
-              <ContextMenu
-                open={openCtxMenu}
-                onClose={onClearSelectedNode}
-                onClick={handleCtxItemClick}
-                nodeType={nodeInitValues.type}
-                {...{ ...ctxMenuPosi, disPaste }}
-              />
-              <DrawerStyleSettings
-                open={openDrawer}
-                onClose={() => setOpenDrawer(false)}
               />
             </>
           )}
         </section>
+        <ContextMenu
+          open={openCtxMenu}
+          onClose={onClearSelectedNode}
+          onClick={handleCtxItemClick}
+          nodeType={nodeInitValues.type}
+          {...{ ...ctxMenuPosi, disPaste }}
+        />
+        <DrawerStyleSettings
+          open={openDrawer}
+          onClose={() => setOpenDrawer(false)}
+        />
       </>
     );
   }

@@ -21,7 +21,7 @@ const FormItemOfSelectType: FC<Props> = memo(({ items }) => {
           }));
           return (
             <Form.Item {...{ label, name }} key={name}>
-              <Select allowClear style={{ width: 150 }} options={_options} />
+              <Select allowClear style={{ width: 160 }} options={_options} />
             </Form.Item>
           );
         })

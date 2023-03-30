@@ -1,6 +1,7 @@
 import {
   FC,
   memo,
+  MouseEvent,
   ReactNode,
   useCallback,
   useEffect,
@@ -14,12 +15,15 @@ import { useElementMovement, type AuxlineData } from '../../hooks';
 
 type Props = {
   vnodes: VNode[];
+  onItemClick: (key: string) => void;
 };
 
 const { buildHTMLString, renderDragVnode } = core;
 
+const isDragTarget = 'isDragTarget';
+
 /**视图操作区域 */
-const ViewOperations: FC<Props> = memo(({ vnodes }) => {
+const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
   const { activeHandler, getAuxlineData, getIsMoving, getMouseCoordinate } =
     useElementMovement('isDragTarget');
 
@@ -49,6 +53,17 @@ const ViewOperations: FC<Props> = memo(({ vnodes }) => {
     e.preventDefault();
     e.stopPropagation();
   }, []);
+
+  const handleDragElemClick = useCallback(
+    (e: MouseEvent) => {
+      e.stopPropagation();
+      const { dataset } = e.target as HTMLElement;
+      if (dataset[isDragTarget] !== 'true') return false;
+      let key = dataset['key'] as string;
+      onItemClick(key);
+    },
+    [onItemClick]
+  );
 
   const renderAuxline = useCallback(() => {
     const [x, y] = coordinate;
@@ -93,7 +108,10 @@ const ViewOperations: FC<Props> = memo(({ vnodes }) => {
         onClose={() => setOpenDrawer(false)}
       />
       <section className='view-opts' onContextMenu={onCustomCtxMenu}>
-        <section ref={wrapperElemRef} className='view-opts-box'>
+        <section
+          ref={wrapperElemRef}
+          className='view-opts-box'
+          onClick={handleDragElemClick}>
           {dragNodes}
           {auxlineData !== undefined && renderAuxline()}
         </section>

@@ -2,6 +2,7 @@
 @light-color: #ffffffea;
 @layout-bgc: #292a2b;
 @layout-bgc2: #242526;
+@gold-color: #ffae59;
 
 .layout,
 .layout > .ant-layout-footer {
@@ -37,6 +38,9 @@
 
   &-box {
     height: 100%;
+    [data-is-drag-target='true']:hover {
+      cursor: grab;
+    }
     [data-is-moving='true'] {
       user-select: none;
       cursor: grabbing;
@@ -47,7 +51,7 @@
     &-y,
     &-x {
       position: absolute;
-      border: 2px dashed #ffae59;
+      border: 1px dashed @gold-color;
     }
     &-y {
       height: 100%;
@@ -76,6 +80,7 @@
       border-radius: 2px;
       color: @light-color;
       background-color: #ffffff1a;
+      color: @gold-color;
     }
     &:hover {
       background-color: #ffffff1a;

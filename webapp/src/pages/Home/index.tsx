@@ -1,5 +1,5 @@
 import { Col, Layout, Row, TreeDataNode } from 'antd';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import core from '../../core';
 import { type VNode } from '../../core/utils';
 import DirectoryTree from './DirectoryTree';
@@ -11,6 +11,7 @@ const { Header, Content, Footer } = Layout;
 
 const Home: React.FC = () => {
   const [vnodes, setVnodes] = useState<VNode[]>([]);
+  const [selectedKey, setSelectedKey] = useState<string>('');
   const [antTreeData, setAntTreeData] = useState<TreeDataNode[]>([]);
 
   useEffect(() => {
@@ -19,6 +20,10 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     document.title = '开发管理页 - HTML Auxiliary Generator';
+  }, []);
+
+  const handleDragNodeClick = useCallback((key: string) => {
+    setSelectedKey(key);
   }, []);
 
   return (
@@ -30,13 +35,13 @@ const Home: React.FC = () => {
         <Row gutter={[19, 19]}>
           <Col span={6}>
             <DirectoryTree
-              selectedKey={0}
+              {...{ selectedKey }}
               onChange={setAntTreeData}
               fieldNames={{ title: 'alias' }}
             />
           </Col>
           <Col span={18}>
-            <ViewOperations {...{ vnodes }} />
+            <ViewOperations {...{ vnodes }} onItemClick={handleDragNodeClick} />
           </Col>
         </Row>
       </Content>
