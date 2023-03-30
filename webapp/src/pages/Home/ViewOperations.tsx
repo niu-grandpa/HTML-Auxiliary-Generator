@@ -8,7 +8,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { DrawerStyleSettings } from '../../components';
 import core from '../../core';
 import { type VNode } from '../../core/utils';
 import { useElementMovement, type AuxlineData } from '../../hooks';
@@ -49,14 +48,13 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
     setHTMLString(buildHTMLString(vnodes));
   }, [vnodes]);
 
-  const onCustomCtxMenu = useCallback((e: any) => {
+  const handleRightClick = useCallback((e: any) => {
     e.preventDefault();
     e.stopPropagation();
   }, []);
 
   const handleDragElemClick = useCallback(
     (e: MouseEvent) => {
-      e.stopPropagation();
       const { dataset } = e.target as HTMLElement;
       if (dataset[isDragTarget] !== 'true') return false;
       let key = dataset['key'] as string;
@@ -102,21 +100,15 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
   }, [isMouseMove, coordinate, auxlineData]);
 
   return (
-    <>
-      <DrawerStyleSettings
-        open={openDrawer}
-        onClose={() => setOpenDrawer(false)}
-      />
-      <section className='view-opts' onContextMenu={onCustomCtxMenu}>
-        <section
-          ref={wrapperElemRef}
-          className='view-opts-box'
-          onClick={handleDragElemClick}>
-          {dragNodes}
-          {auxlineData !== undefined && renderAuxline()}
-        </section>
+    <section className='view-opts' onContextMenu={handleRightClick}>
+      <section
+        ref={wrapperElemRef}
+        className='view-opts-box'
+        onClick={handleDragElemClick}>
+        {dragNodes}
+        {auxlineData !== undefined && renderAuxline()}
       </section>
-    </>
+    </section>
   );
 });
 

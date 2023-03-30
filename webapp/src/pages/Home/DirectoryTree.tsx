@@ -98,6 +98,17 @@ const DirectoryTree: FC<Props> = memo(
       }
     }, [selectedNode]);
 
+    useEffect(() => {
+      const closeContextMenu = (e: Event) => {
+        e.stopPropagation();
+        setOpenCtxMenu(false);
+      };
+      document.addEventListener('click', closeContextMenu);
+      return () => {
+        document.removeEventListener('click', closeContextMenu);
+      };
+    }, []);
+
     const initState = useCallback(() => {
       isEdit && setIsEdit(false);
     }, [isEdit]);
@@ -275,34 +286,18 @@ const DirectoryTree: FC<Props> = memo(
     }, []);
 
     const handleCtxItemClick = useCallback(
-      (value: CTX_MENU_OPTS) => {
-        switch (value) {
-          case CTX_MENU_OPTS.NEW_NON_LEAF:
-            crea(NodeType.CONTAINER);
-            break;
-          case CTX_MENU_OPTS.ADD_TEXT:
-            crea(NodeType.TEXT);
-            break;
-          case CTX_MENU_OPTS.SET_STYLE:
-            onSetStyle();
-            break;
-          case CTX_MENU_OPTS.COPY:
-            onCopyNode(selectedNode!);
-            break;
-          case CTX_MENU_OPTS.CUT:
-            onCutNode(selectedNode!);
-            break;
-          case CTX_MENU_OPTS.PASTE:
-            onPasteNode(copyNode!, selectedNode!);
-            break;
-          case CTX_MENU_OPTS.EDIT_TAG:
-            setOpenModalForm(true);
-            setIsEdit(true);
-            break;
-          case CTX_MENU_OPTS.REMOVE:
-            onDeleteNode(selectedNode!);
-            break;
+      ({ key }: { key: string }) => {
+        if (key === CTX_MENU_OPTS.NEW_NON_LEAF) crea(NodeType.CONTAINER);
+        if (key === CTX_MENU_OPTS.ADD_TEXT) crea(NodeType.TEXT);
+        if (key === CTX_MENU_OPTS.SET_STYLE) onSetStyle();
+        if (key === CTX_MENU_OPTS.COPY) onCopyNode(selectedNode!);
+        if (key === CTX_MENU_OPTS.CUT) onCutNode(selectedNode!);
+        if (key === CTX_MENU_OPTS.PASTE) onPasteNode(copyNode!, selectedNode!);
+        if (key === CTX_MENU_OPTS.EDIT_TAG) {
+          setOpenModalForm(true);
+          setIsEdit(true);
         }
+        if (key === CTX_MENU_OPTS.REMOVE) onDeleteNode(selectedNode!);
         setOpenCtxMenu(false);
       },
       [
@@ -355,62 +350,63 @@ const DirectoryTree: FC<Props> = memo(
           defaultValues={nodeInitValues}
           onValuesChange={handleFinish}
         />
-        <section className='file-list' onContextMenu={e => e.preventDefault()}>
-          <Row>
-            <Col style={{ fontSize: 13 }} span={18}>
-              结构管理(工作区)
-            </Col>
-            <Col span={3}>
-              <Tooltip title='新建文本内容'>
-                <Button
-                  onClick={() => handleOpenMdl(NodeType.TEXT)}
-                  size='small'
-                  ghost
-                  icon={<FileAddOutlined />}
-                />
-              </Tooltip>
-            </Col>
-            <Col span={3}>
-              <Tooltip title='新建容器'>
-                <Button
-                  onClick={() => handleOpenMdl(NodeType.CONTAINER)}
-                  size='small'
-                  ghost
-                  icon={<FolderAddOutlined />}
-                />
-              </Tooltip>
-            </Col>
-          </Row>
-          <hr style={{ marginTop: 10, marginBottom: 16 }} />
-          {!treeData.length ? (
-            <>
-              <p style={{ marginBottom: 18 }}>尚未新建任何节点。</p>
-              <Button type='primary' block onClick={() => handleOpenMdl()}>
-                新建
-              </Button>
-            </>
-          ) : (
-            <>
-              <Tree
-                showIcon
-                showLine
-                blockNode
-                defaultExpandAll
-                {...{ treeData, fieldNames, selectedKeys }}
-                draggable={{ icon: false }}
-                onSelect={handleClickNode}
-                onRightClick={handleRightClick}
-              />
-            </>
-          )}
-        </section>
         <ContextMenu
           open={openCtxMenu}
-          onClose={onClearSelectedNode}
+          {...{ disPaste }}
           onClick={handleCtxItemClick}
-          nodeType={nodeInitValues.type}
-          {...{ ...ctxMenuPosi, disPaste }}
-        />
+          nodeType={nodeInitValues.type}>
+          <section
+            className='file-list'
+            onContextMenu={e => e.preventDefault()}>
+            <Row>
+              <Col style={{ fontSize: 13 }} span={18}>
+                结构管理(工作区)
+              </Col>
+              <Col span={3}>
+                <Tooltip title='新建文本内容'>
+                  <Button
+                    onClick={() => handleOpenMdl(NodeType.TEXT)}
+                    size='small'
+                    ghost
+                    icon={<FileAddOutlined />}
+                  />
+                </Tooltip>
+              </Col>
+              <Col span={3}>
+                <Tooltip title='新建容器'>
+                  <Button
+                    onClick={() => handleOpenMdl(NodeType.CONTAINER)}
+                    size='small'
+                    ghost
+                    icon={<FolderAddOutlined />}
+                  />
+                </Tooltip>
+              </Col>
+            </Row>
+            <hr style={{ marginTop: 10, marginBottom: 16 }} />
+            {!treeData.length ? (
+              <>
+                <p style={{ marginBottom: 18 }}>尚未新建任何节点。</p>
+                <Button type='primary' block onClick={() => handleOpenMdl()}>
+                  新建
+                </Button>
+              </>
+            ) : (
+              <>
+                <Tree
+                  showIcon
+                  showLine
+                  blockNode
+                  defaultExpandAll
+                  {...{ treeData, fieldNames, selectedKeys }}
+                  draggable={{ icon: false }}
+                  onSelect={handleClickNode}
+                  onRightClick={handleRightClick}
+                />
+              </>
+            )}
+          </section>
+        </ContextMenu>
         <DrawerStyleSettings
           open={openDrawer}
           onClose={() => setOpenDrawer(false)}

@@ -1,143 +1,89 @@
-import {
-  FC,
-  memo,
-  MouseEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-
-import '../assets/components/ContextMenu.less';
+import { Dropdown, MenuProps } from 'antd';
+import { FC, memo, useMemo } from 'react';
 import { NodeType } from '../core/runtime-generate';
 
 export const enum CTX_MENU_OPTS {
-  NEW_LEAF,
-  NEW_NON_LEAF,
-  ADD_TEXT,
-  SET_STYLE,
-  COPY,
-  CUT,
-  PASTE,
-  EDIT_TAG,
-  REMOVE,
+  NEW_LEAF = '0',
+  NEW_NON_LEAF = '1',
+  ADD_TEXT = '2',
+  SET_STYLE = '3',
+  COPY = '4',
+  CUT = '5',
+  PASTE = '6',
+  EDIT_TAG = '7',
+  REMOVE = '8',
 }
 
 type Props = {
-  x: number;
-  y: number;
   open: boolean;
   nodeType: NodeType;
-  /**禁用粘贴 */
   disPaste: boolean;
-  onClose: () => void;
-  onClick: (type: CTX_MENU_OPTS) => void;
-};
-
-type ItemsType = {
-  text: string;
-  type: CTX_MENU_OPTS;
-  hidden?: boolean;
-  disabled?: boolean;
+  children: JSX.Element;
+  onClick: ({ key }: { key: string }) => void;
 };
 
 const ContextMenu: FC<Props> = memo(
-  ({ x, y, open, nodeType, disPaste, onClick, onClose }) => {
-    const [display, setDisplay] = useState('none');
-    const [translate, setTranslate] = useState('');
-
+  ({ open, nodeType, disPaste, onClick, children }) => {
     const isText = useMemo(() => nodeType === NodeType.TEXT, [nodeType]);
     const isLeaf = useMemo(() => nodeType !== NodeType.CONTAINER, [nodeType]);
-
-    const items: ItemsType[] = useMemo(
+    const items: MenuProps['items'] = useMemo(
       () => [
         {
-          text: '新建容器...',
-          type: CTX_MENU_OPTS.NEW_NON_LEAF,
-          hidden: isLeaf,
+          label: '新建容器...',
+          key: CTX_MENU_OPTS.NEW_NON_LEAF,
+          disabled: isLeaf,
+          onClick,
         },
         {
-          text: '新建文本...',
-          type: CTX_MENU_OPTS.ADD_TEXT,
-          hidden: isLeaf,
+          label: '新建文本...',
+          key: CTX_MENU_OPTS.ADD_TEXT,
+          disabled: isLeaf,
+          onClick,
         },
         {
-          text: '样式配置...',
-          type: CTX_MENU_OPTS.SET_STYLE,
-          hidden: isText,
+          label: '样式配置...',
+          key: CTX_MENU_OPTS.SET_STYLE,
+          disabled: isText,
+          onClick,
         },
         {
-          text: '剪切',
-          type: CTX_MENU_OPTS.CUT,
+          label: '剪切',
+          key: CTX_MENU_OPTS.CUT,
+          onClick,
         },
         {
-          text: '复制',
-          type: CTX_MENU_OPTS.COPY,
+          label: '复制',
+          key: CTX_MENU_OPTS.COPY,
+          onClick,
         },
         {
-          text: '粘贴',
-          type: CTX_MENU_OPTS.PASTE,
+          label: '粘贴',
+          key: CTX_MENU_OPTS.PASTE,
           disabled: disPaste || isLeaf || isText,
+          onClick,
         },
         {
-          text: '编辑...',
-          type: CTX_MENU_OPTS.EDIT_TAG,
+          label: '编辑...',
+          key: CTX_MENU_OPTS.EDIT_TAG,
+          onClick,
         },
         {
-          text: '删除',
-          type: CTX_MENU_OPTS.REMOVE,
+          label: '删除',
+          key: CTX_MENU_OPTS.REMOVE,
+          onClick,
         },
       ],
-      [disPaste, isLeaf, isText]
+      [disPaste, isLeaf, isText, onClick]
     );
-
-    const handleClick = useCallback(
-      (e: MouseEvent, type: CTX_MENU_OPTS, ignore?: boolean) => {
-        e.stopPropagation();
-        if (ignore) return;
-        onClick(type);
-        setDisplay('none');
-      },
-      [onClick]
-    );
-
-    const handleClose = useCallback(() => {
-      onClose();
-      setDisplay('none');
-    }, [onClose]);
-
-    useEffect(() => {
-      setDisplay(open ? '' : 'none');
-      setTranslate(`translate(${x}px,${y}px)`);
-    }, [x, y, open]);
-
-    useEffect(() => {
-      window.addEventListener('resize', handleClose);
-      return () => {
-        window.removeEventListener('resize', handleClose);
-      };
-    }, [handleClose]);
 
     return (
-      <div
-        className='ctx-menu-overlay'
-        style={{ display: display }}
-        onClick={handleClose}
-        onContextMenu={handleClose}>
-        <ul className='ctx-menu' style={{ transform: translate }}>
-          {items.map(
-            ({ text, type, hidden, disabled }) =>
-              !hidden && (
-                <li
-                  key={text}
-                  className={`ctx-menu-item ${disabled ? 'disabled' : ''}`}
-                  onClick={e => handleClick(e, type, disabled)}>
-                  {text}
-                </li>
-              )
-          )}
-        </ul>
-      </div>
+      <Dropdown
+        menu={{ items }}
+        overlayStyle={{ width: 136 }}
+        trigger={['contextMenu']}
+        {...{ open }}>
+        {children}
+      </Dropdown>
     );
   }
 );
