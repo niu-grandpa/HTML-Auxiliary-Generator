@@ -4,6 +4,7 @@ import {
   FileAddOutlined,
   FileTextOutlined,
   FolderAddOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import {
   Button,
@@ -109,9 +110,18 @@ const DirectoryTree: FC<Props> = memo(
       };
     }, []);
 
-    const initState = useCallback(() => {
+    const resetIsEdit = useCallback(() => {
       isEdit && setIsEdit(false);
     }, [isEdit]);
+
+    const onClearSelectedNode = useCallback(() => {
+      setSelectedNode(null);
+    }, []);
+
+    const handleResetSelected = useCallback(() => {
+      setSelectedKeys([]);
+      onClearSelectedNode();
+    }, [onClearSelectedNode]);
 
     const handleOpenMdl = useCallback(
       (type?: NodeType) => {
@@ -126,9 +136,9 @@ const DirectoryTree: FC<Props> = memo(
     );
 
     const handleCloseModal = useCallback(() => {
-      initState();
+      resetIsEdit();
       setOpenModalForm(false);
-    }, [initState]);
+    }, [resetIsEdit]);
 
     const createNode = useCallback((values: FormOfNodeValues) => {
       const node = createAntTreeNode(values);
@@ -201,10 +211,6 @@ const DirectoryTree: FC<Props> = memo(
       },
       [isEdit, editNode, createNode, processNodeContent]
     );
-
-    const onClearSelectedNode = useCallback(() => {
-      setSelectedNode(null);
-    }, []);
 
     const onCopyNode = useCallback(
       (source: TreeDataNode) => {
@@ -352,7 +358,7 @@ const DirectoryTree: FC<Props> = memo(
           newData = updateNode(newData, values, target)!;
         }
         setTreeData(newData);
-        initState();
+        resetIsEdit();
         onClearSelectedNode();
       },
       [
@@ -360,7 +366,7 @@ const DirectoryTree: FC<Props> = memo(
         selectedNode,
         createNode,
         updateNode,
-        initState,
+        resetIsEdit,
         processNodeContent,
         onClearSelectedNode,
       ]
@@ -384,7 +390,7 @@ const DirectoryTree: FC<Props> = memo(
             className='file-list'
             onContextMenu={e => e.preventDefault()}>
             <Row>
-              <Col style={{ fontSize: 13 }} span={18}>
+              <Col style={{ fontSize: 13 }} span={15}>
                 结构管理(工作区)
               </Col>
               <Col span={3}>
@@ -404,6 +410,16 @@ const DirectoryTree: FC<Props> = memo(
                     size='small'
                     ghost
                     icon={<FolderAddOutlined />}
+                  />
+                </Tooltip>
+              </Col>
+              <Col span={3}>
+                <Tooltip title='重置选中的节点'>
+                  <Button
+                    onClick={handleResetSelected}
+                    size='small'
+                    ghost
+                    icon={<ReloadOutlined />}
                   />
                 </Tooltip>
               </Col>

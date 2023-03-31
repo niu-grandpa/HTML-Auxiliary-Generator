@@ -58,7 +58,7 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
     (e: MouseEvent) => {
       const { dataset } = e.target as HTMLElement;
       if (!isEqual(dataset[isDragTarget], 'true')) return false;
-      let key = dataset['drag-vnode-uuid'] as string;
+      let key = dataset['dragVnodeUuid'] as string;
       onItemClick(key);
     },
     [onItemClick]

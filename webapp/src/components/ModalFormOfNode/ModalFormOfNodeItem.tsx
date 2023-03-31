@@ -62,6 +62,7 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
 
     useEffect(() => {
       if (!edit) {
+        form.resetFields();
         form.setFieldsValue({ ...__defaultValues, type: initialValues!.type });
       } else {
         let alias = initialValues?.alias;
@@ -115,7 +116,7 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
       <Form
         name='form'
         autoComplete='off'
-        {...{ form, initialValues }}
+        {...{ form }}
         style={{ marginTop: 24 }}
         onFinish={handleFinish}
         onValuesChange={handleValuesChange}>
