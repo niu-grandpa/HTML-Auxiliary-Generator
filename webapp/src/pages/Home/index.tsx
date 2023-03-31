@@ -12,14 +12,13 @@ const { Header, Content, Footer } = Layout;
 const Home: React.FC = () => {
   const [vnodes, setVnodes] = useState<VNode[]>([]);
   const [selectedKey, setSelectedKey] = useState<string>('');
-  const [antTreeData, setAntTreeData] = useState<TreeDataNode[]>([]);
-
-  useEffect(() => {
-    setVnodes(antTreeNodeToVNode(antTreeData));
-  }, [antTreeData]);
 
   useEffect(() => {
     document.title = '开发管理页 - HTML Auxiliary Generator';
+  }, []);
+
+  const handleTreeDataChange = useCallback((data: TreeDataNode[]) => {
+    setVnodes(antTreeNodeToVNode(data));
   }, []);
 
   const handleDragNodeClick = useCallback((key: string) => {
@@ -36,7 +35,7 @@ const Home: React.FC = () => {
           <Col span={6}>
             <DirectoryTree
               {...{ selectedKey }}
-              onChange={setAntTreeData}
+              onChange={handleTreeDataChange}
               fieldNames={{ title: 'alias' }}
             />
           </Col>

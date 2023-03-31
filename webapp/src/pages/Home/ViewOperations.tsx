@@ -1,3 +1,4 @@
+import { isEqual } from 'lodash';
 import {
   FC,
   memo,
@@ -56,7 +57,7 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
   const handleDragElemClick = useCallback(
     (e: MouseEvent) => {
       const { dataset } = e.target as HTMLElement;
-      if (dataset[isDragTarget] !== 'true') return false;
+      if (!isEqual(dataset[isDragTarget], 'true')) return false;
       let key = dataset['drag-vnode-uuid'] as string;
       onItemClick(key);
     },
@@ -67,7 +68,6 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
     const [x, y] = coordinate;
 
     const { xCenter, xAlign, x1, x2, yCenter, yAlign, y1, y2 } = auxlineData!;
-
     const showLfLine = x <= xCenter ? '' : 'none';
     const showRtLine = x >= xCenter ? '' : 'none';
     const showTpLine = y <= yCenter ? '' : 'none';

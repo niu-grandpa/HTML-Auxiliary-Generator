@@ -15,18 +15,17 @@ import {
   Tree,
   type TreeDataNode,
 } from 'antd';
-import { clone, cloneDeep, head, isEqual } from 'lodash-es';
 import {
-  FC,
-  Key,
-  memo,
-  MouseEvent,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+  clone,
+  cloneDeep,
+  head,
+  isEqual,
+  isNull,
+  isUndefined,
+} from 'lodash-es';
+import { FC, Key, memo, useCallback, useEffect, useState } from 'react';
 import { DrawerStyleSettings, ModalFormOfNode } from '../../components';
-import { ContextMenu, CTX_MENU_OPTS } from '../../components/ContextMenu';
+import { ContextMenu } from '../../components/ContextMenu';
 import { StyleFormValues } from '../../components/DrawerStyleSettings';
 import { __defaultValues } from '../../components/ModalFormOfNode';
 import { FormOfNodeValues } from '../../components/ModalFormOfNode/ModalFormOfNodeItem';
@@ -57,7 +56,7 @@ const DirectoryTree: FC<Props> = memo(
 
     const [nodeInitValues, setNodeInitValues] =
       useState<FormOfNodeValues>(__defaultValues);
-    const [ctxMenuPosi, setCtxMenuPosi] = useState({ x: 0, y: 0 });
+    const [nodeInitStyle, setNodeInitStyle] = useState<StyleFormValues>();
 
     const [copyNode, setCopyNode] = useState<TreeDataNode | null>(null);
     const [selectedNode, setSelectedNode] = useState<TreeDataNode | null>(null);
@@ -77,11 +76,11 @@ const DirectoryTree: FC<Props> = memo(
     }, [treeData, onChange, selectedKeys]);
 
     useEffect(() => {
-      setDisPaste(isEqual(copyNode, null));
+      setDisPaste(isNull(copyNode));
     }, [copyNode]);
 
     useEffect(() => {
-      if (!isEqual(selectedNode, null) && !isEqual(selectedNode, undefined)) {
+      if (!isNull(selectedNode) && !isUndefined(selectedNode)) {
         // @ts-ignore
         const { type, title, isLeaf, alias, props, content } = selectedNode;
         const { id, className, attributes } = props;
@@ -117,7 +116,7 @@ const DirectoryTree: FC<Props> = memo(
     const handleOpenMdl = useCallback(
       (type?: NodeType) => {
         setNodeInitValues(v => {
-          v!.type = !isEqual(type, undefined) ? type! : NodeType.CONTAINER;
+          v!.type = !isUndefined(type) ? type! : NodeType.CONTAINER;
           return v;
         });
         setOpenModalForm(true);
@@ -140,7 +139,7 @@ const DirectoryTree: FC<Props> = memo(
     // 添加节点附带的额外文本内容
     const processNodeContent = useCallback(
       (node: TreeDataNode, type: NodeType, content: string) => {
-        if (type === NodeType.TEXT || !content) return node;
+        if (isEqual(type, NodeType.TEXT) || !content) return node;
         const textNode = createNode({
           ...__defaultValues,
           type: NodeType.TEXT,
@@ -265,12 +264,9 @@ const DirectoryTree: FC<Props> = memo(
       setSelectedNode(info.selectedNodes[0]);
     }, []);
 
-    const handleRightClick = useCallback((info: any) => {
-      const { event, node } = info;
-      const { clientX, clientY } = event as MouseEvent;
+    const handleRightClick = useCallback(({ node }: any) => {
       setSelectedNode(node);
       setOpenCtxMenu(true);
-      setCtxMenuPosi({ x: clientX, y: clientY + 10 });
     }, []);
 
     const crea = useCallback((type: NodeType) => {
@@ -281,32 +277,54 @@ const DirectoryTree: FC<Props> = memo(
       });
     }, []);
 
-    const handleCtxItemClick = useCallback(
-      ({ key }: { key: string }) => {
-        if (isEqual(key, CTX_MENU_OPTS.NEW_NON_LEAF)) crea(NodeType.CONTAINER);
-        if (isEqual(key, CTX_MENU_OPTS.ADD_TEXT)) crea(NodeType.TEXT);
-        if (isEqual(key, CTX_MENU_OPTS.SET_STYLE)) setOpenDrawer(true);
-        if (isEqual(key, CTX_MENU_OPTS.COPY)) onCopyNode(selectedNode!);
-        if (isEqual(key, CTX_MENU_OPTS.CUT)) onCutNode(selectedNode!);
-        if (isEqual(key, CTX_MENU_OPTS.PASTE)) {
-          onPasteNode(copyNode!, selectedNode!);
-        }
-        if (isEqual(key, CTX_MENU_OPTS.EDIT_TAG)) {
-          setOpenModalForm(true);
-          setIsEdit(true);
-        }
-        if (isEqual(key, CTX_MENU_OPTS.REMOVE)) onDeleteNode(selectedNode!);
-        setOpenCtxMenu(false);
+    const ctxMenuMethods = useCallback(
+      (key: string) => {
+        const methods = {
+          '1': () => crea(NodeType.CONTAINER),
+          '2': () => crea(NodeType.TEXT),
+          '3': () => {
+            // @ts-ignore
+            setNodeInitStyle(selectedNode['props']['style']);
+            setOpenDrawer(true);
+          },
+          '4': () => onCopyNode(selectedNode!),
+          '5': () => onCutNode(selectedNode!),
+          '6': () => onPasteNode(copyNode!, selectedNode!),
+          '7': () => {
+            setOpenModalForm(true);
+            setIsEdit(true);
+          },
+          '8': () => onDeleteNode(selectedNode!),
+        };
+        // @ts-ignore
+        methods[key]();
       },
       [
-        crea,
         copyNode,
-        selectedNode,
+        crea,
         onCopyNode,
         onCutNode,
         onDeleteNode,
         onPasteNode,
+        selectedNode,
       ]
+    );
+
+    const handleCtxItemClick = useCallback(
+      ({ key }: { key: string }) => {
+        ctxMenuMethods(key);
+        setOpenCtxMenu(false);
+      },
+      [ctxMenuMethods]
+    );
+
+    const invokeCallback = useCallback(
+      (node: TreeDataNode) => {
+        const newData = updateAntTree(treeData, node);
+        setTreeData(newData);
+        onChange(newData, selectedKeys);
+      },
+      [onChange, selectedKeys, treeData]
     );
 
     const handleEditStyle = useCallback(
@@ -314,9 +332,9 @@ const DirectoryTree: FC<Props> = memo(
         const n = cloneDeep(selectedNode)!;
         // @ts-ignore
         n.props.style = { ...n.props.style, ...style };
-        setTreeData(updateAntTree(treeData, n));
+        invokeCallback(n);
       },
-      [selectedNode, treeData]
+      [selectedNode, invokeCallback]
     );
 
     const handleFinish = useCallback(
@@ -370,7 +388,7 @@ const DirectoryTree: FC<Props> = memo(
                 结构管理(工作区)
               </Col>
               <Col span={3}>
-                <Tooltip title='新建文本内容'>
+                <Tooltip title='新建文本'>
                   <Button
                     onClick={() => handleOpenMdl(NodeType.TEXT)}
                     size='small'
@@ -380,7 +398,7 @@ const DirectoryTree: FC<Props> = memo(
                 </Tooltip>
               </Col>
               <Col span={3}>
-                <Tooltip title='新建容器'>
+                <Tooltip title='新建元素'>
                   <Button
                     onClick={() => handleOpenMdl(NodeType.CONTAINER)}
                     size='small'
@@ -416,6 +434,7 @@ const DirectoryTree: FC<Props> = memo(
         </ContextMenu>
         <DrawerStyleSettings
           open={openDrawer}
+          initialValues={nodeInitStyle}
           onChange={handleEditStyle}
           onClose={() => setOpenDrawer(false)}
         />

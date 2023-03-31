@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-export function useDebounce<T>(callback: (...args: T[]) => T, wait = 200) {
+export function useDebounce<T>(callback: (...args: any[]) => T, wait = 200) {
   const timer = useRef<NodeJS.Timer>();
   const callbackRef = useRef<Function | null>(callback);
 

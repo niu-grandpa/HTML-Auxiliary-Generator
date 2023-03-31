@@ -35,6 +35,7 @@ const FormItemOfSizeType: FC<Props> = memo(({ items, onUnitChange }) => {
                   <Option value='em'>em</Option>
                   <Option value='vw'>vw</Option>
                   <Option value='vh'>vh</Option>
+                  <Option value='empty'>空</Option>
                 </Select>
               }
             />

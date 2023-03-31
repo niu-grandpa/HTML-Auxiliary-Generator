@@ -1,13 +1,15 @@
-import { Drawer, Form, Space } from 'antd';
-import { FC, memo, useCallback, useState } from 'react';
-import { useDebounce } from '../../hooks';
+import { Drawer, Form } from 'antd';
+import { FC, memo, useCallback, useEffect, useState } from 'react';
 import FormItemOfSelectType from './FormItemOfSelectType';
 import FormItemOfSizeType from './FormItemOfSizeType';
 import FormItemOfTextType from './FormItemOfTextType';
 
+import { useForm } from 'antd/es/form/Form';
+import { isEqual, isUndefined } from 'lodash';
 import '../../assets/components/DrawerStyleSettings.less';
+import { useDebounce } from '../../hooks';
 
-export type StyleFormValues = {};
+export type StyleFormValues = Record<string, string | number>;
 
 type Props = {
   open: boolean;
@@ -16,15 +18,15 @@ type Props = {
   onChange: (data: any) => void;
 };
 
-const FormSpaceItem = memo(({ children }: { children: JSX.Element[] }) => (
-  <Form.Item>
-    <Space>{children}</Space>
-  </Form.Item>
-));
-
 const DrawerStyleSettings: FC<Partial<Props>> = memo(
   ({ open, onClose, onChange, initialValues }) => {
+    const [form] = useForm();
     const [sizeUnit, setSizeUnit] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+      form.resetFields();
+      form.setFieldsValue(initialValues);
+    }, [form, initialValues]);
 
     const handleUnitChange = useCallback(
       (name: string, val: string) => {
@@ -35,24 +37,43 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
       [sizeUnit]
     );
 
-    const handleValuesChange = useDebounce((_: any, values: any) => {
-      onChange?.(values);
-    });
+    const processValues = useCallback(
+      (values: StyleFormValues) => {
+        if (
+          isUndefined(sizeUnit['lineHeight']) &&
+          !isUndefined(values.lineHeight)
+        ) {
+          values.lineHeight = `${values.lineHeight}px`;
+        }
+        for (const key in sizeUnit) {
+          const unit = sizeUnit[key];
+          // @ts-ignore
+          const value = values[key];
+          // @ts-ignore
+          values[key] = isEqual(unit, 'empty') ? value : `${value}${unit}`;
+        }
+        return values;
+      },
+      [sizeUnit]
+    );
+
+    const handleValuesChange = useDebounce((values: StyleFormValues) => {
+      onChange?.(processValues(values));
+    }, 400);
 
     return (
       <Drawer
         width={400}
         placement='left'
         {...{ open, onClose }}
-        title='样式配置'
-        extra='常用属性'
+        title='常用样式'
         bodyStyle={{ overflowX: 'hidden' }}>
         <Form
+          {...{ form }}
+          layout='inline'
           className='dss-form'
           labelCol={{ span: 4 }}
           wrapperCol={{ span: 12 }}
-          layout='inline'
-          {...{ initialValues }}
           onValuesChange={handleValuesChange}>
           <FormItemOfSelectType
             items={[
@@ -61,18 +82,16 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
                 name: 'display',
                 options: [
                   'none',
-                  'inline',
-                  'block',
-                  'inline-block',
-                  'flex',
-                  'inline-flex',
-                  'grid',
-                  'inline-grid',
-                  'table',
-                  'inline-table',
-                  'list-item',
                   'inherit',
+                  'inline',
+                  'inline-flex',
+                  'inline-block',
                 ],
+              },
+              {
+                label: 'visibility',
+                name: 'visibility',
+                options: ['hidden', 'visible', 'collapse'],
               },
               {
                 label: '定位',
@@ -84,6 +103,11 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
                   'sticky ',
                   'fixed',
                 ],
+              },
+              {
+                label: '文本对齐',
+                name: 'textAlign',
+                options: ['right', 'left', 'center', 'justify'],
               },
             ]}
           />
@@ -98,6 +122,22 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
                 name: 'height',
               },
               {
+                label: '最小宽度',
+                name: 'minWidth',
+              },
+              {
+                label: '最大宽度',
+                name: 'maxWidth',
+              },
+              {
+                label: '最小高度',
+                name: 'minHeight',
+              },
+              {
+                label: '最大高度',
+                name: 'maxHeight',
+              },
+              {
                 label: '行高',
                 name: 'lineHeight',
               },
@@ -105,50 +145,33 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
                 label: '文字大小',
                 name: 'fontSize',
               },
-            ]}
-            onUnitChange={handleUnitChange}
-          />
-          <FormItemOfTextType
-            items={[
-              {
-                label: '外边距',
-                name: 'margin',
-              },
-              {
-                label: '内边距',
-                name: 'padding',
-              },
-            ]}
-          />
-          <FormItemOfSizeType
-            items={[
               {
                 label: '上外边距',
                 name: 'marginTop',
-              },
-              {
-                label: '上内边距',
-                name: 'paddingTop',
               },
               {
                 label: '右外边距',
                 name: 'marginRight',
               },
               {
-                label: '右内边距',
-                name: 'paddingRight',
-              },
-              {
                 label: '下外边距',
                 name: 'marginBottom',
               },
               {
-                label: '下内边距',
-                name: 'paddingBottom',
-              },
-              {
                 label: '左外边距',
                 name: 'marginLeft',
+              },
+              {
+                label: '上内边距',
+                name: 'paddingTop',
+              },
+              {
+                label: '右内边距',
+                name: 'paddingRight',
+              },
+              {
+                label: '下内边距',
+                name: 'paddingBottom',
               },
               {
                 label: '左内边距',
@@ -160,27 +183,19 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
           <FormItemOfTextType
             items={[
               {
-                label: '边框',
-                name: 'border',
-              },
-              {
-                label: '字体颜色',
-                name: 'color',
-              },
-              {
-                label: '上框线',
+                label: '上边框',
                 name: 'borderTop',
               },
               {
-                label: '右框线',
+                label: '右边框',
                 name: 'borderRight',
               },
               {
-                label: '下框线',
+                label: '下边框',
                 name: 'borderBottom',
               },
               {
-                label: '左框线',
+                label: '左边框',
                 name: 'borderLeft',
               },
               {
@@ -196,22 +211,25 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
                 name: 'opacity',
               },
               {
-                label: '背景样式',
+                label: '背景',
                 name: 'background',
+              },
+              {
+                label: '字体颜色',
+                name: 'color',
+              },
+              {
+                label: '过渡效果',
+                name: 'transition',
               },
             ]}
           />
           <FormItemOfSelectType
             items={[
               {
-                label: 'visibility',
-                name: 'visibility',
-                options: ['hidden', 'visible', 'collapse'],
-              },
-              {
-                label: '垂直对齐',
-                name: 'verticalAlign',
-                options: ['top', 'bottom', 'middle', 'text-top', 'text-bottom'],
+                label: '浮动',
+                name: 'userSelect',
+                options: ['none ', 'left', 'right'],
               },
               {
                 label: '溢出',
@@ -219,13 +237,30 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
                 options: ['auto', 'scroll', 'hidden', 'visible'],
               },
               {
-                label: '文本对齐',
-                name: 'textAlign',
-                options: ['right', 'left', 'center', 'justify'],
+                label: '垂直对齐',
+                name: 'verticalAlign',
+                options: ['top', 'bottom', 'middle', 'text-top', 'text-bottom'],
               },
               {
                 label: 'X轴溢出',
                 name: 'overflowX',
+                options: ['auto', 'scroll', 'hidden', 'visible'],
+              },
+              {
+                label: '文本修饰',
+                name: 'textDecoration',
+                options: [
+                  'inherit',
+                  'none',
+                  'underline',
+                  'overline',
+                  'line-through',
+                  'blink',
+                ],
+              },
+              {
+                label: 'Y轴溢出',
+                name: 'overflowY',
                 options: ['auto', 'scroll', 'hidden', 'visible'],
               },
               {
@@ -241,26 +276,9 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
                 ],
               },
               {
-                label: 'Y轴溢出',
-                name: 'overflowY',
-                options: ['auto', 'scroll', 'hidden', 'visible'],
-              },
-              {
                 label: 'word break',
                 name: 'wordBreak',
                 options: ['normal', 'break-all', 'keep-all'],
-              },
-              {
-                label: '文本修饰',
-                name: 'textDecoration',
-                options: [
-                  'inherit',
-                  'none',
-                  'underline',
-                  'overline',
-                  'line-through',
-                  'blink',
-                ],
               },
               {
                 label: 'word wrap',
@@ -271,19 +289,6 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
                 label: '字体风格',
                 name: 'fontStyle',
                 options: ['normal', 'italic', 'oblique'],
-              },
-              {
-                label: 'align items',
-                name: 'alignItems',
-                options: [
-                  'stretch',
-                  'center',
-                  'flex-start',
-                  'flex-end',
-                  'baseline',
-                  'initial',
-                  'inherit',
-                ],
               },
               {
                 label: '字体粗细',
@@ -300,34 +305,6 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
                   'bold',
                   'bolder',
                   'lighter',
-                ],
-              },
-              {
-                label: 'justify content',
-                name: 'justifyContent',
-                options: [
-                  'flex-start',
-                  'flex-end',
-                  'center',
-                  'space-between',
-                  'space-around',
-                  'initial',
-                  'inherit',
-                ],
-              },
-              {
-                label: '符号列表',
-                name: 'listStyleType',
-                options: [
-                  'disc',
-                  'circle',
-                  'square',
-                  'decimal',
-                  'lower-roman',
-                  'upper-roman',
-                  'lower-alpha',
-                  'upper-alpha',
-                  'none',
                 ],
               },
               {
@@ -363,8 +340,8 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
                 name: 'letterSpacing',
               },
               {
-                label: '单词间距',
-                name: 'wordSpacing',
+                label: '堆叠层级',
+                name: 'zIndex',
               },
             ]}
             onUnitChange={handleUnitChange}
@@ -375,4 +352,4 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
   }
 );
 
-export { DrawerStyleSettings, FormSpaceItem };
+export { DrawerStyleSettings };

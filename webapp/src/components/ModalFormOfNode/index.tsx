@@ -56,7 +56,7 @@ const ModalFormOfNode: FC<Partial<Props>> = memo(
         {...{ open, onCancel }}
         mask={false}
         footer={null}
-        title={edit ? '编辑节点' : '创建节点'}>
+        title={edit ? '编辑节点' : '新建节点'}>
         <ModalFormOfNodeItem
           {...{ edit, initialValues }}
           onFinish={handleFinish}

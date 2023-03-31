@@ -8,7 +8,6 @@ import {
   Radio,
   Select,
   Space,
-  Tooltip,
 } from 'antd';
 import { useForm } from 'antd/es/form/Form';
 import { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
@@ -141,16 +140,12 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
         )}
         <Form.Item name='type'>
           <Radio.Group disabled={edit} value={isSingle ? undefined : nodeType}>
-            <Tooltip title='作为容器添加其他节点'>
-              <Radio value={NodeType.CONTAINER} disabled={disContainerType}>
-                容器节点
-              </Radio>
-            </Tooltip>
-            <Tooltip title='单纯文本内容没有元素包裹'>
-              <Radio value={NodeType.TEXT} disabled={isSingle}>
-                文本节点
-              </Radio>
-            </Tooltip>
+            <Radio value={NodeType.CONTAINER} disabled={disContainerType}>
+              元素节点
+            </Radio>
+            <Radio value={NodeType.TEXT} disabled={isSingle}>
+              文本节点
+            </Radio>
           </Radio.Group>
         </Form.Item>
         {!isTextType && (

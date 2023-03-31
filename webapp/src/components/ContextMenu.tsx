@@ -29,7 +29,7 @@ const ContextMenu: FC<Props> = memo(
     const items: MenuProps['items'] = useMemo(
       () => [
         {
-          label: '新建容器...',
+          label: '新建元素...',
           key: CTX_MENU_OPTS.NEW_NON_LEAF,
           disabled: isLeaf,
           onClick,
@@ -41,7 +41,7 @@ const ContextMenu: FC<Props> = memo(
           onClick,
         },
         {
-          label: '样式配置...',
+          label: '样式调整...',
           key: CTX_MENU_OPTS.SET_STYLE,
           disabled: isText,
           onClick,

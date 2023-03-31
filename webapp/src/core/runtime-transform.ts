@@ -37,8 +37,14 @@ function toHTMLStrings(
     if (style && Object.keys(style).length) {
       for (const key in style) {
         // @ts-ignore
-        let value = style[key];
+        let value = style[key] as string;
         if (value === undefined) continue;
+        if (
+          typeof value === 'string' &&
+          (value === '' || value.trim() === '')
+        ) {
+          continue;
+        }
         value = typeof value === 'number' ? value + 'px' : value;
         cssText += `${getKebabCase2(key)}: ${value}; `;
       }
