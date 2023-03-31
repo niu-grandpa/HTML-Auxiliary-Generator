@@ -27,6 +27,7 @@ import {
 } from 'react';
 import { DrawerStyleSettings, ModalFormOfNode } from '../../components';
 import { ContextMenu, CTX_MENU_OPTS } from '../../components/ContextMenu';
+import { StyleFormValues } from '../../components/DrawerStyleSettings';
 import { __defaultValues } from '../../components/ModalFormOfNode';
 import { FormOfNodeValues } from '../../components/ModalFormOfNode/ModalFormOfNodeItem';
 import core from '../../core';
@@ -131,7 +132,6 @@ const DirectoryTree: FC<Props> = memo(
     }, [initState]);
 
     const createNode = useCallback((values: FormOfNodeValues) => {
-      // todo 样式
       const node = createAntTreeNode(values);
       node.icon = nodeIcons[values.type];
       return node;
@@ -155,7 +155,7 @@ const DirectoryTree: FC<Props> = memo(
 
     const editNode = useCallback(
       (root: TreeDataNode[], node: TreeDataNode, values: FormOfNodeValues) => {
-        const { type, value, alias, className, identity, attributes, content } =
+        const { value, alias, className, identity, attributes, content } =
           values;
         node.title = value;
         // @ts-ignore
@@ -168,9 +168,9 @@ const DirectoryTree: FC<Props> = memo(
           className,
           attributes,
         };
-        return updateAntTree(root, processNodeContent(node, type, content));
+        return updateAntTree(root, node);
       },
-      [processNodeContent]
+      []
     );
 
     const updateNode = useCallback(
@@ -205,10 +205,6 @@ const DirectoryTree: FC<Props> = memo(
 
     const onClearSelectedNode = useCallback(() => {
       setSelectedNode(null);
-    }, []);
-
-    const onSetStyle = useCallback(() => {
-      setOpenDrawer(true);
     }, []);
 
     const onCopyNode = useCallback(
@@ -287,17 +283,19 @@ const DirectoryTree: FC<Props> = memo(
 
     const handleCtxItemClick = useCallback(
       ({ key }: { key: string }) => {
-        if (key === CTX_MENU_OPTS.NEW_NON_LEAF) crea(NodeType.CONTAINER);
-        if (key === CTX_MENU_OPTS.ADD_TEXT) crea(NodeType.TEXT);
-        if (key === CTX_MENU_OPTS.SET_STYLE) onSetStyle();
-        if (key === CTX_MENU_OPTS.COPY) onCopyNode(selectedNode!);
-        if (key === CTX_MENU_OPTS.CUT) onCutNode(selectedNode!);
-        if (key === CTX_MENU_OPTS.PASTE) onPasteNode(copyNode!, selectedNode!);
-        if (key === CTX_MENU_OPTS.EDIT_TAG) {
+        if (isEqual(key, CTX_MENU_OPTS.NEW_NON_LEAF)) crea(NodeType.CONTAINER);
+        if (isEqual(key, CTX_MENU_OPTS.ADD_TEXT)) crea(NodeType.TEXT);
+        if (isEqual(key, CTX_MENU_OPTS.SET_STYLE)) setOpenDrawer(true);
+        if (isEqual(key, CTX_MENU_OPTS.COPY)) onCopyNode(selectedNode!);
+        if (isEqual(key, CTX_MENU_OPTS.CUT)) onCutNode(selectedNode!);
+        if (isEqual(key, CTX_MENU_OPTS.PASTE)) {
+          onPasteNode(copyNode!, selectedNode!);
+        }
+        if (isEqual(key, CTX_MENU_OPTS.EDIT_TAG)) {
           setOpenModalForm(true);
           setIsEdit(true);
         }
-        if (key === CTX_MENU_OPTS.REMOVE) onDeleteNode(selectedNode!);
+        if (isEqual(key, CTX_MENU_OPTS.REMOVE)) onDeleteNode(selectedNode!);
         setOpenCtxMenu(false);
       },
       [
@@ -308,8 +306,17 @@ const DirectoryTree: FC<Props> = memo(
         onCutNode,
         onDeleteNode,
         onPasteNode,
-        onSetStyle,
       ]
+    );
+
+    const handleEditStyle = useCallback(
+      (style: StyleFormValues) => {
+        const n = cloneDeep(selectedNode)!;
+        // @ts-ignore
+        n.props.style = { ...n.props.style, ...style };
+        setTreeData(updateAntTree(treeData, n));
+      },
+      [selectedNode, treeData]
     );
 
     const handleFinish = useCallback(
@@ -409,6 +416,7 @@ const DirectoryTree: FC<Props> = memo(
         </ContextMenu>
         <DrawerStyleSettings
           open={openDrawer}
+          onChange={handleEditStyle}
           onClose={() => setOpenDrawer(false)}
         />
       </>

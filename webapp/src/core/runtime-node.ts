@@ -143,7 +143,7 @@ function patchProps(n1: TreeDataNode, n2: TreeDataNode) {
   const oldProps = n1.props;
   // @ts-ignore
   const newProps = n2.props;
-  for (const key in oldProps) {
+  for (const key in newProps) {
     const oldValue = oldProps[key];
     const newValue = newProps[key];
     oldProps[key] = newValue;

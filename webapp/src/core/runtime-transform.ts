@@ -29,18 +29,20 @@ function toHTMLStrings(
     selfClose: boolean
   ) => {
     const { style, className, id, attributes } = props!;
+    let cssText = '';
     // <div> -> <div , <input /> -> <input
     startTag = startTag.substring(0, len);
     if (id) startTag += ` id="${id}"`;
     if (className) startTag += ` class="${className}"`;
     if (style && Object.keys(style).length) {
-      let inline = ' style=';
       for (const key in style) {
         // @ts-ignore
-        const value = style[key];
-        inline += `"${getKebabCase2(key)}: ${value}"; `;
+        let value = style[key];
+        if (value === undefined) continue;
+        value = typeof value === 'number' ? value + 'px' : value;
+        cssText += `${getKebabCase2(key)}: ${value}; `;
       }
-      startTag += inline.trimEnd();
+      startTag += ` style="${cssText.trimEnd()}"`;
     }
     if (attributes.length) {
       for (const { name, value } of attributes) {

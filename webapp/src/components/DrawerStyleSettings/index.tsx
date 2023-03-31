@@ -36,7 +36,7 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
     );
 
     const handleValuesChange = useDebounce((_: any, values: any) => {
-      console.log(values);
+      onChange?.(values);
     });
 
     return (

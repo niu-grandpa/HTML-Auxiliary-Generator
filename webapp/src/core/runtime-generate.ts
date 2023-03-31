@@ -41,7 +41,7 @@ function _generate_() {
         className: className || undefined,
         attributes: attributes || [],
         style: { ...style, display: 'inline-block' },
-        'data-key': key,
+        'data-drag-vnode-uuid': key,
         'data-is-drag-target': true,
       },
     };
