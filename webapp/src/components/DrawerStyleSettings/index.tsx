@@ -28,17 +28,8 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
       form.setFieldsValue(initialValues);
     }, [form, initialValues]);
 
-    const handleUnitChange = useCallback(
-      (name: string, val: string) => {
-        const obj: Record<string, string> = { ...sizeUnit };
-        obj[name] = val;
-        setSizeUnit(v => ({ ...v, ...obj }));
-      },
-      [sizeUnit]
-    );
-
     const processValues = useCallback(
-      (values: StyleFormValues) => {
+      (values: StyleFormValues, sizeUnit: Record<string, string>) => {
         if (
           isUndefined(sizeUnit['lineHeight']) &&
           !isUndefined(values.lineHeight)
@@ -54,11 +45,21 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
         }
         return values;
       },
-      [sizeUnit]
+      []
+    );
+
+    const handleUnitChange = useCallback(
+      (name: string, val: string) => {
+        const obj: Record<string, string> = { ...sizeUnit };
+        obj[name] = val;
+        setSizeUnit(v => ({ ...v, ...obj }));
+        onChange?.(processValues(form.getFieldsValue(), obj));
+      },
+      [sizeUnit, form, processValues, onChange]
     );
 
     const handleValuesChange = useDebounce((values: StyleFormValues) => {
-      onChange?.(processValues(values));
+      onChange?.(processValues(values, sizeUnit));
     }, 400);
 
     return (
