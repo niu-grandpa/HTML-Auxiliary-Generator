@@ -18,16 +18,11 @@
   background: #ffffff4d;
 }
 
-.view-opts,
-.file-list {
-  height: 89vh;
-  max-height: 89vh;
-  border-radius: 4px;
-}
-
-.view-opts {
+.grid-background {
   position: relative;
+  padding: 0 !important;
   overflow: hidden;
+  border-radius: 4px;
   color: @layout-bgc;
   background-color: @light-color;
   background-image: linear-gradient(@divider-color 1px, transparent 0),
@@ -35,15 +30,20 @@
     linear-gradient(@divider-color 1px, transparent 0),
     linear-gradient(90deg, @divider-color 1px, transparent 0);
   background-size: 15px 15px, 15px 15px;
+}
 
-  &-box {
-    height: 100%;
-    [data-is-moving='true'] {
-      user-select: none;
-      cursor: grabbing;
-    }
+.view-opts,
+.file-list {
+  height: calc(100vh - 60px);
+  border-radius: 4px;
+}
+
+.view-opts {
+  height: 100%;
+  [data-is-moving='true'] {
+    user-select: none;
+    cursor: grabbing;
   }
-
   &-auxline {
     &-y,
     &-x {

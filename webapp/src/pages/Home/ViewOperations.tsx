@@ -100,14 +100,13 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
   }, [isMouseMove, coordinate, auxlineData]);
 
   return (
-    <section className='view-opts' onContextMenu={handleRightClick}>
-      <section
-        ref={wrapperElemRef}
-        className='view-opts-box'
-        onClick={handleDragElemClick}>
-        {dragNodes}
-        {auxlineData !== undefined && renderAuxline()}
-      </section>
+    <section
+      ref={wrapperElemRef}
+      className='view-opts'
+      onClick={handleDragElemClick}
+      onContextMenu={handleRightClick}>
+      {dragNodes}
+      {/* {auxlineData !== undefined && renderAuxline()} */}
     </section>
   );
 });

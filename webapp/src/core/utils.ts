@@ -6,7 +6,6 @@ export type VNode = {
   type: NodeType;
   key: string;
   tag: string;
-  // antd Tree组件的数据结构决定了children不存在是字符串的情况
   children: VNode[];
   content: string;
   props: {

@@ -1,7 +1,6 @@
 import {
   BuildOutlined,
-  CodeSandboxOutlined,
-  FileAddOutlined,
+  CodepenOutlined,
   FileTextOutlined,
   FolderAddOutlined,
   ReloadOutlined,
@@ -9,11 +8,11 @@ import {
 import {
   Button,
   Col,
-  message,
   Modal,
   Row,
   Tooltip,
   Tree,
+  message,
   type TreeDataNode,
 } from 'antd';
 import {
@@ -45,7 +44,7 @@ const { createAntTreeNode, updateAntTree, deleteNode, resolveKeyConflicts } =
 const { confirm } = Modal;
 
 const nodeIcons = {
-  0: <CodeSandboxOutlined />,
+  0: <CodepenOutlined />,
   1: <BuildOutlined />,
   2: <FileTextOutlined />,
 };
@@ -73,7 +72,7 @@ const DirectoryTree: FC<Props> = memo(
     }, [selectedKey]);
 
     useEffect(() => {
-      onChange(treeData, selectedKeys);
+      onChange(clone(treeData), selectedKeys);
     }, [treeData, onChange, selectedKeys]);
 
     useEffect(() => {
@@ -260,7 +259,7 @@ const DirectoryTree: FC<Props> = memo(
         resolveKeyConflicts(target);
         source.children?.push(target);
         onClearSelectedNode();
-        setTreeData(updateAntTree(clone(treeData), source));
+        setTreeData(updateAntTree(cloneDeep(treeData), cloneDeep(source)));
       },
       [onClearSelectedNode, treeData]
     );
@@ -390,18 +389,8 @@ const DirectoryTree: FC<Props> = memo(
             className='file-list'
             onContextMenu={e => e.preventDefault()}>
             <Row>
-              <Col style={{ fontSize: 13 }} span={15}>
+              <Col style={{ fontSize: 13 }} span={18}>
                 结构管理(工作区)
-              </Col>
-              <Col span={3}>
-                <Tooltip title='新建文本'>
-                  <Button
-                    onClick={() => handleOpenMdl(NodeType.TEXT)}
-                    size='small'
-                    ghost
-                    icon={<FileAddOutlined />}
-                  />
-                </Tooltip>
               </Col>
               <Col span={3}>
                 <Tooltip title='新建元素'>

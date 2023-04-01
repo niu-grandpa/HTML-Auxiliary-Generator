@@ -3,8 +3,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import core from '../../core';
 import { type VNode } from '../../core/utils';
 import DirectoryTree from './DirectoryTree';
-import './index.less';
 import ViewOperations from './ViewOperations';
+import './index.less';
 
 const { antTreeNodeToVNode } = core;
 const { Header, Content, Footer } = Layout;
@@ -31,7 +31,7 @@ const Home: React.FC = () => {
         <section className='logo' />
       </Header>
       <Content style={{ padding: '18px 38px 0 38px' }}>
-        <Row gutter={[19, 19]}>
+        <Row gutter={[24, 24]}>
           <Col span={6}>
             <DirectoryTree
               {...{ selectedKey }}
@@ -39,7 +39,7 @@ const Home: React.FC = () => {
               fieldNames={{ title: 'alias' }}
             />
           </Col>
-          <Col span={18}>
+          <Col span={18} className='grid-background'>
             <ViewOperations {...{ vnodes }} onItemClick={handleDragNodeClick} />
           </Col>
         </Row>
