@@ -64,8 +64,7 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
 
     return (
       <Drawer
-        width={400}
-        placement='left'
+        placement='right'
         {...{ open, onClose }}
         title='常用样式'
         bodyStyle={{ overflowX: 'hidden' }}>

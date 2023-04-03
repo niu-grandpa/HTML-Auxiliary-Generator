@@ -15,13 +15,8 @@
       width: 60%;
       position: relative;
       height: 300px;
-      margin: 0 auto;
+      margin: 50px auto;
       border: 1px solid;
-      overflow: hidden;
-    }
-    [data-is-moving='true'] {
-      user-select: none;
-      cursor: grabbing;
     }
     .line {
       position: absolute;
@@ -42,141 +37,186 @@
     .auxline {
       display: none;
     }
+    [data-is-moving-target="true"] {
+      user-select: none;
+    }
   </style>
   <body>
     <div class="box" data-id="dd">
       <div
         style="width: 20%; height: 100px; border: 1px solid"
-        data-is-moving-target="true"
+        draggable="true" data-is-moving-target="true"
       >
-        >按钮
+        <button draggable="true" data-is-moving-target="true">按钮</button>
+        <button draggable="true" data-is-moving-target="true">按钮</button>
       </div>
-      <button data-is-moving-target="true">按钮</button>
-      <button data-is-moving-target="true">按钮</button>
-      <button data-is-moving-target="true">按钮</button>
-      <button data-is-moving-target="true">按钮</button>
-      <div class="auxline">
+      <button draggable="true" data-is-moving-target="true">按钮</button>
+      <button draggable="true" data-is-moving-target="true">按钮</button>
+      <!-- <div class="auxline">
         <div class="line horizontal" id="left"></div>
         <div class="line horizontal" id="right"></div>
         <div class="line vertial" id="top"></div>
         <div class="line vertial" id="bottom"></div>
       </div>
-    </div>
+    </div> -->
   </body>
   <script>
     const box = document.querySelector('.box');
-    const lf = document.querySelector('#left');
-    const rt = document.querySelector('#right');
-    const tp = document.querySelector('#top');
-    const bt = document.querySelector('#bottom');
-
-    let targetElem = null;
-    let targetBCR = null;
-    let fixX = 0;
-    let fixY = 0;
+    let target = null;
     let shiftX = 0;
     let shiftY = 0;
 
-    let b = 0;
-    const handleMove = e => {
+    const onDragStart = (e) => {
+      e.stopPropagation();
+      if(e.target.dataset.isMovingTarget !== 'true') return false;
+      target = e.target;
+      shiftX = e.clientX - target.getBoundingClientRect().left;
+      shiftY = e.clientY - target.getBoundingClientRect().top;
+    }
+    const onDragDrop = (e) => {
+      onStopEv(e)
+      const {clientX,clientY} = e;
+      const {x, y} = calcPosi(clientX,clientY);
+      target.style.translate = `${x}px ${y}px`;
+      target = null;
+    }
+    const onStopEv = (e) => {
       e.preventDefault();
       e.stopPropagation();
-
-      const { clientX, clientY } = e;
-
-      let x = ~~(clientX - fixX - shiftX - box.offsetLeft);
-      let y = ~~(clientY - fixY - shiftY);
-
-      if (x < -fixX) {
-        x = -fixX;
-        console.log('修正左边界');
+      e.dataTransfer.dropEffect = 'move'
+      e.dataTransfer.effectAllowed = 'move'
+    }
+    const calcPosi = (clientX,clientY) => {
+      const { parentNode } = target;
+      const { left: parentLeft, top:parentTop } = parentNode.getBoundingClientRect();
+      let x = clientX - parentLeft - target.offsetLeft - shiftX;
+      let y = clientY - parentTop - target.offsetTop - shiftY;
+      if(x > parentNode.offsetWidth - (target.offsetWidth + target.offsetLeft)) {
+        x  = parentNode.offsetWidth -  (target.offsetWidth + target.offsetLeft)
       }
-      if (x > box.offsetWidth - (targetBCR.width + fixX)) {
-        x = box.offsetWidth - (targetBCR.width + fixX);
-        console.log('修正右边界');
-      }
-      // 修正目标超出上下边界
-      if (y < -fixY) {
-        y = -fixY;
-        console.log('修正上边界');
-      }
-      if (y > box.offsetHeight - (targetBCR.height + fixY)) {
-        y = box.offsetHeight - (targetBCR.height + fixY);
-        console.log('修正下边界');
-      }
-      const xCenter = ((box.offsetWidth - targetBCR.width) >> 1) - fixX;
-      const yCenter = ((box.offsetHeight - targetBCR.height) >> 1) - fixY;
+      return {x, y}
+    }
 
-      targetElem.style.translate = `${x}px ${y}px`;
+    box.addEventListener('dragstart', onDragStart);
+    box.addEventListener('dragenter',onStopEv);
+    box.addEventListener('dragover',onStopEv);
+    box.addEventListener('drop', onDragDrop);
 
-      if (y >= yCenter) {
-        bt.style.left = x + fixX + (targetBCR.width >> 1) + 'px';
-        bt.style.top = y + fixY + targetBCR.height + 'px';
-        bt.style.display = 'block';
-        tp.style.display = '';
-      } else {
-        tp.style.left = x + fixX + (targetBCR.width >> 1) + 'px';
-        tp.style.height = y + fixY + 'px';
-        tp.style.display = 'block';
-        bt.style.display = '';
-      }
-      if (x >= xCenter) {
-        rt.style.top = y + fixY + (targetBCR.height >> 1) + 'px';
-        rt.style.left = x + fixX + targetBCR.width + 'px';
-        rt.style.display = 'block';
-        lf.style.display = '';
-      } else {
-        lf.style.top = y + fixY + (targetBCR.height >> 1) + 'px';
-        lf.style.width = x + fixX + 'px';
-        lf.style.display = 'block';
-        rt.style.display = '';
-      }
 
-      document.querySelector('.auxline').style.display = 'block';
-      /**
-       * 辅助线计算公式
-       *
-       */
-    };
 
-    const finishEv = e => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (targetElem) {
-        targetElem.dataset.isMoving = '';
-        targetElem = null;
-      }
-      document.querySelector('.auxline').style.display = 'none';
-      box.removeEventListener('mousemove', handleMove);
-      box.removeEventListener('mouseleave', finishEv);
-      box.removeEventListener('mouseup', finishEv);
-    };
+    // const box = document.querySelector('.box');
+    // const lf = document.querySelector('#left');
+    // const rt = document.querySelector('#right');
+    // const tp = document.querySelector('#top');
+    // const bt = document.querySelector('#bottom');
 
-    const handleDown = e => {
-      e.preventDefault();
-      e.stopPropagation();
-      const { target, clientX, clientY } = e;
-      // 利用冒泡获取目标元素
-      if (target.dataset.isMovingTarget !== 'true') return false;
+    // let targetElem = null;
+    // let targetBCR = null;
+    // let fixX = 0;
+    // let fixY = 0;
+    // let shiftX = 0;
+    // let shiftY = 0;
 
-      targetElem = target;
-      targetElem.dataset.isMoving = 'true';
-      targetBCR = targetElem.getBoundingClientRect();
+    // let b = 0;
+    // const handleMove = e => {
+    //   e.preventDefault();
+    //   e.stopPropagation();
 
-      shiftX = clientX - targetBCR.x + 5;
-      shiftY = clientY - targetBCR.y + 5;
-      fixX = targetElem.offsetLeft - box.offsetLeft;
-      fixY = targetElem.offsetTop - box.offsetTop;
+    //   const { clientX, clientY } = e;
 
-      fixX = fixX < 0 ? targetElem.offsetLeft : fixX;
+    //   let x = ~~(clientX - fixX - shiftX - box.offsetLeft);
+    //   let y = ~~(clientY - fixY - shiftY);
 
-      // 鼠标开始在画布移动
-      box.addEventListener('mousemove', handleMove);
-      // 移出画布时解绑鼠标移动事件
-      box.addEventListener('mouseleave', finishEv);
-      box.addEventListener('mouseup', finishEv);
-    };
+    //   if (x < -fixX) {
+    //     x = -fixX;
+    //     console.log('修正左边界');
+    //   }
+    //   if (x > box.offsetWidth - (targetBCR.width + fixX)) {
+    //     x = box.offsetWidth - (targetBCR.width + fixX);
+    //     console.log('修正右边界');
+    //   }
+    //   // 修正目标超出上下边界
+    //   if (y < -fixY) {
+    //     y = -fixY;
+    //     console.log('修正上边界');
+    //   }
+    //   if (y > box.offsetHeight - (targetBCR.height + fixY)) {
+    //     y = box.offsetHeight - (targetBCR.height + fixY);
+    //     console.log('修正下边界');
+    //   }
+    //   const xCenter = ((box.offsetWidth - targetBCR.width) >> 1) - fixX;
+    //   const yCenter = ((box.offsetHeight - targetBCR.height) >> 1) - fixY;
 
-    box.addEventListener('mousedown', handleDown);
+    //   targetElem.style.translate = `${x}px ${y}px`;
+
+    //   if (y >= yCenter) {
+    //     bt.style.left = x + fixX + (targetBCR.width >> 1) + 'px';
+    //     bt.style.top = y + fixY + targetBCR.height + 'px';
+    //     bt.style.display = 'block';
+    //     tp.style.display = '';
+    //   } else {
+    //     tp.style.left = x + fixX + (targetBCR.width >> 1) + 'px';
+    //     tp.style.height = y + fixY + 'px';
+    //     tp.style.display = 'block';
+    //     bt.style.display = '';
+    //   }
+    //   if (x >= xCenter) {
+    //     rt.style.top = y + fixY + (targetBCR.height >> 1) + 'px';
+    //     rt.style.left = x + fixX + targetBCR.width + 'px';
+    //     rt.style.display = 'block';
+    //     lf.style.display = '';
+    //   } else {
+    //     lf.style.top = y + fixY + (targetBCR.height >> 1) + 'px';
+    //     lf.style.width = x + fixX + 'px';
+    //     lf.style.display = 'block';
+    //     rt.style.display = '';
+    //   }
+
+    //   document.querySelector('.auxline').style.display = 'block';
+    //   /**
+    //    * 辅助线计算公式
+    //    *
+    //    */
+    // };
+
+    // const finishEv = e => {
+    //   e.preventDefault();
+    //   e.stopPropagation();
+    //   if (targetElem) {
+    //     targetElem.dataset.isMoving = '';
+    //     targetElem = null;
+    //   }
+    //   document.querySelector('.auxline').style.display = 'none';
+    //   box.removeEventListener('mousemove', handleMove);
+    //   box.removeEventListener('mouseleave', finishEv);
+    //   box.removeEventListener('mouseup', finishEv);
+    // };
+
+    // const handleDown = e => {
+    //   e.preventDefault();
+    //   e.stopPropagation();
+    //   const { target, clientX, clientY } = e;
+    //   // 利用冒泡获取目标元素
+    //   if (target.dataset.isMovingTarget !== 'true') return false;
+
+    //   targetElem = target;
+    //   targetElem.dataset.isMoving = 'true';
+    //   targetBCR = targetElem.getBoundingClientRect();
+
+    //   shiftX = clientX - targetBCR.x + 5;
+    //   shiftY = clientY - targetBCR.y + 5;
+    //   fixX = targetElem.offsetLeft - box.offsetLeft;
+    //   fixY = targetElem.offsetTop - box.offsetTop;
+
+    //   fixX = fixX < 0 ? targetElem.offsetLeft : fixX;
+
+    //   // 鼠标开始在画布移动
+    //   box.addEventListener('mousemove', handleMove);
+    //   // 移出画布时解绑鼠标移动事件
+    //   box.addEventListener('mouseleave', finishEv);
+    //   box.addEventListener('mouseup', finishEv);
+    // };
+
+    // box.addEventListener('mousedown', handleDown);
   </script>
 </html>

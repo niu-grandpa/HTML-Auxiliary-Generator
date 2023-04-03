@@ -40,9 +40,9 @@
 
 .view-opts {
   height: 100%;
-  [data-is-moving='true'] {
+  overflow: hidden;
+  [data-is-drag-target='true'] {
     user-select: none;
-    cursor: grabbing;
   }
   &-auxline {
     &-y,

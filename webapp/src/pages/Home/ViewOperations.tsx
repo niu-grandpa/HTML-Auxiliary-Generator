@@ -25,7 +25,7 @@ const isDragTarget = 'isDragTarget';
 /**视图操作区域 */
 const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
   const { activeHandler, getAuxlineData, getIsMoving, getMouseCoordinate } =
-    useElementMovement('isDragTarget');
+    useElementMovement(isDragTarget);
 
   const wrapperElemRef = useRef<HTMLElement>(null);
 
@@ -63,6 +63,14 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
     },
     [onItemClick]
   );
+
+  const handleA = (e: any) => {
+    e.preventDefault();
+    console.log(e);
+
+    // e.dataTransfer.dropEffect = 'move';
+    // e.dataTransfer.effectAllowed = 'move';
+  };
 
   const renderAuxline = useCallback(() => {
     const [x, y] = coordinate;

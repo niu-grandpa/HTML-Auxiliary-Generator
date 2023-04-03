@@ -30,8 +30,11 @@ const Home: React.FC = () => {
       <Header>
         <section className='logo' />
       </Header>
-      <Content style={{ padding: '18px 38px 0 38px' }}>
+      <Content style={{ padding: '18px 20px 18px 26px' }}>
         <Row gutter={[24, 24]}>
+          <Col span={18} className='grid-background'>
+            <ViewOperations {...{ vnodes }} onItemClick={handleDragNodeClick} />
+          </Col>
           <Col span={6}>
             <DirectoryTree
               {...{ selectedKey }}
@@ -39,15 +42,12 @@ const Home: React.FC = () => {
               fieldNames={{ title: 'alias' }}
             />
           </Col>
-          <Col span={18} className='grid-background'>
-            <ViewOperations {...{ vnodes }} onItemClick={handleDragNodeClick} />
-          </Col>
         </Row>
       </Content>
-      <Footer style={{ textAlign: 'center' }}>
+      {/* <Footer style={{ textAlign: 'center' }}>
         HTML Auxiliary Generator ©{new Date().getFullYear()} Created by Ryan
         John
-      </Footer>
+      </Footer> */}
     </Layout>
   );
 };
