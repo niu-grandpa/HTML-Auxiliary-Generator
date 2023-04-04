@@ -12,9 +12,9 @@
       padding: 0;
     }
     .box {
-      width: 60%;
+      width: 75%;
+      height: 400px;
       position: relative;
-      height: 300px;
       margin: 50px auto;
       border: 1px solid;
     }
@@ -37,15 +37,17 @@
     .auxline {
       display: none;
     }
-    [data-is-moving-target="true"] {
+    [data-is-moving-target='true'] {
       user-select: none;
+      position: absolute;
     }
   </style>
   <body>
-    <div class="box" data-id="dd">
+    <div class="box">
       <div
-        style="width: 20%; height: 100px; border: 1px solid"
-        draggable="true" data-is-moving-target="true"
+        style="width: 148px; height: 100px; border: 1px solid"
+        draggable="true"
+        data-is-moving-target="true"
       >
         <button draggable="true" data-is-moving-target="true">按钮</button>
         <button draggable="true" data-is-moving-target="true">按钮</button>
@@ -59,6 +61,7 @@
         <div class="line vertial" id="bottom"></div>
       </div>
     </div> -->
+    </div>
   </body>
   <script>
     const box = document.querySelector('.box');
@@ -66,43 +69,54 @@
     let shiftX = 0;
     let shiftY = 0;
 
-    const onDragStart = (e) => {
+    const onDragStart = e => {
       e.stopPropagation();
-      if(e.target.dataset.isMovingTarget !== 'true') return false;
+      if (e.target.dataset.isMovingTarget !== 'true') return false;
       target = e.target;
       shiftX = e.clientX - target.getBoundingClientRect().left;
       shiftY = e.clientY - target.getBoundingClientRect().top;
-    }
-    const onDragDrop = (e) => {
-      onStopEv(e)
-      const {clientX,clientY} = e;
-      const {x, y} = calcPosi(clientX,clientY);
-      target.style.translate = `${x}px ${y}px`;
+    };
+    const onDragDrop = e => {
+      onStopEv(e);
+      const { clientX, clientY } = e;
+      const { x, y } = calcPosi(clientX, clientY);
+      target.style.top = `${y}%`;
+      target.style.left = `${x}%`;
       target = null;
-    }
-    const onStopEv = (e) => {
+    };
+    const onStopEv = e => {
       e.preventDefault();
       e.stopPropagation();
-      e.dataTransfer.dropEffect = 'move'
-      e.dataTransfer.effectAllowed = 'move'
-    }
-    const calcPosi = (clientX,clientY) => {
+      e.dataTransfer.dropEffect = 'move';
+      e.dataTransfer.effectAllowed = 'move';
+    };
+    const calcPosi = (clientX, clientY) => {
       const { parentNode } = target;
-      const { left: parentLeft, top:parentTop } = parentNode.getBoundingClientRect();
-      let x = clientX - parentLeft - target.offsetLeft - shiftX;
-      let y = clientY - parentTop - target.offsetTop - shiftY;
-      if(x > parentNode.offsetWidth - (target.offsetWidth + target.offsetLeft)) {
-        x  = parentNode.offsetWidth -  (target.offsetWidth + target.offsetLeft)
+      const {
+        left: parentLeft,
+        top: parentTop,
+        width,
+        height,
+      } = parentNode.getBoundingClientRect();
+      let x = clientX - parentLeft - shiftX;
+      let y = clientY - parentTop - shiftY;
+      if (x < 0) x = 0;
+      if (y < 0) y = 0;
+      if (x > width - target.offsetWidth) {
+        x = width - target.offsetWidth;
       }
-      return {x, y}
-    }
+      if (y > height - target.offsetHeight) {
+        y = height - target.offsetHeight;
+      }
+      x = x / width / 0.01;
+      y = y / height / 0.01;
+      return { x, y };
+    };
 
     box.addEventListener('dragstart', onDragStart);
-    box.addEventListener('dragenter',onStopEv);
-    box.addEventListener('dragover',onStopEv);
+    box.addEventListener('dragenter', onStopEv);
+    box.addEventListener('dragover', onStopEv);
     box.addEventListener('drop', onDragDrop);
-
-
 
     // const box = document.querySelector('.box');
     // const lf = document.querySelector('#left');
