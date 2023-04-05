@@ -6,61 +6,70 @@ import {
   ReactNode,
   memo,
   useCallback,
-  useContext,
   useEffect,
   useRef,
   useState,
 } from 'react';
-import MyContext from '../../context';
+import { StyleFormValues } from '../../components/DrawerStyleSettings';
 import core from '../../core';
-import { type VNode } from '../../core/utils';
 import { useDrag } from '../../hooks';
+import { useTreeDataModel } from '../../model';
 
-type Props = {
-  vnodes: VNode[];
-  onItemClick: (key: string) => void;
-};
+type Props = {};
 
-const { buildHTMLString, renderDragVnode } = core;
+const { renderDragVnode, antTreeNodeToVNode, findNode } = core;
 
 const targetDatasetName = 'isDragTarget';
 
 /**视图操作区域 */
-const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
-  const {} = useContext(MyContext);
+const ViewOperations: FC<Props> = memo(props => {
+  const { treeData, onNeedUpdateNode, saveSelectedKey } = useTreeDataModel(
+    state => ({
+      treeData: state.treeData,
+      onNeedUpdateNode: state.update,
+      saveSelectedKey: state.saveSelectedKey,
+    })
+  );
 
   const wrapperElem = useRef<HTMLElement>(null);
-  useDrag(wrapperElem.current, targetDatasetName);
-
-  const [htmlString, setHTMLString] = useState<string>('');
   const [dragNodes, setDragNodes] = useState<ReactNode[]>([]);
   const [eventTarget, setEventTarget] = useState<ReactMouseEvent>();
 
   useEffect(() => {
+    const vnodes = antTreeNodeToVNode(treeData);
     setDragNodes(renderDragVnode(vnodes));
-    setHTMLString(buildHTMLString(vnodes));
-  }, [vnodes]);
+  }, [treeData]);
 
-  const invokeItemClick = useCallback(
-    (e: ReactMouseEvent) => {
-      const { dataset } = e.target as HTMLElement;
-      if (!isEqual(dataset[targetDatasetName], 'true')) {
-        setEventTarget(undefined);
-        return false;
-      }
-      const key = dataset['dragVnodeUuid'] as string;
-      onItemClick(key);
-      setEventTarget(e);
+  const { onDragComplete } = useDrag(wrapperElem.current, targetDatasetName);
+  onDragComplete((x, y, key) => {
+    onModifyNodePos(key, { top: `${y}%`, left: `${x}%` });
+  });
+
+  const onModifyNodePos = useCallback(
+    (key: string, values: StyleFormValues) => {
+      const current = findNode(treeData, key);
+      if (isUndefined(current)) return;
+      // @ts-ignore
+      current.props.style = { ...current.props.style, ...values };
+      onNeedUpdateNode(current);
     },
-    [onItemClick]
+    [treeData, onNeedUpdateNode]
   );
 
   const handleNodeClick = useCallback(
     (e: ReactMouseEvent) => {
       e.stopPropagation();
-      invokeItemClick(e);
+      const { dataset } = e.target as HTMLElement;
+      if (!isEqual(dataset[targetDatasetName], 'true')) {
+        saveSelectedKey('');
+        setEventTarget(undefined);
+        return false;
+      }
+      const key = dataset['dragVnodeUuid'] as string;
+      setEventTarget(e);
+      saveSelectedKey(key);
     },
-    [invokeItemClick]
+    [saveSelectedKey]
   );
 
   const handleContextMenu = useCallback((e: any) => {

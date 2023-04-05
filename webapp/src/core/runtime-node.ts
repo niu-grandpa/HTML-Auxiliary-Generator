@@ -23,19 +23,21 @@ export function updateAntTree(
   return root;
 }
 
-function findNode(
+export function findNode(
   root: TreeDataNode[],
-  node: TreeDataNode
+  node: TreeDataNode | string
 ): TreeDataNode | undefined {
+  const target = typeof node === 'string' ? node : node.key;
+
   let left = 0;
   let right = root.length - 1;
   while (left <= right) {
     const leftNode = root[left++];
     const rightNode = root[right--];
-    if (leftNode.key === node.key) {
+    if (leftNode.key === target) {
       return leftNode;
     }
-    if (rightNode.key === node.key) {
+    if (rightNode.key === target) {
       return rightNode;
     }
     if (leftNode.children?.length) {

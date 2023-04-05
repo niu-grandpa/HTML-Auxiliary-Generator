@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 export function useDrag(
   refElem: HTMLElement | null,
@@ -7,7 +7,7 @@ export function useDrag(
   const targetRef = useRef<HTMLElement | null>(null);
   const shiftX = useRef(0);
   const shiftY = useRef(0);
-
+  const callbackRef = useRef<(x: number, y: number, key: string) => void>();
   // 计算元素落下的位置。
   // 输出的结果是按照百分比转换的，解决在画布导出代码后，
   // 能根据浏览器窗口适应实际位置，而不是固定在画布上的位置。
@@ -73,24 +73,24 @@ export function useDrag(
       handleStopEvent(event);
       if (!targetRef.current) return false;
       const { x, y } = calcPos(event.clientX, event.clientY);
+      callbackRef.current?.(x, y, targetRef.current.dataset['dragVnodeUuid']!);
       moveAt(x, y);
     },
     [calcPos, moveAt, handleStopEvent]
   );
 
-  useEffect(() => {
-    if (refElem) {
-      refElem.addEventListener('dragstart', handleDragStart);
-      refElem.addEventListener('dragenter', handleStopEvent);
-      refElem.addEventListener('dragover', handleDragOver);
-      refElem.addEventListener('drop', handleDragDrop);
-      return () => {
-        refElem.removeEventListener('dragstart', handleDragStart);
-        refElem.removeEventListener('dragenter', handleStopEvent);
-        refElem.removeEventListener('dragover', handleDragOver);
-        refElem.removeEventListener('drop', handleDragDrop);
-      };
-    }
+  const activeHandler = useCallback(() => {
+    if (!refElem) return;
+    refElem.addEventListener('dragstart', handleDragStart);
+    refElem.addEventListener('dragenter', handleStopEvent);
+    refElem.addEventListener('dragover', handleDragOver);
+    refElem.addEventListener('drop', handleDragDrop);
+    return () => {
+      refElem.removeEventListener('dragstart', handleDragStart);
+      refElem.removeEventListener('dragenter', handleStopEvent);
+      refElem.removeEventListener('dragover', handleDragOver);
+      refElem.removeEventListener('drop', handleDragDrop);
+    };
   }, [
     refElem,
     handleDragStart,
@@ -98,4 +98,19 @@ export function useDrag(
     handleDragOver,
     handleDragDrop,
   ]);
+
+  useEffect(activeHandler, [activeHandler]);
+
+  const returnValue = useMemo(
+    () => ({
+      onDragComplete: (
+        callback: (x: number, y: number, key: string) => void
+      ) => {
+        callbackRef.current = callback;
+      },
+    }),
+    []
+  );
+
+  return returnValue;
 }
