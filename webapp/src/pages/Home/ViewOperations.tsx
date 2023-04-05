@@ -1,9 +1,9 @@
-import { isEqual } from 'lodash';
+import { isEqual, isUndefined } from 'lodash';
 import {
   FC,
-  memo,
   MouseEvent,
   ReactNode,
+  memo,
   useCallback,
   useContext,
   useEffect,
@@ -33,20 +33,33 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
 
   const [htmlString, setHTMLString] = useState<string>('');
   const [dragNodes, setDragNodes] = useState<ReactNode[]>([]);
+  const [eventTarget, setEventTarget] = useState<MouseEvent>();
 
   useEffect(() => {
     setDragNodes(renderDragVnode(vnodes));
     setHTMLString(buildHTMLString(vnodes));
   }, [vnodes]);
 
-  const handleNodeClick = useCallback(
+  const invokeItemClick = useCallback(
     (e: MouseEvent) => {
       const { dataset } = e.target as HTMLElement;
-      if (!isEqual(dataset[targetDatasetName], 'true')) return false;
+      if (!isEqual(dataset[targetDatasetName], 'true')) {
+        setEventTarget(undefined);
+        return false;
+      }
       const key = dataset['dragVnodeUuid'] as string;
       onItemClick(key);
+      setEventTarget(e);
     },
     [onItemClick]
+  );
+
+  const handleNodeClick = useCallback(
+    (e: MouseEvent) => {
+      e.stopPropagation();
+      invokeItemClick(e);
+    },
+    [invokeItemClick]
   );
 
   const handleContextMenu = useCallback((e: any) => {
@@ -54,14 +67,71 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
     e.stopPropagation();
   }, []);
 
+  const handleSizeAdjust = useCallback((w: number, h: number) => {
+    console.log(w, h);
+  }, []);
+
   return (
-    <section
-      ref={wrapperElem}
-      className='view-opts'
-      onClick={handleNodeClick}
-      onContextMenu={handleContextMenu}>
-      {dragNodes}
-    </section>
+    <>
+      <section
+        ref={wrapperElem}
+        className='view-opts'
+        onClick={handleNodeClick}
+        onContextMenu={handleContextMenu}>
+        {dragNodes}
+      </section>
+      <SizeAdjust {...{ eventTarget }} onChange={handleSizeAdjust} />
+    </>
+  );
+});
+
+const SizeAdjust: FC<{
+  eventTarget?: MouseEvent;
+  onChange: (w: number, h: number) => void;
+}> = memo(({ onChange, eventTarget }) => {
+  const [targetSize, setTargetSize] = useState({
+    width: 0,
+    height: 0,
+    top: '',
+    left: '',
+  });
+
+  useEffect(() => {
+    if (isUndefined(eventTarget)) return;
+    const target = eventTarget.target! as HTMLElement;
+    setTargetSize(() => ({
+      width: target.offsetWidth,
+      height: target.offsetHeight,
+      top: target.style.top,
+      left: target.style.left,
+    }));
+    console.log(target.getBoundingClientRect(), eventTarget);
+  }, [eventTarget]);
+
+  const handleMouseDown = useCallback((e: MouseEvent) => {
+    // console.log(e.target);
+  }, []);
+
+  return (
+    <div
+      className='size-adjust'
+      onMouseDown={handleMouseDown}
+      style={eventTarget ? { ...targetSize, display: 'flex' } : undefined}>
+      <ul className='size-adjust-line left'>
+        <li className='size-adjust-dot' />
+        <li className='size-adjust-dot' />
+        <li className='size-adjust-dot' />
+      </ul>
+      <ul className='size-adjust-line center'>
+        <li className='size-adjust-dot' />
+        <li className='size-adjust-dot' />
+      </ul>
+      <ul className='size-adjust-line right'>
+        <li className='size-adjust-dot' />
+        <li className='size-adjust-dot' />
+        <li className='size-adjust-dot' />
+      </ul>
+    </div>
   );
 });
 
