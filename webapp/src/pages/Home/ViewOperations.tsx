@@ -1,7 +1,8 @@
 import { isEqual, isUndefined } from 'lodash';
 import {
   FC,
-  MouseEvent,
+  DragEvent as ReactDragEvent,
+  MouseEvent as ReactMouseEvent,
   ReactNode,
   memo,
   useCallback,
@@ -33,7 +34,7 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
 
   const [htmlString, setHTMLString] = useState<string>('');
   const [dragNodes, setDragNodes] = useState<ReactNode[]>([]);
-  const [eventTarget, setEventTarget] = useState<MouseEvent>();
+  const [eventTarget, setEventTarget] = useState<ReactMouseEvent>();
 
   useEffect(() => {
     setDragNodes(renderDragVnode(vnodes));
@@ -41,7 +42,7 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
   }, [vnodes]);
 
   const invokeItemClick = useCallback(
-    (e: MouseEvent) => {
+    (e: ReactMouseEvent) => {
       const { dataset } = e.target as HTMLElement;
       if (!isEqual(dataset[targetDatasetName], 'true')) {
         setEventTarget(undefined);
@@ -55,7 +56,7 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
   );
 
   const handleNodeClick = useCallback(
-    (e: MouseEvent) => {
+    (e: ReactMouseEvent) => {
       e.stopPropagation();
       invokeItemClick(e);
     },
@@ -67,7 +68,7 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
     e.stopPropagation();
   }, []);
 
-  const handleSizeAdjust = useCallback((w: number, h: number) => {
+  const handleNodeResize = useCallback((w: number, h: number) => {
     console.log(w, h);
   }, []);
 
@@ -80,13 +81,13 @@ const ViewOperations: FC<Props> = memo(({ vnodes, onItemClick }) => {
         onContextMenu={handleContextMenu}>
         {dragNodes}
       </section>
-      <SizeAdjust {...{ eventTarget }} onChange={handleSizeAdjust} />
+      <Resize {...{ eventTarget }} onChange={handleNodeResize} />
     </>
   );
 });
 
-const SizeAdjust: FC<{
-  eventTarget?: MouseEvent;
+const Resize: FC<{
+  eventTarget?: ReactMouseEvent;
   onChange: (w: number, h: number) => void;
 }> = memo(({ onChange, eventTarget }) => {
   const [targetSize, setTargetSize] = useState({
@@ -105,31 +106,64 @@ const SizeAdjust: FC<{
       top: target.style.top,
       left: target.style.left,
     }));
-    console.log(target.getBoundingClientRect(), eventTarget);
   }, [eventTarget]);
 
-  const handleMouseDown = useCallback((e: MouseEvent) => {
-    // console.log(e.target);
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    e.stopPropagation();
+    // TODO
+  }, []);
+
+  const handleMouseUp = useCallback(
+    (e: MouseEvent) => {
+      e.stopPropagation();
+      document.removeEventListener('mousemove', handleMouseMove);
+      // TODO
+    },
+    [handleMouseMove]
+  );
+
+  const handleResize = useCallback(
+    (e: ReactMouseEvent) => {
+      e.stopPropagation();
+      const target = e.target as HTMLElement;
+      if (!target.classList.contains('size-adjust-dot')) return false;
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [handleMouseMove, handleMouseUp]
+  );
+
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
+
+  const stopAllEvent = useCallback((e: ReactDragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
   }, []);
 
   return (
     <div
       className='size-adjust'
-      onMouseDown={handleMouseDown}
+      onMouseDown={handleResize}
+      onDragStart={stopAllEvent}
       style={eventTarget ? { ...targetSize, display: 'flex' } : undefined}>
       <ul className='size-adjust-line left'>
-        <li className='size-adjust-dot' />
-        <li className='size-adjust-dot' />
-        <li className='size-adjust-dot' />
+        <li className='size-adjust-dot' data-placement='leftTop' />
+        <li className='size-adjust-dot' data-placement='left' />
+        <li className='size-adjust-dot' data-placement='leftBottom' />
       </ul>
       <ul className='size-adjust-line center'>
-        <li className='size-adjust-dot' />
-        <li className='size-adjust-dot' />
+        <li className='size-adjust-dot' data-placement='centerTop' />
+        <li className='size-adjust-dot' data-placement='centerBottom' />
       </ul>
       <ul className='size-adjust-line right'>
-        <li className='size-adjust-dot' />
-        <li className='size-adjust-dot' />
-        <li className='size-adjust-dot' />
+        <li className='size-adjust-dot' data-placement='rightTop' />
+        <li className='size-adjust-dot' data-placement='right' />
+        <li className='size-adjust-dot' data-placement='rightBottom' />
       </ul>
     </div>
   );
