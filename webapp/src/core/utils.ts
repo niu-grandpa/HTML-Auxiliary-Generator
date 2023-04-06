@@ -34,6 +34,7 @@ export function resolveKeyConflicts(node: TreeDataNode) {
     const child = node.children[i];
     resolveKeyConflicts(child);
   }
+  return node;
 }
 
 /**创建拖动节点——虚拟节点 */

@@ -60,12 +60,16 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   const {
     selectedKey,
     saveTreeData,
+    needPushNode,
+    noticePushNode,
     needUpdateNode,
     needDeleteNode,
     noticeDeleteNode,
   } = useTreeDataModel(state => ({
     selectedKey: state.selectedKey,
     saveTreeData: state.saveTreeData,
+    needPushNode: state.newNode,
+    noticePushNode: state.push,
     needDeleteNode: state.deleteNode,
     needUpdateNode: state.node,
     noticeDeleteNode: state.delete,
@@ -274,11 +278,15 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   );
 
   const onPasteNode = useCallback(
-    (target: TreeDataNode, source: TreeDataNode) => {
-      resolveKeyConflicts(target);
-      source.children?.push(target);
-      onClearSelectedNode();
-      setTreeData(updateAntTree(cloneDeep(treeData), cloneDeep(source)));
+    (target: TreeDataNode, source?: TreeDataNode) => {
+      if (!isUndefined(source)) {
+        resolveKeyConflicts(target);
+        source.children?.push(target);
+        onClearSelectedNode();
+        setTreeData(updateAntTree(cloneDeep(treeData), cloneDeep(source)));
+      } else {
+        setTreeData([...treeData, target]);
+      }
     },
     [onClearSelectedNode, treeData]
   );
@@ -369,18 +377,17 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
       while (repeat--) {
         // 没有选中任何节点进行创建，说明是要创建根节点
         if (!target) {
-          const node = processNodeContent(createNode(values), type, content);
-          newData.push(node);
+          onPasteNode(processNodeContent(createNode(values), type, content));
           continue;
         }
-        newData = updateNode(newData, values, target)!;
+        setTreeData(updateNode(newData, values, target)!);
       }
-      setTreeData(newData);
       resetIsEdit();
       onClearSelectedNode();
     },
     [
       treeData,
+      onPasteNode,
       selectedNode,
       createNode,
       updateNode,
@@ -396,6 +403,13 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
       noticeDeleteNode(null);
     }
   }, [needDeleteNode, onDeleteNode, noticeDeleteNode]);
+
+  useEffect(() => {
+    if (needPushNode) {
+      onPasteNode(needPushNode);
+      noticePushNode(null);
+    }
+  }, [treeData, needPushNode, onPasteNode, noticePushNode]);
 
   return (
     <>

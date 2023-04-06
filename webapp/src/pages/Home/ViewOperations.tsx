@@ -14,7 +14,9 @@ import {
 import { CTX_MENU_OPTS } from '../../components/ContextMenu';
 import { StyleFormValues } from '../../components/DrawerStyleSettings';
 import core from '../../core';
+import { resolveKeyConflicts } from '../../core/utils';
 import { useDrag } from '../../hooks';
+import { toPercentPos } from '../../hooks/useDrag';
 import { useTreeDataModel } from '../../model';
 import { getIsTargetNode } from '../../utils';
 
@@ -26,13 +28,19 @@ const targetDatasetName = 'isDragTarget';
 
 /**视图操作区域 */
 const ViewOperations: FC<Props> = memo(props => {
-  const { treeData, noticeDeleteNode, noticeUpdateNode, saveSelectedKey } =
-    useTreeDataModel(state => ({
-      treeData: state.treeData,
-      noticeDeleteNode: state.delete,
-      noticeUpdateNode: state.update,
-      saveSelectedKey: state.saveSelectedKey,
-    }));
+  const {
+    treeData,
+    noticePushNode,
+    noticeDeleteNode,
+    noticeUpdateNode,
+    saveSelectedKey,
+  } = useTreeDataModel(state => ({
+    treeData: state.treeData,
+    noticePushNode: state.push,
+    noticeDeleteNode: state.delete,
+    noticeUpdateNode: state.update,
+    saveSelectedKey: state.saveSelectedKey,
+  }));
 
   const wrapperElem = useRef<HTMLElement>(null);
   const currentKey = useRef('');
@@ -122,17 +130,37 @@ const ViewOperations: FC<Props> = memo(props => {
         optsMethods.copy(treeNode);
         optsMethods.del(treeNode);
       },
-      paste: () => {
-        console.log(copyNode);
+      paste: (x: number, y: number) => {
+        const { offsetWidth, offsetHeight } = wrapperElem.current!;
+        const { left, top } = wrapperElem.current!.getBoundingClientRect();
+        x = x - left;
+        y = y - top;
+        const { x: _left, y: _top } = toPercentPos(
+          x,
+          y,
+          offsetWidth,
+          offsetHeight
+        );
+        // @ts-ignore
+        const style = copyNode.props.style;
+        // @ts-ignore
+        copyNode.props.style = { ...style, top: `${_top}%`, left: `${_left}%` };
+        noticePushNode(resolveKeyConflicts(copyNode!));
       },
     }),
-    [treeData, copyNode, noticeDeleteNode]
+    [treeData, copyNode, noticePushNode, noticeDeleteNode]
   );
 
   const optionsEvent = useCallback(
-    (type: 'copy' | 'cut' | 'del' | 'paste') => {
-      const treeNode = getTreeNode(currentKey.current);
-      optsMethods[type](treeNode);
+    (type: 'copy' | 'cut' | 'del' | 'paste', ev?: any) => {
+      if (type === 'paste') {
+        const { domEvent } = ev;
+        optsMethods.paste(domEvent.clientX, domEvent.clientY);
+        setCopyNode(undefined);
+      } else {
+        const treeNode = getTreeNode(currentKey.current);
+        optsMethods[type](treeNode);
+      }
     },
     [getTreeNode, optsMethods]
   );
@@ -155,7 +183,7 @@ const ViewOperations: FC<Props> = memo(props => {
         label: '粘贴',
         key: CTX_MENU_OPTS.PASTE,
         disabled: disPaste,
-        onClick: () => optionsEvent('paste'),
+        onClick: (e: unknown) => optionsEvent('paste', e),
       },
       {
         label: '删除',

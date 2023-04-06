@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { getIsTargetNode } from '../utils';
 
+/**将x y坐标由px转为对应包裹层的百分比数值 */
+export function toPercentPos(
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) {
+  x = x / width / 0.01;
+  y = y / height / 0.01;
+  return { x, y };
+}
+
 export function useDrag(
   refElem: HTMLElement | null,
   targetDatasetName: string
@@ -31,10 +43,7 @@ export function useDrag(
     x > rightBound && (x = rightBound);
     y > bottomBound && (y = bottomBound);
 
-    x = x / parentWidth / 0.01;
-    y = y / parentHeight / 0.01;
-
-    return { x, y };
+    return toPercentPos(x, y, parentWidth, parentHeight);
   }, []);
 
   const moveAt = useCallback((x: number, y: number) => {
