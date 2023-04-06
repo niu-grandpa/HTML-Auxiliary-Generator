@@ -35,7 +35,7 @@ const ContextMenu: FC<Props> = memo(
           onClick,
         },
         {
-          label: '新建文本...',
+          label: '添加文本...',
           key: CTX_MENU_OPTS.ADD_TEXT,
           disabled: isLeaf,
           onClick,
@@ -71,6 +71,7 @@ const ContextMenu: FC<Props> = memo(
           label: '删除',
           key: CTX_MENU_OPTS.REMOVE,
           onClick,
+          danger: true,
         },
       ],
       [disPaste, isLeaf, isText, onClick]

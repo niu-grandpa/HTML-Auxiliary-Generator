@@ -1,19 +1,22 @@
-import { isEqual, isUndefined } from 'lodash';
+import { Dropdown, TreeDataNode, message } from 'antd';
+import { cloneDeep, isEqual, isUndefined } from 'lodash';
 import {
   FC,
   DragEvent as ReactDragEvent,
   MouseEvent as ReactMouseEvent,
-  ReactNode,
   memo,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
+import { CTX_MENU_OPTS } from '../../components/ContextMenu';
 import { StyleFormValues } from '../../components/DrawerStyleSettings';
 import core from '../../core';
 import { useDrag } from '../../hooks';
 import { useTreeDataModel } from '../../model';
+import { getIsTargetNode } from '../../utils';
 
 type Props = {};
 
@@ -23,74 +26,163 @@ const targetDatasetName = 'isDragTarget';
 
 /**视图操作区域 */
 const ViewOperations: FC<Props> = memo(props => {
-  const { treeData, onNeedUpdateNode, saveSelectedKey } = useTreeDataModel(
-    state => ({
+  const { treeData, noticeDeleteNode, noticeUpdateNode, saveSelectedKey } =
+    useTreeDataModel(state => ({
       treeData: state.treeData,
-      onNeedUpdateNode: state.update,
+      noticeDeleteNode: state.delete,
+      noticeUpdateNode: state.update,
       saveSelectedKey: state.saveSelectedKey,
-    })
-  );
+    }));
 
   const wrapperElem = useRef<HTMLElement>(null);
-  const [dragNodes, setDragNodes] = useState<ReactNode[]>([]);
-  const [eventTarget, setEventTarget] = useState<ReactMouseEvent>();
+  const currentKey = useRef('');
 
-  useEffect(() => {
+  const [disCtxMenu, setDisCtxMenu] = useState(false);
+  const [eventTarget, setEventTarget] = useState<ReactMouseEvent>();
+  const [copyNode, setCopyNode] = useState<TreeDataNode | undefined>(undefined);
+
+  const disPaste = useMemo(() => isUndefined(copyNode), [copyNode]);
+
+  const dragNodes = useMemo(() => {
     const vnodes = antTreeNodeToVNode(treeData);
-    setDragNodes(renderDragVnode(vnodes));
+    return renderDragVnode(vnodes);
   }, [treeData]);
 
   const { onDragComplete } = useDrag(wrapperElem.current, targetDatasetName);
   onDragComplete((x, y, key) => {
-    onModifyNodePos(key, { top: `${y}%`, left: `${x}%` });
+    updateNodePos(key, { top: `${y}%`, left: `${x}%` });
   });
 
-  const onModifyNodePos = useCallback(
-    (key: string, values: StyleFormValues) => {
+  const getTreeNode = useCallback(
+    (key: string) => {
       const current = findNode(treeData, key);
+      return current;
+    },
+    [treeData]
+  );
+
+  const updateNodePos = useCallback(
+    (key: string, values: StyleFormValues) => {
+      const current = getTreeNode(key);
       if (isUndefined(current)) return;
       // @ts-ignore
       current.props.style = { ...current.props.style, ...values };
-      onNeedUpdateNode(current);
+      noticeUpdateNode(current);
     },
-    [treeData, onNeedUpdateNode]
+    [getTreeNode, noticeUpdateNode]
   );
 
   const handleNodeClick = useCallback(
     (e: ReactMouseEvent) => {
       e.stopPropagation();
-      const { dataset } = e.target as HTMLElement;
-      if (!isEqual(dataset[targetDatasetName], 'true')) {
+      const res = getIsTargetNode(e.target as HTMLElement);
+      if (!res) {
         saveSelectedKey('');
         setEventTarget(undefined);
         return false;
       }
-      const key = dataset['dragVnodeUuid'] as string;
+      const key = res.dataset['dragVnodeUuid'] as string;
       setEventTarget(e);
       saveSelectedKey(key);
     },
     [saveSelectedKey]
   );
 
-  const handleContextMenu = useCallback((e: any) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
+  const handleContextMenu = useCallback(
+    (e: ReactMouseEvent) => {
+      const target = getIsTargetNode(e.target as HTMLElement);
+      if (!target) {
+        !disCtxMenu && setDisCtxMenu(true);
+        return false;
+      }
+      setDisCtxMenu(false);
+      currentKey.current = target.dataset['dragVnodeUuid']!;
+    },
+    [disCtxMenu]
+  );
 
   const handleNodeResize = useCallback((w: number, h: number) => {
     console.log(w, h);
   }, []);
 
+  const optsMethods = useMemo(
+    () => ({
+      del: (treeNode?: TreeDataNode) => {
+        noticeDeleteNode(treeNode);
+        currentKey.current = '';
+      },
+      copy: (treeNode?: TreeDataNode) => {
+        setCopyNode(cloneDeep(treeNode));
+      },
+      cut: (treeNode?: TreeDataNode) => {
+        if (isEqual(treeData.length, 1)) {
+          message.info('需要节点数量大于1');
+          return;
+        }
+        optsMethods.copy(treeNode);
+        optsMethods.del(treeNode);
+      },
+      paste: () => {
+        console.log(copyNode);
+      },
+    }),
+    [treeData, copyNode, noticeDeleteNode]
+  );
+
+  const optionsEvent = useCallback(
+    (type: 'copy' | 'cut' | 'del' | 'paste') => {
+      const treeNode = getTreeNode(currentKey.current);
+      optsMethods[type](treeNode);
+    },
+    [getTreeNode, optsMethods]
+  );
+
+  const items = useMemo(
+    () => [
+      {
+        label: '复制',
+        key: CTX_MENU_OPTS.COPY,
+        disabled: disCtxMenu,
+        onClick: () => optionsEvent('copy'),
+      },
+      {
+        label: '剪切',
+        key: CTX_MENU_OPTS.CUT,
+        disabled: disCtxMenu,
+        onClick: () => optionsEvent('cut'),
+      },
+      {
+        label: '粘贴',
+        key: CTX_MENU_OPTS.PASTE,
+        disabled: disPaste,
+        onClick: () => optionsEvent('paste'),
+      },
+      {
+        label: '删除',
+        key: CTX_MENU_OPTS.REMOVE,
+        danger: true,
+        disabled: disCtxMenu,
+        onClick: () => optionsEvent('del'),
+      },
+    ],
+    [disCtxMenu, disPaste, optionsEvent]
+  );
+
   return (
     <>
-      <section
-        ref={wrapperElem}
-        className='view-opts'
-        onClick={handleNodeClick}
-        onContextMenu={handleContextMenu}>
-        {dragNodes}
-      </section>
-      <Resize {...{ eventTarget }} onChange={handleNodeResize} />
+      <Dropdown
+        trigger={['contextMenu']}
+        overlayStyle={{ width: 100 }}
+        menu={{ items }}>
+        <section
+          ref={wrapperElem}
+          className='view-opts'
+          onClick={handleNodeClick}
+          onContextMenu={handleContextMenu}>
+          {dragNodes}
+          <Resize {...{ eventTarget }} onChange={handleNodeResize} />
+        </section>
+      </Dropdown>
     </>
   );
 });

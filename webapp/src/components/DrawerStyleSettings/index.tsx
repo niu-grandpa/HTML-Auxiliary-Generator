@@ -64,6 +64,7 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
 
     return (
       <Drawer
+        destroyOnClose
         placement='right'
         {...{ open, onClose }}
         title='常用样式'

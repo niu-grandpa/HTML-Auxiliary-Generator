@@ -1,13 +1,15 @@
 import { TreeDataNode } from 'antd';
 import { create } from 'zustand';
 
+type NodeType = TreeDataNode | null | undefined;
+
 type Props = {
-  node: TreeDataNode | null;
-  deleteKey: string;
+  node: NodeType;
+  deleteNode: NodeType;
   selectedKey: string;
   treeData: TreeDataNode[];
-  update: (node: TreeDataNode) => void;
-  delete: (key: string) => void;
+  update: (node: NodeType) => void;
+  delete: (key: NodeType) => void;
   saveTreeData: (data: TreeDataNode[]) => void;
   saveSelectedKey: (key: string) => void;
 };
@@ -15,11 +17,11 @@ type Props = {
 /** 使得树节点在两个组件间能够进行数据修改 */
 export const useTreeDataModel = create<Props>(set => ({
   node: null,
-  deleteKey: '',
+  deleteNode: null,
   selectedKey: '',
   treeData: [],
-  update: (node: TreeDataNode) => set(() => ({ node })),
-  delete: (key: string) => set(() => ({ deleteKey: key })),
+  update: (node: NodeType) => set(() => ({ node })),
+  delete: (node: NodeType) => set(() => ({ deleteNode: node })),
   saveTreeData: (data: TreeDataNode[]) => set(() => ({ treeData: data })),
   saveSelectedKey: (key: string) => set(() => ({ selectedKey: key })),
 }));

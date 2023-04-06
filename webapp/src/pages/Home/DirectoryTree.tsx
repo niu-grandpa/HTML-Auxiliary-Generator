@@ -23,7 +23,15 @@ import {
   isNull,
   isUndefined,
 } from 'lodash-es';
-import { FC, Key, memo, useCallback, useEffect, useState } from 'react';
+import {
+  FC,
+  Key,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { DrawerStyleSettings, ModalFormOfNode } from '../../components';
 import { ContextMenu } from '../../components/ContextMenu';
 import { StyleFormValues } from '../../components/DrawerStyleSettings';
@@ -49,13 +57,19 @@ const nodeIcons = {
 };
 
 const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
-  const { selectedKey, saveTreeData, needUpdateNode } = useTreeDataModel(
-    state => ({
-      selectedKey: state.selectedKey,
-      needUpdateNode: state.node,
-      saveTreeData: state.saveTreeData,
-    })
-  );
+  const {
+    selectedKey,
+    saveTreeData,
+    needUpdateNode,
+    needDeleteNode,
+    noticeDeleteNode,
+  } = useTreeDataModel(state => ({
+    selectedKey: state.selectedKey,
+    saveTreeData: state.saveTreeData,
+    needDeleteNode: state.deleteNode,
+    needUpdateNode: state.node,
+    noticeDeleteNode: state.delete,
+  }));
 
   const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
@@ -68,13 +82,15 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   const [selectedNode, setSelectedNode] = useState<TreeDataNode | null>(null);
 
   const [isEdit, setIsEdit] = useState(false);
-  const [disPaste, setDisPaste] = useState(true);
+
+  const disPaste = useMemo(() => isNull(copyNode), [copyNode]);
+
   const [openDrawer, setOpenDrawer] = useState(false);
   const [openCtxMenu, setOpenCtxMenu] = useState(false);
   const [openModalForm, setOpenModalForm] = useState(false);
 
   useEffect(() => {
-    if (!isNull(needUpdateNode)) {
+    if (needUpdateNode) {
       setTreeData(updateAntTree(treeData, needUpdateNode!));
     }
   }, [treeData, needUpdateNode]);
@@ -86,10 +102,6 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   useEffect(() => {
     saveTreeData(clone(treeData));
   }, [treeData, saveTreeData]);
-
-  useEffect(() => {
-    setDisPaste(isNull(copyNode));
-  }, [copyNode]);
 
   useEffect(() => {
     if (!isNull(selectedNode) && !isUndefined(selectedNode)) {
@@ -377,6 +389,13 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
       onClearSelectedNode,
     ]
   );
+
+  useEffect(() => {
+    if (needDeleteNode) {
+      onDeleteNode(needDeleteNode!, false);
+      noticeDeleteNode(null);
+    }
+  }, [needDeleteNode, onDeleteNode, noticeDeleteNode]);
 
   return (
     <>

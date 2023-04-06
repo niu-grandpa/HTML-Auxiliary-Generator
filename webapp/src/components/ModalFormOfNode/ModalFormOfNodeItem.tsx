@@ -4,10 +4,10 @@ import {
   Form,
   Input,
   InputNumber,
-  message,
   Radio,
   Select,
   Space,
+  message,
 } from 'antd';
 import { useForm } from 'antd/es/form/Form';
 import { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
@@ -58,12 +58,16 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
     useEffect(() => {
       setIsSingle(initialValues?.type === NodeType.SINGLE);
       setIsTextType(initialValues?.type === NodeType.TEXT);
-    }, [initialValues?.type]);
+    }, [initialValues]);
+
+    const initData = useCallback(() => {
+      form.resetFields();
+      form.setFieldsValue({ ...__defaultValues, type: initialValues!.type });
+    }, [form, initialValues]);
 
     useEffect(() => {
       if (!edit) {
-        form.resetFields();
-        form.setFieldsValue({ ...__defaultValues, type: initialValues!.type });
+        initData();
       } else {
         let alias = initialValues?.alias;
         if (initialValues?.value === initialValues?.alias) {
@@ -71,7 +75,7 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
         }
         form.setFieldsValue({ ...initialValues, alias });
       }
-    }, [edit, form, initialValues]);
+    }, [edit, form, initData, initialValues]);
 
     const handleValuesChange = useCallback(
       (_: any, { value, type }: FormOfNodeValues) => {
@@ -108,8 +112,9 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
         } else {
           onFinish?.(values);
         }
+        !edit && initData();
       },
-      [onFinish, nodeType]
+      [edit, initData, onFinish, nodeType]
     );
 
     return (

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { getIsTargetNode } from '../utils';
 
 export function useDrag(
   refElem: HTMLElement | null,
@@ -60,12 +61,13 @@ export function useDrag(
     (event: DragEvent) => {
       handleStopEvent(event);
       const target = event.target as HTMLElement;
-      if (target.dataset[targetDatasetName] !== 'true') return false;
-      targetRef.current = target;
-      shiftX.current = event.clientX - target.getBoundingClientRect().left;
-      shiftY.current = event.clientY - target.getBoundingClientRect().top;
+      const res = getIsTargetNode(target);
+      if (!res) return false;
+      targetRef.current = res;
+      shiftX.current = event.clientX - res.getBoundingClientRect().left;
+      shiftY.current = event.clientY - res.getBoundingClientRect().top;
     },
-    [handleStopEvent, targetDatasetName]
+    [handleStopEvent]
   );
 
   const handleDragDrop = useCallback(
