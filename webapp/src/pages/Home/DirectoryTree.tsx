@@ -280,8 +280,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   const onPasteNode = useCallback(
     (target: TreeDataNode, source?: TreeDataNode) => {
       if (!isUndefined(source)) {
-        resolveKeyConflicts(target);
-        source.children?.push(target);
+        source.children?.push(cloneDeep(resolveKeyConflicts(target))!);
         onClearSelectedNode();
         setTreeData(updateAntTree(cloneDeep(treeData), cloneDeep(source)));
       } else {

@@ -145,7 +145,7 @@ const ViewOperations: FC<Props> = memo(props => {
         const style = copyNode.props.style;
         // @ts-ignore
         copyNode.props.style = { ...style, top: `${_top}%`, left: `${_left}%` };
-        noticePushNode(resolveKeyConflicts(copyNode!));
+        noticePushNode(cloneDeep(resolveKeyConflicts(copyNode!)));
       },
     }),
     [treeData, copyNode, noticePushNode, noticeDeleteNode]
@@ -156,7 +156,7 @@ const ViewOperations: FC<Props> = memo(props => {
       if (type === 'paste') {
         const { domEvent } = ev;
         optsMethods.paste(domEvent.clientX, domEvent.clientY);
-        setCopyNode(undefined);
+        // setCopyNode(undefined);
       } else {
         const treeNode = getTreeNode(currentKey.current);
         optsMethods[type](treeNode);

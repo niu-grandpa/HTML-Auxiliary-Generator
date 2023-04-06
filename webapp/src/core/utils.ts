@@ -16,19 +16,22 @@ export type VNode = {
   } | null;
 };
 
-let uid = 0;
+let uid = 0,
+  timestamp = Date.now();
 export function createNodeKey(): string {
   while (SAVED_KEYS.includes(uid)) {
-    uid++;
+    ++uid;
   }
   SAVED_KEYS.push(uid);
-  SAVED_KEYS.sort((a, b) => a - b);
-  return `${uid}-${Date.now()}`;
+  return `${uid}-${timestamp++}`;
 }
 
 // 解决复制的节点 key 冲突
 export function resolveKeyConflicts(node: TreeDataNode) {
-  node.key = createNodeKey();
+  const newKey = createNodeKey();
+  node.key = newKey;
+  // @ts-ignore
+  node.props['data-drag-vnode-uuid'] = newKey;
   if (node.isLeaf || !node.children?.length) return;
   for (let i = 0; i < node.children.length; i++) {
     const child = node.children[i];
