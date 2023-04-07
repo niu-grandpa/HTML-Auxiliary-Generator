@@ -2,11 +2,9 @@ import { Dropdown, TreeDataNode, message } from 'antd';
 import { cloneDeep, isEqual, isUndefined } from 'lodash';
 import {
   FC,
-  DragEvent as ReactDragEvent,
   MouseEvent as ReactMouseEvent,
   memo,
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -16,7 +14,6 @@ import { StyleFormValues } from '../../components/DrawerStyleSettings';
 import core from '../../core';
 import { resolveKeyConflicts } from '../../core/utils';
 import { useDrag } from '../../hooks';
-import { toPercentPos } from '../../hooks/useDrag';
 import { useTreeDataModel } from '../../model';
 import { getIsTargetNode } from '../../utils';
 
@@ -46,7 +43,6 @@ const ViewOperations: FC<Props> = memo(props => {
   const currentKey = useRef('');
 
   const [disCtxMenu, setDisCtxMenu] = useState(false);
-  const [eventTarget, setEventTarget] = useState<ReactMouseEvent>();
   const [copyNode, setCopyNode] = useState<TreeDataNode | undefined>(undefined);
 
   const disPaste = useMemo(() => isUndefined(copyNode), [copyNode]);
@@ -56,9 +52,14 @@ const ViewOperations: FC<Props> = memo(props => {
     return renderDragVnode(vnodes);
   }, [treeData]);
 
+  const getTranslateProps = useCallback(
+    (x: number, y: number) => ({ translate: `${x}px ${y}px` }),
+    []
+  );
+
   const { onDragComplete } = useDrag(wrapperElem.current, targetDatasetName);
   onDragComplete((x, y, key) => {
-    updateNodePos(key, { top: `${y}%`, left: `${x}%` });
+    updateNodePos(key, getTranslateProps(x, y));
   });
 
   const getTreeNode = useCallback(
@@ -86,11 +87,9 @@ const ViewOperations: FC<Props> = memo(props => {
       const res = getIsTargetNode(e.target as HTMLElement);
       if (!res) {
         saveSelectedKey('');
-        setEventTarget(undefined);
         return false;
       }
       const key = res.dataset['dragVnodeUuid'] as string;
-      setEventTarget(e);
       saveSelectedKey(key);
     },
     [saveSelectedKey]
@@ -109,15 +108,11 @@ const ViewOperations: FC<Props> = memo(props => {
     [disCtxMenu]
   );
 
-  const handleNodeResize = useCallback((w: number, h: number) => {
-    console.log(w, h);
-  }, []);
-
   const optsMethods = useMemo(
     () => ({
       del: (treeNode?: TreeDataNode) => {
         noticeDeleteNode(treeNode);
-        currentKey.current = '';
+        // currentKey.current = '';
       },
       copy: (treeNode?: TreeDataNode) => {
         setCopyNode(cloneDeep(treeNode));
@@ -131,24 +126,17 @@ const ViewOperations: FC<Props> = memo(props => {
         optsMethods.del(treeNode);
       },
       paste: (x: number, y: number) => {
-        const { offsetWidth, offsetHeight } = wrapperElem.current!;
         const { left, top } = wrapperElem.current!.getBoundingClientRect();
-        x = x - left;
-        y = y - top;
-        const { x: _left, y: _top } = toPercentPos(
-          x,
-          y,
-          offsetWidth,
-          offsetHeight
-        );
         // @ts-ignore
         const style = copyNode.props.style;
+        x -= left;
+        y -= top;
         // @ts-ignore
-        copyNode.props.style = { ...style, top: `${_top}%`, left: `${_left}%` };
+        copyNode.props.style = { ...style, ...getTranslateProps(x, y) };
         noticePushNode(cloneDeep(resolveKeyConflicts(copyNode!)));
       },
     }),
-    [treeData, copyNode, noticePushNode, noticeDeleteNode]
+    [treeData, copyNode, noticePushNode, noticeDeleteNode, getTranslateProps]
   );
 
   const optionsEvent = useCallback(
@@ -197,104 +185,18 @@ const ViewOperations: FC<Props> = memo(props => {
   );
 
   return (
-    <>
-      <Dropdown
-        trigger={['contextMenu']}
-        overlayStyle={{ width: 100 }}
-        menu={{ items }}>
-        <section
-          ref={wrapperElem}
-          className='view-opts'
-          onClick={handleNodeClick}
-          onContextMenu={handleContextMenu}>
-          {dragNodes}
-          <Resize {...{ eventTarget }} onChange={handleNodeResize} />
-        </section>
-      </Dropdown>
-    </>
-  );
-});
-
-const Resize: FC<{
-  eventTarget?: ReactMouseEvent;
-  onChange: (w: number, h: number) => void;
-}> = memo(({ onChange, eventTarget }) => {
-  const [targetSize, setTargetSize] = useState({
-    width: 0,
-    height: 0,
-    top: '',
-    left: '',
-  });
-
-  useEffect(() => {
-    if (isUndefined(eventTarget)) return;
-    const target = eventTarget.target! as HTMLElement;
-    setTargetSize(() => ({
-      width: target.offsetWidth,
-      height: target.offsetHeight,
-      top: target.style.top,
-      left: target.style.left,
-    }));
-  }, [eventTarget]);
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    e.stopPropagation();
-    // TODO
-  }, []);
-
-  const handleMouseUp = useCallback(
-    (e: MouseEvent) => {
-      e.stopPropagation();
-      document.removeEventListener('mousemove', handleMouseMove);
-      // TODO
-    },
-    [handleMouseMove]
-  );
-
-  const handleResize = useCallback(
-    (e: ReactMouseEvent) => {
-      e.stopPropagation();
-      const target = e.target as HTMLElement;
-      if (!target.classList.contains('size-adjust-dot')) return false;
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    },
-    [handleMouseMove, handleMouseUp]
-  );
-
-  useEffect(() => {
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [handleMouseMove, handleMouseUp]);
-
-  const stopAllEvent = useCallback((e: ReactDragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
-
-  return (
-    <div
-      className='size-adjust'
-      onMouseDown={handleResize}
-      onDragStart={stopAllEvent}
-      style={eventTarget ? { ...targetSize, display: 'flex' } : undefined}>
-      <ul className='size-adjust-line left'>
-        <li className='size-adjust-dot' data-placement='leftTop' />
-        <li className='size-adjust-dot' data-placement='left' />
-        <li className='size-adjust-dot' data-placement='leftBottom' />
-      </ul>
-      <ul className='size-adjust-line center'>
-        <li className='size-adjust-dot' data-placement='centerTop' />
-        <li className='size-adjust-dot' data-placement='centerBottom' />
-      </ul>
-      <ul className='size-adjust-line right'>
-        <li className='size-adjust-dot' data-placement='rightTop' />
-        <li className='size-adjust-dot' data-placement='right' />
-        <li className='size-adjust-dot' data-placement='rightBottom' />
-      </ul>
-    </div>
+    <Dropdown
+      trigger={['contextMenu']}
+      overlayStyle={{ width: 100 }}
+      menu={{ items }}>
+      <section
+        ref={wrapperElem}
+        className='view-opts'
+        onClick={handleNodeClick}
+        onContextMenu={handleContextMenu}>
+        {dragNodes}
+      </section>
+    </Dropdown>
   );
 });
 

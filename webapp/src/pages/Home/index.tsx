@@ -27,12 +27,12 @@ const Home: React.FC = () => {
         <section className='logo' />
         <Button onClick={handleCompileHTML}>导出</Button>
       </Header>
-      <Content style={{ padding: '18px 20px 18px 26px' }}>
-        <Row gutter={[24, 24]}>
-          <Col span={18} className='grid-background'>
+      <Content>
+        <Row>
+          <Col span={19} className='grid-background'>
             <ViewOperations />
           </Col>
-          <Col span={6}>
+          <Col span={5}>
             <DirectoryTree fieldNames={{ title: 'alias' }} />
           </Col>
         </Row>

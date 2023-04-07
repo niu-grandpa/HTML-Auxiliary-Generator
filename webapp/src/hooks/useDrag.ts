@@ -1,54 +1,38 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { getIsTargetNode } from '../utils';
 
-/**将x y坐标由px转为对应包裹层的百分比数值 */
-export function toPercentPos(
-  x: number,
-  y: number,
-  width: number,
-  height: number
-) {
-  x = x / width / 0.01;
-  y = y / height / 0.01;
-  return { x, y };
-}
-
 export function useDrag(
   refElem: HTMLElement | null,
   targetDatasetName: string
 ) {
-  const targetRef = useRef<HTMLElement | null>(null);
   const shiftX = useRef(0);
   const shiftY = useRef(0);
+  const targetRef = useRef<HTMLElement | null>(null);
   const callbackRef = useRef<(x: number, y: number, key: string) => void>();
-  // 计算元素落下的位置。
-  // 输出的结果是按照百分比转换的，解决在画布导出代码后，
-  // 能根据浏览器窗口适应实际位置，而不是固定在画布上的位置。
+  // 计算出来的元素x坐标是相对于画布的，
+  // 因此当导出元素的x坐标需加上此画布损失的右边距整个浏览器剩余的宽度比值
+  // 公式：{targetX + [targetX / [(bodyW - wrapperW) / 100)]]}
   const calcPos = useCallback((clientX: number, clientY: number) => {
     const { parentElement } = targetRef.current!;
-    const {
-      left: parentLeft,
-      top: parentTop,
-      width: parentWidth,
-      height: parentHeight,
-    } = parentElement!.getBoundingClientRect();
-
-    let x = clientX - parentLeft - shiftX.current;
-    let y = clientY - parentTop - shiftY.current;
-    x < 0 && (x = 0);
-    y < 0 && (y = 0);
-
-    const rightBound = parentWidth - targetRef.current!.offsetWidth;
-    const bottomBound = parentHeight - targetRef.current!.offsetHeight;
-    x > rightBound && (x = rightBound);
-    y > bottomBound && (y = bottomBound);
-
-    return toPercentPos(x, y, parentWidth, parentHeight);
+    const { left: parentLeft, top: parentTop } =
+      parentElement!.getBoundingClientRect();
+    const x = clientX - parentLeft - shiftX.current;
+    const y = clientY - parentTop - shiftY.current;
+    // !不要边界检测，会造成嵌套的子元素无法移出父元素（如果父元素没有宽高）
+    // !即使有了宽高也会导致子元素位置计算错误
+    // x < 0 && (x = 0);
+    // y < 0 && (y = 0);
+    // const rightBound = parentElement.offsetWidth - targetRef.current!.offsetWidth;
+    // const bottomBound = parentElement.offsetHeight - targetRef.current!.offsetHeight;
+    // x > rightBound && (x = rightBound);
+    // y > bottomBound && (y = bottomBound);
+    return { x, y };
   }, []);
 
   const moveAt = useCallback((x: number, y: number) => {
-    targetRef.current!.style.top = `${y}%`;
-    targetRef.current!.style.left = `${x}%`;
+    // targetRef.current!.style.top = `${y}%`;
+    // targetRef.current!.style.left = `${x}%`;
+    targetRef.current!.style.translate = `${x}px ${y}px`;
     targetRef.current = null;
   }, []);
 

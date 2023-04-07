@@ -40,7 +40,7 @@ function _generate_() {
         id: identity || undefined,
         className: className || undefined,
         attributes: attributes || [],
-        style: { ...style, position: 'absolute' },
+        style: { position: 'absolute', ...style },
         draggable: true,
         'data-drag-vnode-uuid': key,
         'data-is-drag-target': true,
