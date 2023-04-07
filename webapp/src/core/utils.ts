@@ -8,6 +8,7 @@ export type VNode = {
   tag: string;
   children: VNode[];
   content: string;
+  actualPos: [number, number];
   props: {
     id: string;
     className: string;
@@ -47,6 +48,7 @@ export function createDragVnode(
   tag: string,
   content: string,
   props: VNode['props'],
+  actualPos: [number, number],
   children: VNode[]
 ): VNode {
   return {
@@ -56,5 +58,6 @@ export function createDragVnode(
     content,
     props,
     children,
+    actualPos,
   };
 }

@@ -1,16 +1,18 @@
 import { Button, Col, Layout, Row } from 'antd';
 import React, { useCallback, useEffect } from 'react';
+import { useTreeDataModel } from '../../model';
 import DirectoryTree from './DirectoryTree';
 import ViewOperations from './ViewOperations';
 
-import { useTreeDataModel } from '../../model';
+import core from '../../core';
 import './index.less';
 
 const { Header, Content, Footer } = Layout;
+const { buildHTMLString } = core;
 
 const Home: React.FC = () => {
-  const { treeData } = useTreeDataModel(state => ({
-    treeData: state.treeData,
+  const { dragVnodes } = useTreeDataModel(state => ({
+    dragVnodes: state.dragVnodes,
   }));
 
   useEffect(() => {
@@ -18,8 +20,8 @@ const Home: React.FC = () => {
   }, []);
 
   const handleCompileHTML = useCallback(() => {
-    console.log(treeData);
-  }, [treeData]);
+    buildHTMLString(dragVnodes);
+  }, [dragVnodes]);
 
   return (
     <Layout className='layout'>

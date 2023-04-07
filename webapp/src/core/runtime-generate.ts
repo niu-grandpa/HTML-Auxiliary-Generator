@@ -36,6 +36,8 @@ function _generate_() {
       content,
       // 由于leaf节点添加的内容不显示下级，因此通过标题显示出来
       alias: type === NodeType.TEXT ? content : alias || value || content,
+      // 存储画布元素相对浏览器的实际位置 [x,y]
+      actualPos: [0, 0],
       props: {
         id: identity || undefined,
         className: className || undefined,
@@ -64,13 +66,14 @@ function _generate_() {
 
     const createVnode = (node: TreeDataNode): VNode => {
       // @ts-ignore
-      const { title, key, children, type, props, content } = node;
+      const { title, key, children, type, props, content, actualPos } = node;
       const dragVnode = createDragVnode(
         key as string,
         type,
         title as string,
         content,
         props,
+        actualPos,
         children?.length ? antTreeNodeToVNode(children as TreeDataNode[]) : []
       );
       return dragVnode;

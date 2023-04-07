@@ -94,17 +94,11 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   const [openModalForm, setOpenModalForm] = useState(false);
 
   useEffect(() => {
-    if (needUpdateNode) {
-      setTreeData(updateAntTree(treeData, needUpdateNode!));
-    }
-  }, [treeData, needUpdateNode]);
-
-  useEffect(() => {
     setSelectedKeys([selectedKey]);
   }, [selectedKey]);
 
   useEffect(() => {
-    saveTreeData(clone(treeData));
+    saveTreeData(cloneDeep(treeData));
   }, [treeData, saveTreeData]);
 
   useEffect(() => {
@@ -397,9 +391,14 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   );
 
   useEffect(() => {
+    if (needUpdateNode) {
+      setTreeData(clone(updateAntTree(treeData, needUpdateNode!)));
+    }
+  }, [treeData, needUpdateNode, saveTreeData]);
+
+  useEffect(() => {
     if (needDeleteNode) {
       onDeleteNode(needDeleteNode!, false);
-      noticeDeleteNode(null);
     }
   }, [needDeleteNode, onDeleteNode, noticeDeleteNode]);
 

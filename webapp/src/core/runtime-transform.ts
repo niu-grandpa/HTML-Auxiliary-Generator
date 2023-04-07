@@ -24,17 +24,18 @@ function toHTMLStrings(
   };
   const processNode = (
     startTag: string,
-    props: VNode['props'],
+    props: VNode['props'] & { actualPos: [number, number] },
     len: number,
     selfClose: boolean
   ) => {
-    const { style, className, id, attributes } = props!;
+    const { style, className, id, attributes, actualPos } = props!;
     let cssText = '';
     // <div> -> <div , <input /> -> <input
     startTag = startTag.substring(0, len);
     if (id) startTag += ` id="${id}"`;
     if (className) startTag += ` class="${className}"`;
     if (style && Object.keys(style).length) {
+      style.translate = `${actualPos[0]}px ${actualPos[1]}px`;
       for (const key in style) {
         // @ts-ignore
         let value = style[key] as string;
@@ -62,7 +63,7 @@ function toHTMLStrings(
   const whiteSpace = ' '.repeat(space);
 
   for (const node of dragVnodes) {
-    const { type, tag, props, children, content } = node;
+    const { type, tag, props, children, content, actualPos } = node;
     if (type === NodeType.TEXT) {
       addContent(`${whiteSpace}${content}`);
       addNewline();
@@ -73,7 +74,12 @@ function toHTMLStrings(
     let endTag = '';
     startTag = isSingle ? `<${tag} />` : `<${tag}>`;
     if (props !== null) {
-      startTag = processNode(startTag, props, tag.length + 1, isSingle);
+      startTag = processNode(
+        startTag,
+        { ...props, actualPos },
+        tag.length + 1,
+        isSingle
+      );
     }
     addContent(`${whiteSpace}${startTag}`);
     if (isSingle) {

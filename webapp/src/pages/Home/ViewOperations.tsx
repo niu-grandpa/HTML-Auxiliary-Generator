@@ -1,5 +1,5 @@
 import { Dropdown, TreeDataNode, message } from 'antd';
-import { cloneDeep, isEqual, isUndefined } from 'lodash';
+import { clone, cloneDeep, isEqual, isUndefined } from 'lodash';
 import {
   FC,
   MouseEvent as ReactMouseEvent,
@@ -10,8 +10,7 @@ import {
   useState,
 } from 'react';
 import { CTX_MENU_OPTS } from '../../components/ContextMenu';
-import { StyleFormValues } from '../../components/DrawerStyleSettings';
-import core from '../../core';
+import core, { calcActualPos, renderDragVnode } from '../../core';
 import { resolveKeyConflicts } from '../../core/utils';
 import { useDrag } from '../../hooks';
 import { useTreeDataModel } from '../../model';
@@ -19,7 +18,7 @@ import { getIsTargetNode } from '../../utils';
 
 type Props = {};
 
-const { renderDragVnode, antTreeNodeToVNode, findNode } = core;
+const { antTreeNodeToVNode, findNode } = core;
 
 const targetDatasetName = 'isDragTarget';
 
@@ -31,8 +30,10 @@ const ViewOperations: FC<Props> = memo(props => {
     noticeDeleteNode,
     noticeUpdateNode,
     saveSelectedKey,
+    saveDragVnodes,
   } = useTreeDataModel(state => ({
     treeData: state.treeData,
+    saveDragVnodes: state.saveDragVnodes,
     noticePushNode: state.push,
     noticeDeleteNode: state.delete,
     noticeUpdateNode: state.update,
@@ -49,17 +50,13 @@ const ViewOperations: FC<Props> = memo(props => {
 
   const dragNodes = useMemo(() => {
     const vnodes = antTreeNodeToVNode(treeData);
+    saveDragVnodes(cloneDeep(vnodes));
     return renderDragVnode(vnodes);
-  }, [treeData]);
-
-  const getTranslateProps = useCallback(
-    (x: number, y: number) => ({ translate: `${x}px ${y}px` }),
-    []
-  );
+  }, [treeData, saveDragVnodes]);
 
   const { onDragComplete } = useDrag(wrapperElem.current, targetDatasetName);
   onDragComplete((x, y, key) => {
-    updateNodePos(key, getTranslateProps(x, y));
+    updateNodePos(key, x, y);
   });
 
   const getTreeNode = useCallback(
@@ -70,15 +67,29 @@ const ViewOperations: FC<Props> = memo(props => {
     [treeData]
   );
 
+  const setNodePosData = useCallback(
+    (node: TreeDataNode, x: number, y: number) => {
+      // @ts-ignore
+      node.actualPos = calcActualPos(wrapperElem.current!, x, y);
+      // @ts-ignore
+      const style = node.props.style;
+      // @ts-ignore
+      node.props.style = {
+        ...style,
+        translate: `${x}px ${y}px`,
+      };
+    },
+    []
+  );
+
   const updateNodePos = useCallback(
-    (key: string, values: StyleFormValues) => {
+    (key: string, x: number, y: number) => {
       const current = getTreeNode(key);
       if (isUndefined(current)) return;
-      // @ts-ignore
-      current.props.style = { ...current.props.style, ...values };
-      noticeUpdateNode(current);
+      setNodePosData(current, x, y);
+      noticeUpdateNode(clone(current));
     },
-    [getTreeNode, noticeUpdateNode]
+    [getTreeNode, noticeUpdateNode, setNodePosData]
   );
 
   const handleNodeClick = useCallback(
@@ -127,16 +138,11 @@ const ViewOperations: FC<Props> = memo(props => {
       },
       paste: (x: number, y: number) => {
         const { left, top } = wrapperElem.current!.getBoundingClientRect();
-        // @ts-ignore
-        const style = copyNode.props.style;
-        x -= left;
-        y -= top;
-        // @ts-ignore
-        copyNode.props.style = { ...style, ...getTranslateProps(x, y) };
+        setNodePosData(copyNode!, x - left, y - top);
         noticePushNode(cloneDeep(resolveKeyConflicts(copyNode!)));
       },
     }),
-    [treeData, copyNode, noticePushNode, noticeDeleteNode, getTranslateProps]
+    [treeData, copyNode, noticePushNode, noticeDeleteNode, setNodePosData]
   );
 
   const optionsEvent = useCallback(

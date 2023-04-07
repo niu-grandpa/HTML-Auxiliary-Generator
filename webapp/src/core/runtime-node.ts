@@ -73,23 +73,16 @@ export function deleteNode(root: TreeDataNode[], node: TreeDataNode) {
 
 function patchNode(n1: TreeDataNode, n2: TreeDataNode) {
   // 修改标签名
-  if (n1.title !== n2.title) {
-    n1.title = n2.title;
-  }
+  n1.title !== n2.title && (n1.title = n2.title);
   // @ts-ignore
-  if (n1.alias !== n2.alias) {
-    // @ts-ignore
-    n1.alias = n2.alias;
-  }
+  n1.alias !== n2.alias && (n1.alias = n2.alias);
   // @ts-ignore
-  if (n1.content !== n2.content) {
-    // @ts-ignore
-    n1.content = n2.content;
-  }
+  n1.content !== n2.content && (n1.content = n2.content);
   // @ts-ignore
-  if (n1.props !== n2.props) {
-    patchProps(n1, n2);
-  }
+  n1.props !== n2.props && patchProps(n1, n2);
+  // @ts-ignore
+  n2.actualPos.forEach((pos, i) => (n1.actualPos[i] = pos));
+
   const oldChildren = n1.children!;
   const newChildren = n2.children!;
   if (oldChildren.length !== newChildren.length) {
