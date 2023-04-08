@@ -1,6 +1,6 @@
 import { Dropdown, MenuProps } from 'antd';
 import { FC, memo, useMemo } from 'react';
-import { NodeType } from '../core/runtime-generate';
+import { NodeType } from '../../core/runtime-generate';
 
 export const enum CTX_MENU_OPTS {
   NEW_LEAF = '0',

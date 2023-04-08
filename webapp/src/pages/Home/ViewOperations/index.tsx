@@ -9,12 +9,12 @@ import {
   useRef,
   useState,
 } from 'react';
-import { CTX_MENU_OPTS } from '../../components/ContextMenu';
-import core, { calcActualPos, renderDragVnode } from '../../core';
-import { resolveKeyConflicts } from '../../core/utils';
-import { useDrag } from '../../hooks';
-import { useTreeDataModel } from '../../model';
-import { getIsTargetNode } from '../../utils';
+import { CTX_MENU_OPTS } from '../../../components/ContextMenu';
+import core, { calcActualPos, renderDragVnode } from '../../../core';
+import { resolveKeyConflicts } from '../../../core/utils';
+import { useDrag } from '../../../hooks';
+import { useTreeDataModel } from '../../../model';
+import { getIsTargetNode } from '../../../utils';
 
 type Props = {};
 

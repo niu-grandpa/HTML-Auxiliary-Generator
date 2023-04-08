@@ -21,30 +21,31 @@ import { cloneDeep, isEqual, isNull, isUndefined } from 'lodash-es';
 import {
   FC,
   Key,
+  lazy,
   memo,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from 'react';
-import { ModalFormOfNode } from '../../components';
-import { ContextMenu } from '../../components/ContextMenu';
-import { StyleFormValues } from '../../components/DrawerStyleSettings';
-import { __defaultValues } from '../../components/ModalFormOfNode';
-import { FormOfNodeValues } from '../../components/ModalFormOfNode/ModalFormOfNodeItem';
-import core from '../../core';
-import { NodeType } from '../../core/runtime-generate';
-import { SELF_CLOSING_TAG } from '../../core/runtime-transform';
-import { useTreeDataModel } from '../../model';
+import { LazyLoading, ModalFormOfNode } from '../../../components';
+import { ContextMenu } from '../../../components/ContextMenu';
+import { __defaultValues } from '../../../components/ModalFormOfNode';
+import { FormOfNodeValues } from '../../../components/ModalFormOfNode/ModalFormOfNodeItem';
+import core from '../../../core';
+import { NodeType } from '../../../core/runtime-generate';
+import { SELF_CLOSING_TAG } from '../../../core/runtime-transform';
+import { useTreeDataModel } from '../../../model';
 
 type Props = {
   fieldNames: Partial<{ title: string; key: string; children: string }>;
 };
 
+const StyleForm = lazy(() => import('./StyleForm'));
+const { confirm } = Modal;
+
 const { createAntTreeNode, updateAntTree, deleteNode, resolveKeyConflicts } =
   core;
-const { confirm } = Modal;
-const { TabPane } = Tabs;
 
 const nodeIcons = {
   0: <CodepenOutlined />,
@@ -78,7 +79,6 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
 
   const [nodeInitValues, setNodeInitValues] =
     useState<FormOfNodeValues>(__defaultValues);
-  const [nodeInitStyle, setNodeInitStyle] = useState<StyleFormValues>();
 
   const [copyNode, setCopyNode] = useState<TreeDataNode | null>(null);
   const [selectedNode, setSelectedNode] = useState<TreeDataNode | null>(null);
@@ -406,7 +406,9 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
       {
         label: 'Style',
         key: 'style',
-        children: '样式',
+        children: (
+          <LazyLoading fallback='loading...' children={<StyleForm />} />
+        ),
       },
     ],
     [treeData, selectedKeys, fieldNames, handleClickNode, handleRightClick]
