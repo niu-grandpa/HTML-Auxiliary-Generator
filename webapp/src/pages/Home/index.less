@@ -62,6 +62,8 @@
 }
 
 .file-list {
+  max-width: 316px;
+  max-height: 760px;
   padding: 16px;
   overflow: auto;
   color: @light-color;
@@ -113,6 +115,30 @@
     }
     &-ink-bar {
       background: @gold-color;
+    }
+  }
+}
+
+.style-form {
+  .ant-form-item {
+    margin-bottom: 14px;
+    &-label {
+      padding: 0;
+      label {
+        font-weight: 500;
+        color: @light-color;
+      }
+    }
+  }
+  .ant-select {
+    &-selection-item,
+    &-focused {
+      color: @light-color !important;
+    }
+  }
+  &-select {
+    .ant-select-arrow {
+      color: @light-color;
     }
   }
 }
