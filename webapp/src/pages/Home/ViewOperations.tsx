@@ -21,6 +21,7 @@ type Props = {};
 const { antTreeNodeToVNode, findNode } = core;
 
 const targetDatasetName = 'isDragTarget';
+const targetKeyName = 'dragVnodeUuid';
 
 /**视图操作区域 */
 const ViewOperations: FC<Props> = memo(props => {
@@ -100,7 +101,7 @@ const ViewOperations: FC<Props> = memo(props => {
         saveSelectedKey('');
         return false;
       }
-      const key = res.dataset['dragVnodeUuid'] as string;
+      const key = res.dataset[targetKeyName] as string;
       saveSelectedKey(key);
     },
     [saveSelectedKey]
@@ -114,7 +115,7 @@ const ViewOperations: FC<Props> = memo(props => {
         return false;
       }
       setDisCtxMenu(false);
-      currentKey.current = target.dataset['dragVnodeUuid']!;
+      currentKey.current = target.dataset[targetKeyName]!;
     },
     [disCtxMenu]
   );
@@ -138,8 +139,10 @@ const ViewOperations: FC<Props> = memo(props => {
       },
       paste: (x: number, y: number) => {
         const { left, top } = wrapperElem.current!.getBoundingClientRect();
-        setNodePosData(copyNode!, x - left, y - top);
-        noticePushNode(cloneDeep(resolveKeyConflicts(copyNode!)));
+        const c = cloneDeep(copyNode)!;
+        setNodePosData(c, x - left, y - top);
+        resolveKeyConflicts(c);
+        noticePushNode(c);
       },
     }),
     [treeData, copyNode, noticePushNode, noticeDeleteNode, setNodePosData]
@@ -199,6 +202,7 @@ const ViewOperations: FC<Props> = memo(props => {
         ref={wrapperElem}
         className='view-opts'
         onClick={handleNodeClick}
+        onMouseDown={handleNodeClick}
         onContextMenu={handleContextMenu}>
         {dragNodes}
       </section>

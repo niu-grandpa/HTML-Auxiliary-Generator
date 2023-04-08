@@ -1,6 +1,6 @@
 import {
-  BuildOutlined,
   CodepenOutlined,
+  CoffeeOutlined,
   FileTextOutlined,
   FolderAddOutlined,
   ReloadOutlined,
@@ -10,19 +10,14 @@ import {
   Col,
   Modal,
   Row,
+  Tabs,
+  TabsProps,
   Tooltip,
   Tree,
   message,
   type TreeDataNode,
 } from 'antd';
-import {
-  clone,
-  cloneDeep,
-  head,
-  isEqual,
-  isNull,
-  isUndefined,
-} from 'lodash-es';
+import { cloneDeep, isEqual, isNull, isUndefined } from 'lodash-es';
 import {
   FC,
   Key,
@@ -32,7 +27,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { DrawerStyleSettings, ModalFormOfNode } from '../../components';
+import { ModalFormOfNode } from '../../components';
 import { ContextMenu } from '../../components/ContextMenu';
 import { StyleFormValues } from '../../components/DrawerStyleSettings';
 import { __defaultValues } from '../../components/ModalFormOfNode';
@@ -49,10 +44,11 @@ type Props = {
 const { createAntTreeNode, updateAntTree, deleteNode, resolveKeyConflicts } =
   core;
 const { confirm } = Modal;
+const { TabPane } = Tabs;
 
 const nodeIcons = {
   0: <CodepenOutlined />,
-  1: <BuildOutlined />,
+  1: <CoffeeOutlined />,
   2: <FileTextOutlined />,
 };
 
@@ -62,6 +58,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
     saveTreeData,
     needPushNode,
     noticePushNode,
+    noticeUpdateNode,
     needUpdateNode,
     needDeleteNode,
     noticeDeleteNode,
@@ -70,6 +67,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
     saveTreeData: state.saveTreeData,
     needPushNode: state.newNode,
     noticePushNode: state.push,
+    noticeUpdateNode: state.update,
     needDeleteNode: state.deleteNode,
     needUpdateNode: state.node,
     noticeDeleteNode: state.delete,
@@ -89,7 +87,6 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
 
   const disPaste = useMemo(() => isNull(copyNode), [copyNode]);
 
-  const [openDrawer, setOpenDrawer] = useState(false);
   const [openCtxMenu, setOpenCtxMenu] = useState(false);
   const [openModalForm, setOpenModalForm] = useState(false);
 
@@ -239,7 +236,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   const onDeleteNode = useCallback(
     (source: TreeDataNode, showConfirm = true) => {
       const onDelete = () => {
-        setTreeData(deleteNode(cloneDeep(treeData), cloneDeep(source)!));
+        setTreeData(deleteNode(treeData.slice(), cloneDeep(source)!));
         onClearSelectedNode();
       };
       if (isEqual(showConfirm, false)) {
@@ -260,8 +257,8 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
 
   const onCutNode = useCallback(
     (source: TreeDataNode) => {
-      if (isEqual(treeData.length, 1) && isEqual(head(treeData), source)) {
-        message.info('根节点数量小于2, 不能进行剪切');
+      if (isEqual(treeData.length, 1)) {
+        message.info('根节点数量至少需要2个');
         onClearSelectedNode();
         return;
       }
@@ -274,9 +271,12 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   const onPasteNode = useCallback(
     (target: TreeDataNode, source?: TreeDataNode) => {
       if (!isUndefined(source)) {
-        source.children?.push(cloneDeep(resolveKeyConflicts(target))!);
+        const s = cloneDeep(source);
+        const t = cloneDeep(target);
+        resolveKeyConflicts(t)!;
+        s.children?.push(t);
+        setTreeData(updateAntTree(treeData, s).slice());
         onClearSelectedNode();
-        setTreeData(updateAntTree(cloneDeep(treeData), cloneDeep(source)));
       } else {
         setTreeData([...treeData, target]);
       }
@@ -307,19 +307,14 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
       const methods = {
         '1': () => crea(NodeType.CONTAINER),
         '2': () => crea(NodeType.TEXT),
-        '3': () => {
-          // @ts-ignore
-          setNodeInitStyle(selectedNode['props']['style']);
-          setOpenDrawer(true);
-        },
-        '4': () => onCopyNode(selectedNode!),
-        '5': () => onCutNode(selectedNode!),
-        '6': () => onPasteNode(copyNode!, selectedNode!),
-        '7': () => {
-          setOpenModalForm(true);
+        '3': () => onCopyNode(selectedNode!),
+        '4': () => onCutNode(selectedNode!),
+        '5': () => onPasteNode(copyNode!, selectedNode!),
+        '6': () => {
           setIsEdit(true);
+          setOpenModalForm(true);
         },
-        '8': () => onDeleteNode(selectedNode!),
+        '7': () => onDeleteNode(selectedNode!),
       };
       // @ts-ignore
       methods[key]();
@@ -343,37 +338,18 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
     [ctxMenuMethods]
   );
 
-  const invokeCallback = useCallback(
-    (node: TreeDataNode) => {
-      const newData = updateAntTree(treeData, node);
-      setTreeData(newData);
-      saveTreeData(newData);
-    },
-    [saveTreeData, treeData]
-  );
-
-  const handleEditStyle = useCallback(
-    (style: StyleFormValues) => {
-      const n = cloneDeep(selectedNode)!;
-      // @ts-ignore
-      n.props.style = { ...n.props.style, ...style };
-      invokeCallback(n);
-    },
-    [selectedNode, invokeCallback]
-  );
-
   const handleFinish = useCallback(
     (values: FormOfNodeValues) => {
       const target = cloneDeep(selectedNode)!;
       let { repeat, content, type } = values;
-      let newData: TreeDataNode[] = cloneDeep(treeData);
+      const newData: TreeDataNode[] = treeData.slice();
       while (repeat--) {
         // 没有选中任何节点进行创建，说明是要创建根节点
         if (!target) {
           onPasteNode(processNodeContent(createNode(values), type, content));
           continue;
         }
-        setTreeData(updateNode(newData, values, target)!);
+        setTreeData(updateNode(newData, values, target)!.slice());
       }
       resetIsEdit();
       onClearSelectedNode();
@@ -392,9 +368,10 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
 
   useEffect(() => {
     if (needUpdateNode) {
-      setTreeData(clone(updateAntTree(treeData, needUpdateNode!)));
+      setTreeData(updateAntTree(treeData.slice(), needUpdateNode!).slice());
+      noticeUpdateNode(null);
     }
-  }, [treeData, needUpdateNode, saveTreeData]);
+  }, [treeData, needUpdateNode, saveTreeData, noticeUpdateNode]);
 
   useEffect(() => {
     if (needDeleteNode) {
@@ -408,6 +385,32 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
       noticePushNode(null);
     }
   }, [treeData, needPushNode, onPasteNode, noticePushNode]);
+
+  const tabsItems: TabsProps['items'] = useMemo(
+    () => [
+      {
+        label: '结构管理',
+        key: 'structure',
+        children: (
+          <Tree
+            showIcon
+            showLine
+            blockNode
+            defaultExpandAll
+            {...{ treeData, fieldNames, selectedKeys }}
+            onSelect={handleClickNode}
+            onRightClick={handleRightClick}
+          />
+        ),
+      },
+      {
+        label: 'Style',
+        key: 'style',
+        children: '样式',
+      },
+    ],
+    [treeData, selectedKeys, fieldNames, handleClickNode, handleRightClick]
+  );
 
   return (
     <>
@@ -426,7 +429,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
         <section className='file-list' onContextMenu={e => e.preventDefault()}>
           <Row>
             <Col style={{ fontSize: 13 }} span={18}>
-              结构管理(工作区)
+              无标题(工作区)
             </Col>
             <Col span={3}>
               <Tooltip title='新建元素'>
@@ -449,36 +452,19 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
               </Tooltip>
             </Col>
           </Row>
-          <hr style={{ marginTop: 10, marginBottom: 16 }} />
           {!treeData.length ? (
             <>
+              <hr style={{ marginBottom: 26 }} />
               <p style={{ marginBottom: 18 }}>尚未新建任何节点。</p>
               <Button type='primary' block onClick={() => handleOpenMdl()}>
                 新建
               </Button>
             </>
           ) : (
-            <>
-              <Tree
-                showIcon
-                showLine
-                blockNode
-                defaultExpandAll
-                {...{ treeData, fieldNames, selectedKeys }}
-                draggable={{ icon: false }}
-                onSelect={handleClickNode}
-                onRightClick={handleRightClick}
-              />
-            </>
+            <Tabs items={tabsItems} />
           )}
         </section>
       </ContextMenu>
-      <DrawerStyleSettings
-        open={openDrawer}
-        initialValues={nodeInitStyle}
-        onChange={handleEditStyle}
-        onClose={() => setOpenDrawer(false)}
-      />
     </>
   );
 });

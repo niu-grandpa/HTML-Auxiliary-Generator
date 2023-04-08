@@ -130,7 +130,7 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
             <Input.TextArea />
           </Form.Item>
         ) : (
-          <Form.Item label='预置元素' name='value'>
+          <Form.Item label='元素标签' name='value'>
             <Select
               showSearch
               allowClear
@@ -196,13 +196,13 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
                   {fields.map(({ key, name, ...restField }) => (
                     <Space align='baseline' {...{ key }}>
                       <Form.Item
-                        label='属性'
+                        label='name'
                         name={[name, 'name']}
                         {...restField}>
                         <Input placeholder='属性名' />
                       </Form.Item>
                       <Form.Item
-                        label='属值'
+                        label='value'
                         name={[name, 'value']}
                         {...restField}>
                         <Input placeholder='属性值' />

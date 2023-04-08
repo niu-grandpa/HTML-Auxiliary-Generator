@@ -22,7 +22,7 @@ const FormItemOfSizeType: FC<Props> = memo(({ items, onUnitChange }) => {
         fields.map(({ label, name, min, defaultValue }) => (
           <Form.Item {...{ name, label }} key={name}>
             <InputNumber
-              style={{ width: 160 }}
+              style={{ width: 120 }}
               {...{ min, defaultValue }}
               addonAfter={
                 <Select

@@ -12,7 +12,7 @@ const FormItemOfTextType: FC<Props> = memo(({ items }) => {
       {fiedls =>
         fiedls.map(({ label, name }) => (
           <Form.Item {...{ label, name }} key={name}>
-            <Input autoComplete='off' style={{ width: 160 }} />
+            <Input autoComplete='off' style={{ width: 120 }} />
           </Form.Item>
         ))
       }

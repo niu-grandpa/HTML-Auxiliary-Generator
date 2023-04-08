@@ -58,12 +58,13 @@ const DrawerStyleSettings: FC<Partial<Props>> = memo(
       [sizeUnit, form, processValues, onChange]
     );
 
-    const handleValuesChange = useDebounce((values: StyleFormValues) => {
+    const handleValuesChange = useDebounce((_, values: StyleFormValues) => {
       onChange?.(processValues(values, sizeUnit));
     }, 400);
 
     return (
       <Drawer
+        mask={false}
         destroyOnClose
         placement='right'
         {...{ open, onClose }}

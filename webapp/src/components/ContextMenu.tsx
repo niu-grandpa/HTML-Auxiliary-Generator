@@ -6,12 +6,11 @@ export const enum CTX_MENU_OPTS {
   NEW_LEAF = '0',
   NEW_NON_LEAF = '1',
   ADD_TEXT = '2',
-  SET_STYLE = '3',
-  COPY = '4',
-  CUT = '5',
-  PASTE = '6',
-  EDIT_TAG = '7',
-  REMOVE = '8',
+  COPY = '3',
+  CUT = '4',
+  PASTE = '5',
+  EDIT_TAG = '6',
+  REMOVE = '7',
 }
 
 type Props = {
@@ -38,12 +37,6 @@ const ContextMenu: FC<Props> = memo(
           label: '添加文本...',
           key: CTX_MENU_OPTS.ADD_TEXT,
           disabled: isLeaf,
-          onClick,
-        },
-        {
-          label: '样式调整...',
-          key: CTX_MENU_OPTS.SET_STYLE,
-          disabled: isText,
           onClick,
         },
         {
