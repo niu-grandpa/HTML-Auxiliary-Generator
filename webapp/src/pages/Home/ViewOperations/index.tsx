@@ -1,5 +1,5 @@
 import { Dropdown, TreeDataNode, message } from 'antd';
-import { clone, cloneDeep, isEqual, isUndefined } from 'lodash';
+import { cloneDeep, isEqual, isUndefined } from 'lodash';
 import {
   FC,
   MouseEvent as ReactMouseEvent,
@@ -30,7 +30,7 @@ const ViewOperations: FC<Props> = memo(props => {
     noticePushNode,
     noticeDeleteNode,
     noticeUpdateNode,
-    saveSelectedKey,
+    saveSelectedNode,
     saveDragVnodes,
   } = useTreeDataModel(state => ({
     treeData: state.treeData,
@@ -38,7 +38,7 @@ const ViewOperations: FC<Props> = memo(props => {
     noticePushNode: state.push,
     noticeDeleteNode: state.delete,
     noticeUpdateNode: state.update,
-    saveSelectedKey: state.saveSelectedKey,
+    saveSelectedNode: state.saveSelectedNode,
   }));
 
   const wrapperElem = useRef<HTMLElement>(null);
@@ -63,7 +63,7 @@ const ViewOperations: FC<Props> = memo(props => {
   const getTreeNode = useCallback(
     (key: string) => {
       const current = findNode(treeData, key);
-      return current;
+      return cloneDeep(current);
     },
     [treeData]
   );
@@ -88,7 +88,7 @@ const ViewOperations: FC<Props> = memo(props => {
       const current = getTreeNode(key);
       if (isUndefined(current)) return;
       setNodePosData(current, x, y);
-      noticeUpdateNode(clone(current));
+      noticeUpdateNode(current);
     },
     [getTreeNode, noticeUpdateNode, setNodePosData]
   );
@@ -98,13 +98,13 @@ const ViewOperations: FC<Props> = memo(props => {
       e.stopPropagation();
       const res = getIsTargetNode(e.target as HTMLElement);
       if (!res) {
-        saveSelectedKey('');
+        saveSelectedNode({ key: '', node: null });
         return false;
       }
       const key = res.dataset[targetKeyName] as string;
-      saveSelectedKey(key);
+      saveSelectedNode({ key, node: getTreeNode(key) });
     },
-    [saveSelectedKey]
+    [saveSelectedNode, getTreeNode]
   );
 
   const handleContextMenu = useCallback(

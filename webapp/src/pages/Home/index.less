@@ -131,14 +131,16 @@
     }
   }
   .ant-select {
-    &-selection-item,
     &-focused {
       color: @light-color !important;
     }
   }
   &-select {
-    .ant-select-arrow {
-      color: @light-color;
+    .ant-select {
+      &-selection-item,
+      &-arrow {
+        color: @light-color;
+      }
     }
   }
 }

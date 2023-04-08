@@ -36,6 +36,7 @@ import core from '../../../core';
 import { NodeType } from '../../../core/runtime-generate';
 import { SELF_CLOSING_TAG } from '../../../core/runtime-transform';
 import { useTreeDataModel } from '../../../model';
+import { StyleFormValueType } from './StyleForm';
 
 type Props = {
   fieldNames: Partial<{ title: string; key: string; children: string }>;
@@ -55,16 +56,16 @@ const nodeIcons = {
 
 const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   const {
-    selectedKey,
     saveTreeData,
     needPushNode,
+    selectedNodeInfo,
     noticePushNode,
     noticeUpdateNode,
     needUpdateNode,
     needDeleteNode,
     noticeDeleteNode,
   } = useTreeDataModel(state => ({
-    selectedKey: state.selectedKey,
+    selectedNodeInfo: state.selectedNode,
     saveTreeData: state.saveTreeData,
     needPushNode: state.newNode,
     noticePushNode: state.push,
@@ -77,8 +78,9 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
 
-  const [nodeInitValues, setNodeInitValues] =
+  const [nodeInitVals, setNodeInitVals] =
     useState<FormOfNodeValues>(__defaultValues);
+  const [nodeStyleVals, setNodeStyleVals] = useState<StyleFormValueType>({});
 
   const [copyNode, setCopyNode] = useState<TreeDataNode | null>(null);
   const [selectedNode, setSelectedNode] = useState<TreeDataNode | null>(null);
@@ -91,19 +93,23 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   const [openModalForm, setOpenModalForm] = useState(false);
 
   useEffect(() => {
-    setSelectedKeys([selectedKey]);
-  }, [selectedKey]);
+    setSelectedKeys([selectedNodeInfo.key]);
+  }, [selectedNodeInfo]);
 
   useEffect(() => {
     saveTreeData(cloneDeep(treeData));
   }, [treeData, saveTreeData]);
 
   useEffect(() => {
+    if (selectedNodeInfo.node) setSelectedNode(selectedNodeInfo.node);
+  }, [selectedNodeInfo]);
+
+  useEffect(() => {
     if (!isNull(selectedNode) && !isUndefined(selectedNode)) {
       // @ts-ignore
       const { type, title, isLeaf, alias, props, content } = selectedNode;
-      const { id, className, attributes } = props;
-      setNodeInitValues({
+      const { id, className, attributes, style } = props;
+      setNodeInitVals({
         type,
         content,
         value: `${title}`,
@@ -114,6 +120,10 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
         className,
         attributes,
       });
+      setNodeStyleVals(style);
+    } else {
+      setNodeStyleVals({});
+      setNodeInitVals(__defaultValues);
     }
   }, [selectedNode]);
 
@@ -143,7 +153,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
 
   const handleOpenMdl = useCallback(
     (type?: NodeType) => {
-      setNodeInitValues(v => {
+      setNodeInitVals(v => {
         v!.type = !isUndefined(type) ? type! : NodeType.CONTAINER;
         return v;
       });
@@ -296,7 +306,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
 
   const crea = useCallback((type: NodeType) => {
     setOpenModalForm(true);
-    setNodeInitValues(v => {
+    setNodeInitVals(v => {
       v!.type = type;
       return v;
     });
@@ -336,6 +346,23 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
       setOpenCtxMenu(false);
     },
     [ctxMenuMethods]
+  );
+
+  const handleEditStyle = useCallback(
+    (values: StyleFormValueType) => {
+      console.log(values);
+
+      if (!selectedNode) {
+        message.info('请先选择节点');
+        setNodeStyleVals({});
+        return;
+      }
+      const c = cloneDeep(selectedNode);
+      // @ts-ignore
+      c.props.style = { ...c.props.style, ...values };
+      setTreeData(updateAntTree(treeData.slice(), c).slice());
+    },
+    [selectedNode, treeData]
   );
 
   const handleFinish = useCallback(
@@ -407,11 +434,27 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
         label: 'Style',
         key: 'style',
         children: (
-          <LazyLoading fallback='loading...' children={<StyleForm />} />
+          <LazyLoading
+            fallback='loading...'
+            children={
+              <StyleForm
+                defaultValues={nodeStyleVals}
+                onValuesChange={handleEditStyle}
+              />
+            }
+          />
         ),
       },
     ],
-    [treeData, selectedKeys, fieldNames, handleClickNode, handleRightClick]
+    [
+      treeData,
+      selectedKeys,
+      fieldNames,
+      nodeStyleVals,
+      handleEditStyle,
+      handleClickNode,
+      handleRightClick,
+    ]
   );
 
   return (
@@ -420,14 +463,14 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
         edit={isEdit}
         open={openModalForm}
         onCancel={handleCloseModal}
-        defaultValues={nodeInitValues}
+        defaultValues={nodeInitVals}
         onValuesChange={handleFinish}
       />
       <ContextMenu
         open={openCtxMenu}
         {...{ disPaste }}
         onClick={handleCtxItemClick}
-        nodeType={nodeInitValues.type}>
+        nodeType={nodeInitVals.type}>
         <section className='file-list' onContextMenu={e => e.preventDefault()}>
           <Row>
             <Col style={{ fontSize: 13 }} span={18}>

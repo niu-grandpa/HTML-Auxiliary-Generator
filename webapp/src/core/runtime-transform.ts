@@ -3,6 +3,7 @@ import { NodeType } from './runtime-generate';
 import { type VNode } from './utils';
 
 export const SELF_CLOSING_TAG = ['br', 'hr', 'img', 'input'];
+const propsWithoutUnits = ['opacity', 'zoom', 'fontWeight', 'scale'];
 
 export function transform(dragVnodes: VNode[]): string {
   const html: string[] = [];
@@ -46,7 +47,10 @@ function toHTMLStrings(
         ) {
           continue;
         }
-        value = typeof value === 'number' ? value + 'px' : value;
+        if (typeof value === 'number' && !propsWithoutUnits.includes(key)) {
+          value = value + 'px';
+        }
+
         cssText += `${getKebabCase2(key)}: ${value}; `;
       }
       startTag += ` style="${cssText.trimEnd()}"`;

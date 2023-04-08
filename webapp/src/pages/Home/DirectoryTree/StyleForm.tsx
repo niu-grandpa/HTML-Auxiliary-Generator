@@ -1,17 +1,56 @@
 import { Form, Input, InputNumber, Select, Space } from 'antd';
 import { DefaultOptionType } from 'antd/es/select';
-import { memo } from 'react';
+import { forIn, isEqual } from 'lodash';
+import { memo, useCallback, useEffect, useState } from 'react';
+import { useDebounce } from '../../../hooks';
 
-const StyleForm = memo(() => {
+export type StyleFormValueType = Record<string, string | number>;
+type Props = {
+  defaultValues: StyleFormValueType;
+  onValuesChange: (values: StyleFormValueType) => void;
+};
+
+const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
   const [form] = Form.useForm();
+  const [unitObj, setUnitObj] = useState<Record<any, any>>({});
+
+  useEffect(() => {
+    form.resetFields();
+    form.setFieldsValue(defaultValues);
+  }, [form, defaultValues]);
+
+  const processUnit = useCallback(
+    (values: StyleFormValueType, name: string, unit: string) => {
+      const val = values[name];
+      values[name] = val + (isEqual(unit, 'none') ? '' : unit);
+    },
+    []
+  );
+
+  const handleSetUnit = useCallback(
+    (unit: string, name: string) => {
+      processUnit(form.getFieldsValue(), name, unit);
+      setUnitObj(val => {
+        val[name] = unit;
+        return val;
+      });
+    },
+    [form, processUnit]
+  );
+
+  const handleValuesChange = useDebounce((_, values: StyleFormValueType) => {
+    forIn(unitObj, (unit, name) => processUnit(values, name, unit));
+    onValuesChange(values);
+  });
 
   return (
     <Form
-      autoComplete='off'
       {...{ form }}
       size='small'
+      layout='vertical'
+      autoComplete='off'
       className='style-form'
-      layout='vertical'>
+      onValuesChange={handleValuesChange}>
       <Space>
         <FormItemOfSelect
           name='display'
@@ -23,16 +62,16 @@ const StyleForm = memo(() => {
         />
       </Space>
       <Space>
-        <FormItemOfInputNumber name='width' />
-        <FormItemOfInputNumber name='height' />
+        <FormItemOfInputNumber onUnitChange={handleSetUnit} name='width' />
+        <FormItemOfInputNumber onUnitChange={handleSetUnit} name='height' />
       </Space>
       <Space>
-        <FormItemOfInputNumber name='fontSize' />
-        <FormItemOfInputNumber name='lineHight' />
+        <FormItemOfInputNumber onUnitChange={handleSetUnit} name='fontSize' />
+        <FormItemOfInputNumber onUnitChange={handleSetUnit} name='lineHight' />
       </Space>
       <Space>
-        <FormItemOfInputNumber name='maxWidth' />
-        <FormItemOfInputNumber name='maxHeight' />
+        <FormItemOfInputNumber onUnitChange={handleSetUnit} name='maxWidth' />
+        <FormItemOfInputNumber onUnitChange={handleSetUnit} name='maxHeight' />
       </Space>
       <Space>
         <Form.Item label='color' name='color'>
@@ -77,8 +116,11 @@ const StyleForm = memo(() => {
         />
       </Space>
       <Space>
-        <FormItemOfInputNumber name='zIndex' />
-        <FormItemOfInputNumber name='letterSpacing' />
+        <FormItemOfInputNumber onUnitChange={handleSetUnit} name='zIndex' />
+        <FormItemOfInputNumber
+          onUnitChange={handleSetUnit}
+          name='letterSpacing'
+        />
       </Space>
       <Space>
         <Form.Item label='textShadow' name='textShadow'>
@@ -90,13 +132,13 @@ const StyleForm = memo(() => {
       </Space>
       <Space>
         <FormItemOfSelect
-          name='backgroundSize'
-          options={['auto', 'cover', 'contain']}
+          name='textDecoration'
+          options={['overline', 'underline', 'none', 'line-through']}
         />
         <FormItemOfSelect
-          label='bgcAttachment'
-          name='backgroundAttachment'
-          options={['fixed', 'scroll', 'local']}
+          label='borderCollapse'
+          name='borderCollapse'
+          options={['collapse', 'separate', 'inherit']}
         />
       </Space>
       <Space>
@@ -110,8 +152,18 @@ const StyleForm = memo(() => {
         />
       </Space>
       <Space>
-        <FormItemOfInputNumber name='opacity' closeUnit step={0.01} />
-        <FormItemOfInputNumber name='scale' closeUnit step={0.01} />
+        <FormItemOfInputNumber
+          onUnitChange={handleSetUnit}
+          name='opacity'
+          closeUnit
+          step={0.01}
+        />
+        <FormItemOfInputNumber
+          onUnitChange={handleSetUnit}
+          name='zoom'
+          closeUnit
+          step={0.01}
+        />
       </Space>
       <Space>
         <FormItemOfSelect
@@ -210,8 +262,19 @@ type FormItemProps = {
 };
 
 const FormItemOfInputNumber = memo<
-  FormItemProps & { closeUnit?: boolean; step?: number }
->(({ label, name, step, closeUnit }) => {
+  FormItemProps & {
+    closeUnit?: boolean;
+    step?: number;
+    onUnitChange?: (val: string, name: string) => void;
+  }
+>(({ label, name, step, closeUnit, onUnitChange }) => {
+  const handleChange = useCallback(
+    (unit: string) => {
+      onUnitChange?.(unit, name);
+    },
+    [onUnitChange, name]
+  );
+
   return (
     <Form.Item {...{ name }} label={label || name}>
       <InputNumber
@@ -224,6 +287,7 @@ const FormItemOfInputNumber = memo<
               className='style-form-select'
               defaultValue='px'
               options={sizeUnit}
+              onChange={handleChange}
             />
           )
         }
@@ -237,6 +301,7 @@ const FormItemOfSelect = memo<FormItemProps & { options: (string | number)[] }>(
     return (
       <Form.Item {...{ name }} label={label || name}>
         <Select
+          allowClear
           style={{ width: 132 }}
           options={options.map(item => ({ label: item, value: item }))}
         />
