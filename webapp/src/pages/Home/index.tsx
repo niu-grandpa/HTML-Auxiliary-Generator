@@ -1,33 +1,22 @@
-import { Button, Col, Layout, Row } from 'antd';
-import React, { useCallback, useEffect } from 'react';
-import { useTreeDataModel } from '../../model';
+import { Col, Layout, Row } from 'antd';
+import React, { useEffect } from 'react';
 import DirectoryTree from './DirectoryTree';
 import ViewOperations from './ViewOperations';
 
-import core from '../../core';
+import HeaderContent from './HeaderContent';
 import './index.less';
 
 const { Header, Content, Footer } = Layout;
-const { buildHTMLString } = core;
 
 const Home: React.FC = () => {
-  const { dragVnodes } = useTreeDataModel(state => ({
-    dragVnodes: state.dragVnodes,
-  }));
-
   useEffect(() => {
     document.title = '开发管理页 - HTML Auxiliary Generator';
   }, []);
 
-  const handleCompileHTML = useCallback(() => {
-    buildHTMLString(dragVnodes);
-  }, [dragVnodes]);
-
   return (
     <Layout className='layout'>
       <Header>
-        <section className='logo' />
-        <Button onClick={handleCompileHTML}>导出</Button>
+        <HeaderContent />
       </Header>
       <Content>
         <Row>

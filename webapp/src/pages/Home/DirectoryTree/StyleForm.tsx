@@ -40,7 +40,8 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
 
   const handleValuesChange = useDebounce((_, values: StyleFormValueType) => {
     forIn(unitObj, (unit, name) => processUnit(values, name, unit));
-    onValuesChange(values);
+    const { translate } = defaultValues;
+    onValuesChange({ ...values, translate });
   });
 
   return (

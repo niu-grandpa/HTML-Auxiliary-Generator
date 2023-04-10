@@ -95,7 +95,6 @@ function _generate_() {
    */
   function buildHTMLString(vnodes: VNode[]): string {
     const res = transform(vnodes);
-    console.log(res);
     return res;
   }
 

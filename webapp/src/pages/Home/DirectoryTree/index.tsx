@@ -350,8 +350,6 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
 
   const handleEditStyle = useCallback(
     (values: StyleFormValueType) => {
-      console.log(values);
-
       if (!selectedNode) {
         message.info('请先选择节点');
         setNodeStyleVals({});
