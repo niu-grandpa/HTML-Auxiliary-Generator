@@ -1,86 +1,51 @@
 import { SnippetsOutlined } from '@ant-design/icons';
-import {
-  Button,
-  Col,
-  Drawer,
-  Empty,
-  Menu,
-  MenuProps,
-  Row,
-  Tooltip,
-  message,
-} from 'antd';
-import { memo, useCallback, useRef, useState } from 'react';
+import { Button, Col, Drawer, Empty, Row, Tooltip, message } from 'antd';
+import { isEqual } from 'lodash';
+import { useCallback, useState } from 'react';
 import core from '../../../core';
 import { useTreeDataModel } from '../../../model';
+import Login from './Login';
 
 const { buildHTMLString } = core;
 
-const HeaderContent = memo(() => {
+const HeaderContent = () => {
   const { dragVnodes } = useTreeDataModel(state => ({
     dragVnodes: state.dragVnodes,
   }));
 
-  const htmlString = useRef('');
   const [open, setOpen] = useState(false);
-  const [menuKey, setMenuKey] = useState('');
+  const [htmlString, setHTMLString] = useState('');
 
   const handleCopy = useCallback(() => {
-    if (!htmlString.current) return;
-    navigator.clipboard.writeText(htmlString.current).then(() => {
+    if (isEqual(htmlString, '')) return;
+    navigator.clipboard.writeText(htmlString).then(() => {
       message.success('复制成功🎉');
     });
-  }, []);
+  }, [htmlString]);
 
   const handleCompileHTML = useCallback(() => {
-    htmlString.current = buildHTMLString(dragVnodes);
+    setOpen(true);
+    setHTMLString(buildHTMLString(dragVnodes));
   }, [dragVnodes]);
-
-  const menuItems: MenuProps['items'] = [
-    {
-      label: '代码操作',
-      key: 'caode',
-      children: [
-        {
-          label: '查看',
-          key: 'review',
-          onClick: () => setOpen(true),
-        },
-        {
-          label: '复制',
-          key: 'copy',
-          onClick: handleCopy,
-        },
-      ],
-    },
-    {
-      label: '登录',
-      key: 'login',
-    },
-  ];
 
   return (
     <>
       <Row>
-        <Col span={21}>
+        <Col span={22}>
           <section className='logo' />
+          <Button type='primary' ghost onClick={handleCompileHTML}>
+            代码预览
+          </Button>
         </Col>
-        <Col span={3}>
-          <Menu
-            mode='horizontal'
-            items={menuItems}
-            theme='dark'
-            selectedKeys={[menuKey]}
-            onClick={e => setMenuKey(e.key)}
-            onOpenChange={handleCompileHTML}
-          />
+        <Col span={2}>
+          <Login />
         </Col>
       </Row>
       <Drawer
-        width={520}
+        height={600}
         {...{ open }}
-        mask={false}
-        title='HTML源代码'
+        title='HTML代码预览'
+        placement='bottom'
         extra={
           <Tooltip title='复制代码'>
             <Button
@@ -92,11 +57,11 @@ const HeaderContent = memo(() => {
         }
         onClose={() => setOpen(false)}>
         <pre>
-          <code>{!htmlString.current ? <Empty /> : htmlString.current}</code>
+          <code>{isEqual(htmlString, '') ? <Empty /> : htmlString}</code>
         </pre>
       </Drawer>
     </>
   );
-});
+};
 
 export default HeaderContent;
