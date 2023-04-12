@@ -1,5 +1,5 @@
 import { SnippetsOutlined } from '@ant-design/icons';
-import { Button, Col, Drawer, Empty, Row, Tooltip, message } from 'antd';
+import { Button, Col, Drawer, Empty, Row, Space, Tooltip, message } from 'antd';
 import { isEqual } from 'lodash';
 import { useCallback, useState } from 'react';
 import core from '../../../core';
@@ -33,9 +33,14 @@ const HeaderContent = () => {
       <Row>
         <Col span={22}>
           <section className='logo' />
-          <Button type='primary' ghost onClick={handleCompileHTML}>
-            代码预览
-          </Button>
+          <Space size='large'>
+            <Button type='primary' ghost onClick={handleCompileHTML}>
+              代码预览
+            </Button>
+            <Button type='primary' ghost onClick={handleCompileHTML}>
+              使用教程
+            </Button>
+          </Space>
         </Col>
         <Col span={2}>
           <Login />

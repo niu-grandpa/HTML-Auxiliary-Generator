@@ -117,7 +117,10 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
         />
       </Space>
       <Space>
-        <FormItemOfInputNumber onUnitChange={handleSetUnit} name='zIndex' />
+        <FormItemOfInputNumber
+          onUnitChange={handleSetUnit}
+          name='borderRadius'
+        />
         <FormItemOfInputNumber
           onUnitChange={handleSetUnit}
           name='letterSpacing'
@@ -133,17 +136,6 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
       </Space>
       <Space>
         <FormItemOfSelect
-          name='textDecoration'
-          options={['overline', 'underline', 'none', 'line-through']}
-        />
-        <FormItemOfSelect
-          label='borderCollapse'
-          name='borderCollapse'
-          options={['collapse', 'separate', 'inherit']}
-        />
-      </Space>
-      <Space>
-        <FormItemOfSelect
           name='fontWeight'
           options={[100, 200, 300, 400, 500, 600, 700, 800, 900]}
         />
@@ -155,13 +147,12 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
       <Space>
         <FormItemOfInputNumber
           onUnitChange={handleSetUnit}
-          name='opacity'
+          name='zIndex'
           closeUnit
-          step={0.01}
         />
         <FormItemOfInputNumber
           onUnitChange={handleSetUnit}
-          name='zoom'
+          name='opacity'
           closeUnit
           step={0.01}
         />
@@ -208,8 +199,8 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
           ]}
         />
         <FormItemOfSelect
-          name='overflow'
-          options={['auto', 'scroll', 'hidden', 'visible']}
+          name='textDecoration'
+          options={['overline', 'underline', 'none', 'line-through']}
         />
       </Space>
       <Space>
