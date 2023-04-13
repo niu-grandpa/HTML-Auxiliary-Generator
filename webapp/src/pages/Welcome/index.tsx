@@ -1,6 +1,7 @@
 import { Button } from 'antd';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import MainIcon from '../../assets/images/main.svg';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const Home = () => {
   return (
     <>
       <Button onClick={() => navigate('/home')}>主页</Button>
+      <img src={MainIcon} alt='main' />
     </>
   );
 };

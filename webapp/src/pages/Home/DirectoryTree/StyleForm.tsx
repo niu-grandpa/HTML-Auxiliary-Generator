@@ -76,10 +76,14 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
       </Space>
       <Space>
         <Form.Item label='color' name='color'>
-          <Input />
+          <Input
+            type='color'
+            defaultValue='#000000'
+            style={{ cursor: 'pointer' }}
+          />
         </Form.Item>
         <Form.Item label='background' name='background'>
-          <Input />
+          <Input style={{ width: 231 }} />
         </Form.Item>
       </Space>
       <Space>

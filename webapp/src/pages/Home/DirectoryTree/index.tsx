@@ -421,6 +421,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
             showIcon
             showLine
             blockNode
+            autoExpandParent
             defaultExpandAll
             {...{ treeData, fieldNames, selectedKeys }}
             onSelect={handleClickNode}
