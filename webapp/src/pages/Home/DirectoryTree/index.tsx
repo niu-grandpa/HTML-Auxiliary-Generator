@@ -34,7 +34,6 @@ import { __defaultValues } from '../../../components/ModalFormOfNode';
 import { FormOfNodeValues } from '../../../components/ModalFormOfNode/ModalFormOfNodeItem';
 import core from '../../../core';
 import { NodeType } from '../../../core/runtime-generate';
-import { SELF_CLOSING_TAG } from '../../../core/runtime-transform';
 import { useTreeDataModel } from '../../../model';
 import { StyleFormValueType } from './StyleForm';
 
@@ -101,7 +100,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   }, [treeData, saveTreeData]);
 
   useEffect(() => {
-    if (selectedNodeInfo.node) setSelectedNode(selectedNodeInfo.node);
+    setSelectedNode(selectedNodeInfo.node || null);
   }, [selectedNodeInfo]);
 
   useEffect(() => {
@@ -211,21 +210,10 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
 
   const updateNode = useCallback(
     (root: TreeDataNode[], values: FormOfNodeValues, target: TreeDataNode) => {
-      const { value: tag, content, type } = values;
+      const { content, type } = values;
       // 1.修改节点标签
       if (isEqual(isEdit, true)) {
-        if (target.children?.length && SELF_CLOSING_TAG.includes(tag)) {
-          confirm({
-            title: '警告',
-            content: '自闭合元素不能作为容器，会清空该节点下的子节点',
-            onOk() {
-              target.children!.length = 0;
-              return editNode(root, target, values);
-            },
-          });
-        } else {
-          return editNode(root, target, values);
-        }
+        return editNode(root, target, values);
       }
       // 2.新增节点
       const n = processNodeContent(createNode(values), type, content);
@@ -351,8 +339,8 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   const handleEditStyle = useCallback(
     (values: StyleFormValueType) => {
       if (!selectedNode) {
-        message.info('请先选择节点');
-        setNodeStyleVals({});
+        message.info('请先点击选择一个节点');
+        // setNodeStyleVals({});
         return;
       }
       const c = cloneDeep(selectedNode);

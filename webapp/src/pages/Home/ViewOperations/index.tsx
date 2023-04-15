@@ -5,6 +5,7 @@ import {
   MouseEvent as ReactMouseEvent,
   memo,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -15,6 +16,7 @@ import { resolveKeyConflicts } from '../../../core/utils';
 import { useDrag } from '../../../hooks';
 import { useTreeDataModel } from '../../../model';
 import { getIsTargetNode } from '../../../utils';
+import ResizeElem, { ResizeElemData } from './ResizeElem';
 
 type Props = {};
 
@@ -41,24 +43,40 @@ const ViewOperations: FC<Props> = memo(props => {
     saveSelectedNode: state.saveSelectedNode,
   }));
 
-  const wrapperElem = useRef<HTMLElement>(null);
   const currentKey = useRef('');
+  const wrapperElem = useRef<HTMLElement>(null);
+  const { onDragComplete } = useDrag(wrapperElem.current, targetDatasetName);
 
   const [disCtxMenu, setDisCtxMenu] = useState(false);
+  const [showResizeElem, setShowResizeElem] = useState(false);
   const [copyNode, setCopyNode] = useState<TreeDataNode | undefined>(undefined);
+  const [resizeElemData, setResizeElemData] = useState<ResizeElemData>({
+    coordinate: '',
+    refWidth: 0,
+    refHeight: 0,
+  });
 
   const disPaste = useMemo(() => isUndefined(copyNode), [copyNode]);
-
   const dragNodes = useMemo(() => {
     const vnodes = antTreeNodeToVNode(treeData);
     saveDragVnodes(cloneDeep(vnodes));
     return renderDragVnode(vnodes);
   }, [treeData, saveDragVnodes]);
 
-  const { onDragComplete } = useDrag(wrapperElem.current, targetDatasetName);
   onDragComplete((x, y, key) => {
     updateNodePos(key, x, y);
   });
+
+  useEffect(() => {
+    if (!dragNodes.length) {
+      setShowResizeElem(false);
+      setResizeElemData({
+        coordinate: '',
+        refWidth: 0,
+        refHeight: 0,
+      });
+    }
+  }, [dragNodes]);
 
   const getTreeNode = useCallback(
     (key: string) => {
@@ -98,11 +116,18 @@ const ViewOperations: FC<Props> = memo(props => {
       e.stopPropagation();
       const res = getIsTargetNode(e.target as HTMLElement);
       if (!res) {
+        setShowResizeElem(false);
         saveSelectedNode({ key: '', node: null });
         return false;
       }
       const key = res.dataset[targetKeyName] as string;
       saveSelectedNode({ key, node: getTreeNode(key) });
+      setResizeElemData({
+        coordinate: res.style.translate,
+        refWidth: res.offsetWidth,
+        refHeight: res.offsetHeight,
+      });
+      setShowResizeElem(true);
     },
     [saveSelectedNode, getTreeNode]
   );
@@ -140,7 +165,7 @@ const ViewOperations: FC<Props> = memo(props => {
       paste: (x: number, y: number) => {
         const { left, top } = wrapperElem.current!.getBoundingClientRect();
         const c = cloneDeep(copyNode)!;
-        setNodePosData(c, x - left, y - top);
+        setNodePosData(c, x - left - 50, y - top - 90);
         resolveKeyConflicts(c);
         noticePushNode(c);
       },
@@ -193,20 +218,31 @@ const ViewOperations: FC<Props> = memo(props => {
     [disCtxMenu, disPaste, optionsEvent]
   );
 
+  const handleResizeElem = useCallback(() => {}, []);
+
   return (
-    <Dropdown
-      trigger={['contextMenu']}
-      overlayStyle={{ width: 100 }}
-      menu={{ items }}>
-      <section
-        ref={wrapperElem}
-        className='view-opts'
-        onClick={handleNodeClick}
-        onMouseDown={handleNodeClick}
-        onContextMenu={handleContextMenu}>
-        {dragNodes}
-      </section>
-    </Dropdown>
+    <>
+      {!dragNodes.length ? null : (
+        <Dropdown
+          trigger={['contextMenu']}
+          overlayStyle={{ width: 100 }}
+          menu={{ items }}>
+          <section
+            ref={wrapperElem}
+            className='view-opts'
+            onClick={handleNodeClick}
+            onDragEnd={handleNodeClick}
+            onContextMenu={handleContextMenu}>
+            {dragNodes}
+            <ResizeElem
+              open={showResizeElem}
+              data={resizeElemData}
+              onResize={handleResizeElem}
+            />
+          </section>
+        </Dropdown>
+      )}
+    </>
   );
 });
 
