@@ -6,7 +6,7 @@ import ViewOperations from './ViewOperations';
 import HeaderContent from './HeaderContent';
 import './index.less';
 
-const { Header, Content, Footer } = Layout;
+const { Header, Content } = Layout;
 
 const Home: React.FC = () => {
   useEffect(() => {
@@ -28,10 +28,6 @@ const Home: React.FC = () => {
           </Col>
         </Row>
       </Content>
-      <Footer style={{ textAlign: 'center' }}>
-        HTML Auxiliary Generator ©{new Date().getFullYear()} Created by Ryan
-        John
-      </Footer>
     </Layout>
   );
 };
