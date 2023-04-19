@@ -1,6 +1,6 @@
 import { Form, Input, InputNumber, Select, Space } from 'antd';
 import { DefaultOptionType } from 'antd/es/select';
-import { forIn, isEqual } from 'lodash';
+import { forIn, isEqual, keys } from 'lodash';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { useDebounce } from '../../../hooks';
 
@@ -15,8 +15,11 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
   const [unitObj, setUnitObj] = useState<Record<any, any>>({});
 
   useEffect(() => {
-    form.resetFields();
-    form.setFieldsValue(defaultValues);
+    if (keys(defaultValues).length) {
+      // todo 设置默认单位
+      form.resetFields();
+      form.setFieldsValue(defaultValues);
+    }
   }, [form, defaultValues]);
 
   const processUnit = useCallback(
@@ -75,18 +78,6 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
         <FormItemOfInputNumber onUnitChange={handleSetUnit} name='maxHeight' />
       </Space>
       <Space>
-        <Form.Item label='color' name='color'>
-          <Input
-            type='color'
-            defaultValue='#000000'
-            style={{ cursor: 'pointer' }}
-          />
-        </Form.Item>
-        <Form.Item label='background' name='background'>
-          <Input style={{ width: 231 }} />
-        </Form.Item>
-      </Space>
-      <Space>
         <Form.Item label='margin' name='margin'>
           <Input />
         </Form.Item>
@@ -94,14 +85,22 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
           <Input />
         </Form.Item>
       </Space>
-      <Space>
-        <Form.Item label='border' name='border'>
-          <Input />
-        </Form.Item>
-        <Form.Item label='boxShadow' name='boxShadow'>
-          <Input />
-        </Form.Item>
-      </Space>
+      <Form.Item label='color' name='color'>
+        <Input
+          type='color'
+          defaultValue='#000000'
+          style={{ cursor: 'pointer' }}
+        />
+      </Form.Item>
+      <Form.Item label='background' name='background'>
+        <Input />
+      </Form.Item>
+      <Form.Item label='border' name='border'>
+        <Input />
+      </Form.Item>
+      <Form.Item label='boxShadow' name='boxShadow'>
+        <Input />
+      </Form.Item>
       <Space>
         <FormItemOfSelect
           name='textAlign'

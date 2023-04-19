@@ -338,17 +338,18 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
 
   const handleEditStyle = useCallback(
     (values: StyleFormValueType) => {
-      if (!selectedNode) {
-        message.info('请先点击选择一个节点');
-        // setNodeStyleVals({});
+      const cur = selectedNode || selectedNodeInfo.node;
+      if (!cur) {
+        message.info('请先选择一个节点');
+        setNodeStyleVals({});
         return;
       }
-      const c = cloneDeep(selectedNode);
+      const c = cloneDeep(cur);
       // @ts-ignore
       c.props.style = { ...c.props.style, ...values };
       setTreeData(updateAntTree(treeData.slice(), c).slice());
     },
-    [selectedNode, treeData]
+    [selectedNode, treeData, selectedNodeInfo]
   );
 
   const handleFinish = useCallback(

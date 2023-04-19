@@ -5,7 +5,6 @@ import {
   MouseEvent as ReactMouseEvent,
   memo,
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -15,8 +14,11 @@ import core, { calcActualPos, renderDragVnode } from '../../../core';
 import { resolveKeyConflicts } from '../../../core/utils';
 import { useDrag } from '../../../hooks';
 import { useTreeDataModel } from '../../../model';
-import { getIsTargetNode } from '../../../utils';
-import ResizeElem, { ResizeElemData } from './ResizeElem';
+import {
+  getDomByNodeKey,
+  getIsTargetNode,
+  getStringPxToNumber,
+} from '../../../utils';
 
 type Props = {};
 
@@ -43,18 +45,12 @@ const ViewOperations: FC<Props> = memo(props => {
     saveSelectedNode: state.saveSelectedNode,
   }));
 
-  const currentKey = useRef('');
   const wrapperElem = useRef<HTMLElement>(null);
   const { onDragComplete } = useDrag(wrapperElem.current, targetDatasetName);
 
+  const [curKey, setCurKey] = useState('');
   const [disCtxMenu, setDisCtxMenu] = useState(false);
-  const [showResizeElem, setShowResizeElem] = useState(false);
   const [copyNode, setCopyNode] = useState<TreeDataNode | undefined>(undefined);
-  const [resizeElemData, setResizeElemData] = useState<ResizeElemData>({
-    coordinate: '',
-    refWidth: 0,
-    refHeight: 0,
-  });
 
   const disPaste = useMemo(() => isUndefined(copyNode), [copyNode]);
   const dragNodes = useMemo(() => {
@@ -66,17 +62,6 @@ const ViewOperations: FC<Props> = memo(props => {
   onDragComplete((x, y, key) => {
     updateNodePos(key, x, y);
   });
-
-  useEffect(() => {
-    if (!dragNodes.length) {
-      setShowResizeElem(false);
-      setResizeElemData({
-        coordinate: '',
-        refWidth: 0,
-        refHeight: 0,
-      });
-    }
-  }, [dragNodes]);
 
   const getTreeNode = useCallback(
     (key: string) => {
@@ -116,18 +101,12 @@ const ViewOperations: FC<Props> = memo(props => {
       e.stopPropagation();
       const res = getIsTargetNode(e.target as HTMLElement);
       if (!res) {
-        setShowResizeElem(false);
+        setCurKey('');
         saveSelectedNode({ key: '', node: null });
         return false;
       }
       const key = res.dataset[targetKeyName] as string;
       saveSelectedNode({ key, node: getTreeNode(key) });
-      setResizeElemData({
-        coordinate: res.style.translate,
-        refWidth: res.offsetWidth,
-        refHeight: res.offsetHeight,
-      });
-      setShowResizeElem(true);
     },
     [saveSelectedNode, getTreeNode]
   );
@@ -136,25 +115,27 @@ const ViewOperations: FC<Props> = memo(props => {
     (e: ReactMouseEvent) => {
       const target = getIsTargetNode(e.target as HTMLElement);
       if (!target) {
+        setCurKey('');
         !disCtxMenu && setDisCtxMenu(true);
         return false;
       }
       setDisCtxMenu(false);
-      currentKey.current = target.dataset[targetKeyName]!;
+      setCurKey(target.dataset[targetKeyName]!);
     },
     [disCtxMenu]
   );
 
   const optsMethods = useMemo(
     () => ({
-      del: (treeNode?: TreeDataNode) => {
+      create() {},
+      del: (treeNode: TreeDataNode) => {
         noticeDeleteNode(treeNode);
-        // currentKey.current = '';
+        setCurKey('');
       },
-      copy: (treeNode?: TreeDataNode) => {
+      copy: (treeNode: TreeDataNode) => {
         setCopyNode(cloneDeep(treeNode));
       },
-      cut: (treeNode?: TreeDataNode) => {
+      cut: (treeNode: TreeDataNode) => {
         if (isEqual(treeData.length, 1)) {
           message.info('需要节点数量大于1');
           return;
@@ -162,33 +143,58 @@ const ViewOperations: FC<Props> = memo(props => {
         optsMethods.copy(treeNode);
         optsMethods.del(treeNode);
       },
-      paste: (x: number, y: number) => {
-        const { left, top } = wrapperElem.current!.getBoundingClientRect();
+      paste: (treeNode: TreeDataNode, mouseX: number, mouseY: number) => {
         const c = cloneDeep(copyNode)!;
-        setNodePosData(c, x - left - 50, y - top - 90);
         resolveKeyConflicts(c);
-        noticePushNode(c);
+        if (isUndefined(treeNode)) {
+          const { left, top } = wrapperElem.current!.getBoundingClientRect();
+          setNodePosData(c, mouseX - left - 50, mouseY - top - 90);
+          noticePushNode(c);
+        } else {
+          const parentDom = getDomByNodeKey(treeNode.key as string);
+          const [x, y] = getStringPxToNumber(parentDom.style.translate);
+          setNodePosData(
+            c,
+            mouseX - x - 20,
+            mouseY - y - parentDom.offsetHeight + 10
+          );
+          treeNode.children?.push(c);
+          noticeUpdateNode(treeNode);
+        }
       },
     }),
-    [treeData, copyNode, noticePushNode, noticeDeleteNode, setNodePosData]
+    [
+      treeData,
+      copyNode,
+      noticeUpdateNode,
+      noticePushNode,
+      noticeDeleteNode,
+      setNodePosData,
+    ]
   );
 
   const optionsEvent = useCallback(
-    (type: 'copy' | 'cut' | 'del' | 'paste', ev?: any) => {
+    (type: 'create' | 'copy' | 'cut' | 'del' | 'paste', ev?: any) => {
+      const treeNode = getTreeNode(curKey)!;
+
       if (type === 'paste') {
         const { domEvent } = ev;
-        optsMethods.paste(domEvent.clientX, domEvent.clientY);
+        optsMethods.paste(treeNode, domEvent.clientX, domEvent.clientY);
         // setCopyNode(undefined);
       } else {
-        const treeNode = getTreeNode(currentKey.current);
         optsMethods[type](treeNode);
       }
     },
-    [getTreeNode, optsMethods]
+    [curKey, getTreeNode, optsMethods]
   );
 
   const items = useMemo(
     () => [
+      {
+        label: '创建元素',
+        key: CTX_MENU_OPTS.NEW_NON_LEAF,
+        onClick: () => optionsEvent('copy'),
+      },
       {
         label: '复制',
         key: CTX_MENU_OPTS.COPY,
@@ -218,30 +224,21 @@ const ViewOperations: FC<Props> = memo(props => {
     [disCtxMenu, disPaste, optionsEvent]
   );
 
-  const handleResizeElem = useCallback(() => {}, []);
-
   return (
     <>
-      {!dragNodes.length ? null : (
-        <Dropdown
-          trigger={['contextMenu']}
-          overlayStyle={{ width: 100 }}
-          menu={{ items }}>
-          <section
-            ref={wrapperElem}
-            className='view-opts'
-            onClick={handleNodeClick}
-            onDragEnd={handleNodeClick}
-            onContextMenu={handleContextMenu}>
-            {dragNodes}
-            <ResizeElem
-              open={showResizeElem}
-              data={resizeElemData}
-              onResize={handleResizeElem}
-            />
-          </section>
-        </Dropdown>
-      )}
+      <Dropdown
+        trigger={['contextMenu']}
+        overlayStyle={{ width: 100 }}
+        menu={{ items }}>
+        <section
+          ref={wrapperElem}
+          className='view-opts'
+          onClick={handleNodeClick}
+          onDragEnd={handleNodeClick}
+          onContextMenu={handleContextMenu}>
+          {!dragNodes.length ? null : dragNodes}
+        </section>
+      </Dropdown>
     </>
   );
 });

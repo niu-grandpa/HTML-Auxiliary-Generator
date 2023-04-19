@@ -27,17 +27,15 @@ const ResizeElem = memo<Props>(({ open, data, onResize }) => {
   const visible = useMemo(() => (open ? '' : 'none'), [open]);
   const refElmSize = useMemo(
     () => ({
-      width: data.refWidth + (data.refWidth >> 1),
-      height: data.refHeight + (data.refHeight >> 1),
+      width: data.refWidth,
+      height: data.refHeight,
     }),
-    [data]
+    [data.refWidth, data.refHeight]
   );
   const translate = useMemo(() => {
     const [x, y] = data.coordinate.split('px');
-    const _x = parseInt(x) - (data.refWidth >> 2);
-    const _y = parseInt(y) - (data.refHeight >> 2);
-    return `${_x}px ${_y}px`;
-  }, [data]);
+    return `${x}px ${y}px`;
+  }, [data.coordinate]);
 
   const handleResize = useCallback(() => {}, []);
 
