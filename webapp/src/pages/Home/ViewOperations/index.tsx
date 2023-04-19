@@ -191,11 +191,6 @@ const ViewOperations: FC<Props> = memo(props => {
   const items = useMemo(
     () => [
       {
-        label: '创建元素',
-        key: CTX_MENU_OPTS.NEW_NON_LEAF,
-        onClick: () => optionsEvent('copy'),
-      },
-      {
         label: '复制',
         key: CTX_MENU_OPTS.COPY,
         disabled: disCtxMenu,

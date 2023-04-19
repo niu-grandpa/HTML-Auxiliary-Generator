@@ -25,7 +25,6 @@ const Login = memo<Props>(({ loginToken }) => {
   return (
     <>
       <Button
-        type='primary'
         ghost
         shape='round'
         icon={<UserOutlined />}

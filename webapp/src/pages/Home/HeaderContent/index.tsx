@@ -1,4 +1,10 @@
-import { SnippetsOutlined } from '@ant-design/icons';
+import {
+  DownloadOutlined,
+  FileTextOutlined,
+  ReadOutlined,
+  SettingOutlined,
+  SnippetsOutlined,
+} from '@ant-design/icons';
 import { Button, Col, Drawer, Empty, Row, Space, Tooltip, message } from 'antd';
 import { isEqual } from 'lodash';
 import { useCallback, useState } from 'react';
@@ -30,15 +36,37 @@ const HeaderContent = () => {
 
   return (
     <>
-      <Row>
+      <Row className='header-content'>
         <Col span={22}>
           <section className='logo' />
           <Space size='large'>
-            <Button type='primary' ghost onClick={handleCompileHTML}>
-              代码预览
-            </Button>
-            <Button type='primary' ghost onClick={handleCompileHTML}>
+            <Button
+              type='link'
+              icon={<ReadOutlined />}
+              ghost
+              onClick={handleCompileHTML}>
               使用教程
+            </Button>
+            <Button
+              type='link'
+              icon={<FileTextOutlined />}
+              ghost
+              onClick={handleCompileHTML}>
+              预览代码
+            </Button>
+            <Button
+              type='link'
+              icon={<SettingOutlined />}
+              ghost
+              onClick={handleCompileHTML}>
+              设置
+            </Button>
+            <Button
+              type='link'
+              icon={<DownloadOutlined />}
+              ghost
+              onClick={handleCompileHTML}>
+              导出
             </Button>
           </Space>
         </Col>

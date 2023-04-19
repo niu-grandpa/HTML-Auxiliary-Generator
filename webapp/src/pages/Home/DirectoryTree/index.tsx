@@ -403,7 +403,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   const tabsItems: TabsProps['items'] = useMemo(
     () => [
       {
-        label: '结构管理',
+        label: '节点树',
         key: 'structure',
         children: (
           <Tree
@@ -462,7 +462,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
         <section className='file-list' onContextMenu={e => e.preventDefault()}>
           <Row>
             <Col style={{ fontSize: 13 }} span={18}>
-              无标题(工作区)
+              结构管理器
             </Col>
             <Col span={3}>
               <Tooltip title='新建元素'>
