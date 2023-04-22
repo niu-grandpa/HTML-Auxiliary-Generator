@@ -128,12 +128,13 @@ const ViewOperations: FC<Props> = memo(props => {
   const optsMethods = useMemo(
     () => ({
       create() {},
-      del: (treeNode: TreeDataNode) => {
-        noticeDeleteNode(treeNode);
+      del: (treeNode: TreeDataNode, restCopy = true) => {
         setCurKey('');
+        noticeDeleteNode(treeNode);
+        restCopy && optsMethods.copy(undefined);
       },
-      copy: (treeNode: TreeDataNode) => {
-        setCopyNode(cloneDeep(treeNode));
+      copy: (treeNode?: TreeDataNode) => {
+        setCopyNode(treeNode ? cloneDeep(treeNode) : undefined);
       },
       cut: (treeNode: TreeDataNode) => {
         if (isEqual(treeData.length, 1)) {
@@ -141,7 +142,7 @@ const ViewOperations: FC<Props> = memo(props => {
           return;
         }
         optsMethods.copy(treeNode);
-        optsMethods.del(treeNode);
+        optsMethods.del(treeNode, false);
       },
       paste: (treeNode: TreeDataNode, mouseX: number, mouseY: number) => {
         const c = cloneDeep(copyNode)!;

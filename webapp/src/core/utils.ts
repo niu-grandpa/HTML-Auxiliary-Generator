@@ -56,10 +56,11 @@ export function createDragVnode(
   };
 }
 
+const randomRandomWord = randomWord();
 export function getHash() {
   //定义一个时间戳，计算与1970年相差的毫秒数  用来获得唯一时间
   const timestamp = new Date().valueOf();
-  const myRandom = randomWord(false, 4, 5);
+  const myRandom = randomRandomWord(false, 4, 5);
   const hashcode = getHashCode(myRandom + timestamp.toString());
   return `${myRandom}_${hashcode}`;
 }
@@ -86,80 +87,31 @@ function getHashCode(str: string) {
  ** randomWord(true,3，6);长度不定，true
  ** arr变量可以把其他字符加入，如以后需要小写字母，直接加入即可
  */
-function randomWord(randomFlag: boolean, min: number, max: number) {
+function randomWord() {
+  const arr = Array<string>(62);
   let str = '';
-  let range = min;
-  const arr = [
-    '0',
-    '1',
-    '2',
-    '3',
-    '4',
-    '5',
-    '6',
-    '7',
-    '8',
-    '9',
-    'a',
-    'b',
-    'c',
-    'd',
-    'e',
-    'f',
-    'g',
-    'h',
-    'i',
-    'j',
-    'k',
-    'l',
-    'm',
-    'n',
-    'o',
-    'p',
-    'q',
-    'r',
-    's',
-    't',
-    'u',
-    'v',
-    'w',
-    'x',
-    'y',
-    'z',
-    'A',
-    'B',
-    'C',
-    'D',
-    'E',
-    'F',
-    'G',
-    'H',
-    'I',
-    'J',
-    'K',
-    'L',
-    'M',
-    'N',
-    'O',
-    'P',
-    'Q',
-    'R',
-    'S',
-    'T',
-    'U',
-    'V',
-    'W',
-    'X',
-    'Y',
-    'Z',
-  ];
-  // 随机产生
-  if (randomFlag) {
-    range = Math.round(Math.random() * (max - min)) + min;
-  }
-  for (let i = 0; i < range; i++) {
-    const pos = Math.round(Math.random() * (arr.length - 1));
-    str += arr[pos];
-  }
-  return str;
+  let idx = 0;
+  return (randomFlag: boolean, min: number, max: number) => {
+    let range = min;
+    if (!arr[0]) {
+      for (let i = 48; i <= 57; i++) {
+        arr[idx++] = String.fromCharCode(i);
+      }
+      for (let i = 97; i <= 122; i++) {
+        arr[idx++] = String.fromCharCode(i);
+      }
+      for (let i = 65; i <= 90; i++) {
+        arr[idx++] = String.fromCharCode(i);
+      }
+    }
+    // 随机产生
+    if (randomFlag) {
+      range = Math.round(Math.random() * (max - min)) + min;
+    }
+    for (let i = 0; i < range; i++) {
+      const pos = Math.round(Math.random() * (arr.length - 1));
+      str += arr[pos];
+    }
+    return str;
+  };
 }

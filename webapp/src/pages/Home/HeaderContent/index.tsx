@@ -5,12 +5,23 @@ import {
   SettingOutlined,
   SnippetsOutlined,
 } from '@ant-design/icons';
-import { Button, Col, Drawer, Empty, Row, Space, Tooltip, message } from 'antd';
+import {
+  Button,
+  Col,
+  Drawer,
+  Empty,
+  Modal,
+  Row,
+  Select,
+  Space,
+  Tooltip,
+  message,
+} from 'antd';
 import { isEqual } from 'lodash';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import core from '../../../core';
 import { useTreeDataModel } from '../../../model';
-import Login from './Login';
+import LoginComponent from './Login';
 
 const { buildHTMLString } = core;
 
@@ -19,8 +30,13 @@ const HeaderContent = () => {
     dragVnodes: state.dragVnodes,
   }));
 
-  const [open, setOpen] = useState(false);
   const [htmlString, setHTMLString] = useState('');
+  const [settings, setSettings] = useState({
+    styleType: 'inline',
+    sugar: 'default',
+  });
+  const [openCodeView, setOpenCodeView] = useState(false);
+  const [openSettings, setOpenSettings] = useState(false);
 
   const handleCopy = useCallback(() => {
     if (isEqual(htmlString, '')) return;
@@ -30,9 +46,34 @@ const HeaderContent = () => {
   }, [htmlString]);
 
   const handleCompileHTML = useCallback(() => {
-    setOpen(true);
-    setHTMLString(buildHTMLString(dragVnodes));
-  }, [dragVnodes]);
+    setOpenCodeView(true);
+    setHTMLString(
+      buildHTMLString(dragVnodes, {
+        space: 0,
+        indentation: 2,
+        styleType: settings.styleType,
+        sugar: settings.sugar,
+      })
+    );
+  }, [dragVnodes, settings]);
+
+  const navItems = useMemo(
+    () => [
+      { icon: <ReadOutlined />, title: '使用教程', onClick: () => {} },
+      {
+        icon: <FileTextOutlined />,
+        title: '预览代码',
+        onClick: handleCompileHTML,
+      },
+      {
+        icon: <SettingOutlined />,
+        title: '设置',
+        onClick: () => setOpenSettings(true),
+      },
+      { icon: <DownloadOutlined />, title: '导出', onClick: () => {} },
+    ],
+    [handleCompileHTML]
+  );
 
   return (
     <>
@@ -40,43 +81,21 @@ const HeaderContent = () => {
         <Col span={22}>
           <section className='logo' />
           <Space size='large'>
-            <Button
-              type='link'
-              icon={<ReadOutlined />}
-              ghost
-              onClick={handleCompileHTML}>
-              使用教程
-            </Button>
-            <Button
-              type='link'
-              icon={<FileTextOutlined />}
-              ghost
-              onClick={handleCompileHTML}>
-              预览代码
-            </Button>
-            <Button
-              type='link'
-              icon={<SettingOutlined />}
-              ghost
-              onClick={handleCompileHTML}>
-              设置
-            </Button>
-            <Button
-              type='link'
-              icon={<DownloadOutlined />}
-              ghost
-              onClick={handleCompileHTML}>
-              导出
-            </Button>
+            {navItems.map(({ icon, title, onClick }) => (
+              <Button type='link' ghost {...{ icon, onClick }} key={title}>
+                {title}
+              </Button>
+            ))}
           </Space>
         </Col>
         <Col span={2}>
-          <Login />
+          <LoginComponent />
         </Col>
       </Row>
       <Drawer
-        height={600}
-        {...{ open }}
+        height={'90%'}
+        open={openCodeView}
+        destroyOnClose
         title='HTML代码预览'
         placement='bottom'
         extra={
@@ -88,11 +107,54 @@ const HeaderContent = () => {
             />
           </Tooltip>
         }
-        onClose={() => setOpen(false)}>
+        onClose={() => setOpenCodeView(false)}>
         <pre>
           <code>{isEqual(htmlString, '') ? <Empty /> : htmlString}</code>
         </pre>
       </Drawer>
+      <Modal
+        open={openSettings}
+        title='转换设置'
+        footer={false}
+        onCancel={() => setOpenSettings(false)}>
+        <Space style={{ marginTop: 16, marginBottom: 16 }}>
+          <span>转换类型: </span>
+          <Select
+            size='small'
+            allowClear
+            defaultValue='default'
+            style={{ width: 150 }}
+            onChange={v =>
+              setSettings(obj => {
+                obj.sugar = v;
+                return obj;
+              })
+            }
+            options={[
+              { label: '原生', value: 'default' },
+              { label: 'Vue', value: 'vue' },
+              { label: 'React', value: 'react' },
+            ]}
+          />
+          <span>样式语法: </span>
+          <Select
+            size='small'
+            allowClear
+            defaultValue='inline'
+            style={{ width: 150 }}
+            onChange={v =>
+              setSettings(obj => {
+                obj.styleType = v;
+                return obj;
+              })
+            }
+            options={[
+              { label: '内联样式', value: 'inline' },
+              { label: '类名样式', value: 'classname' },
+            ]}
+          />
+        </Space>
+      </Modal>
     </>
   );
 };

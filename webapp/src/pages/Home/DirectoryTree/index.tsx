@@ -232,10 +232,10 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   );
 
   const onDeleteNode = useCallback(
-    (source: TreeDataNode, showConfirm = true) => {
+    (source: TreeDataNode, showConfirm = true, restCopy = true) => {
       const onDelete = () => {
         setTreeData(deleteNode(treeData.slice(), cloneDeep(source)!));
-        onClearSelectedNode();
+        restCopy && onClearSelectedNode();
       };
       if (isEqual(showConfirm, false)) {
         onDelete();
@@ -261,7 +261,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
         return;
       }
       onCopyNode(source);
-      onDeleteNode(source, false);
+      onDeleteNode(source, false, false);
     },
     [treeData, onClearSelectedNode, onDeleteNode, onCopyNode]
   );
