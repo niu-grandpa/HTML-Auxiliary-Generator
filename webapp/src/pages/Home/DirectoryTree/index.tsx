@@ -356,21 +356,21 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
     (values: FormOfNodeValues) => {
       const target = cloneDeep(selectedNode)!;
       let { repeat, content, type } = values;
-      const newData: TreeDataNode[] = treeData.slice();
+      let newData: TreeDataNode[] = treeData.slice();
       while (repeat--) {
         // 没有选中任何节点进行创建，说明是要创建根节点
         if (!target) {
-          onPasteNode(processNodeContent(createNode(values), type, content));
+          newData.push(processNodeContent(createNode(values), type, content));
           continue;
         }
-        setTreeData(updateNode(newData, values, target)!.slice());
+        newData = updateNode(newData, values, target)!;
       }
+      setTreeData(newData.slice());
       resetIsEdit();
       onClearSelectedNode();
     },
     [
       treeData,
-      onPasteNode,
       selectedNode,
       createNode,
       updateNode,
