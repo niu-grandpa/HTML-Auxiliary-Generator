@@ -60,9 +60,9 @@ const randomRandomWord = randomWord();
 export function getHash() {
   //定义一个时间戳，计算与1970年相差的毫秒数  用来获得唯一时间
   const timestamp = new Date().valueOf();
-  const myRandom = randomRandomWord(false, 4, 5);
+  const myRandom = randomRandomWord(2, 5);
   const hashcode = getHashCode(myRandom + timestamp.toString());
-  return `${myRandom}_${hashcode}`;
+  return `${myRandom}${hashcode}`;
 }
 
 //产生一个hash值，只有数字，规则和java的hashcode规则相同
@@ -89,27 +89,26 @@ function getHashCode(str: string) {
  */
 function randomWord() {
   const arr = Array<string>(62);
+  let range = 0;
   let str = '';
-  let idx = 0;
-  return (randomFlag: boolean, min: number, max: number) => {
-    let range = min;
+  return (min: number, max: number) => {
     if (!arr[0]) {
-      for (let i = 48; i <= 57; i++) {
-        arr[idx++] = String.fromCharCode(i);
-      }
+      let idx = 0;
       for (let i = 97; i <= 122; i++) {
         arr[idx++] = String.fromCharCode(i);
       }
       for (let i = 65; i <= 90; i++) {
         arr[idx++] = String.fromCharCode(i);
       }
+      for (let i = 48; i <= 57; i++) {
+        arr[idx++] = String.fromCharCode(i);
+      }
     }
+    str = '';
     // 随机产生
-    if (randomFlag) {
-      range = Math.round(Math.random() * (max - min)) + min;
-    }
+    range = ~~(Math.random() * (max - min)) + min;
     for (let i = 0; i < range; i++) {
-      const pos = Math.round(Math.random() * (arr.length - 1));
+      const pos = ~~(Math.random() * (arr.length - 1));
       str += arr[pos];
     }
     return str;
