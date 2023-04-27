@@ -34,6 +34,7 @@ const HeaderContent = () => {
   const [settings, setSettings] = useState({
     styleType: 'inline',
     sugar: 'default',
+    file: 'html',
   });
   const [openCodeView, setOpenCodeView] = useState(false);
   const [openSettings, setOpenSettings] = useState(false);
@@ -57,12 +58,20 @@ const HeaderContent = () => {
     );
   }, [dragVnodes, settings]);
 
+  const handleSettings = useCallback((name: string, val: string) => {
+    setSettings(obj => {
+      // @ts-ignore
+      obj[name] = val;
+      return obj;
+    });
+  }, []);
+
   const navItems = useMemo(
     () => [
       { icon: <ReadOutlined />, title: '使用教程', onClick: () => {} },
       {
         icon: <FileTextOutlined />,
-        title: '预览代码',
+        title: '查看代码',
         onClick: handleCompileHTML,
       },
       {
@@ -96,17 +105,18 @@ const HeaderContent = () => {
         height={'90%'}
         open={openCodeView}
         destroyOnClose
-        title='HTML代码预览'
-        placement='bottom'
-        extra={
-          <Tooltip title='复制代码'>
-            <Button
-              shape='circle'
-              icon={<SnippetsOutlined />}
-              onClick={handleCopy}
-            />
-          </Tooltip>
+        title={
+          <>
+            <span style={{ marginRight: 12 }}>HTML代码预览</span>
+            <Tooltip title='复制代码'>
+              <SnippetsOutlined
+                onClick={handleCopy}
+                style={{ fontSize: 18, cursor: 'pointer' }}
+              />
+            </Tooltip>
+          </>
         }
+        placement='bottom'
         onClose={() => setOpenCodeView(false)}>
         <pre>
           <code>{isEqual(htmlString, '') ? <Empty /> : htmlString}</code>
@@ -114,22 +124,17 @@ const HeaderContent = () => {
       </Drawer>
       <Modal
         open={openSettings}
-        title='转换设置'
+        title='代码转换'
         footer={false}
         onCancel={() => setOpenSettings(false)}>
-        <Space style={{ marginTop: 16, marginBottom: 16 }}>
-          <span>转换类型: </span>
+        <Space style={{ marginTop: 16, marginBottom: 16 }} size='large' wrap>
+          <span>转换目标: </span>
           <Select
             size='small'
             allowClear
             defaultValue='default'
-            style={{ width: 150 }}
-            onChange={v =>
-              setSettings(obj => {
-                obj.sugar = v;
-                return obj;
-              })
-            }
+            style={{ width: 130 }}
+            onChange={v => handleSettings('sugar', v)}
             options={[
               { label: '原生', value: 'default' },
               { label: 'Vue', value: 'vue' },
@@ -141,16 +146,23 @@ const HeaderContent = () => {
             size='small'
             allowClear
             defaultValue='inline'
-            style={{ width: 150 }}
-            onChange={v =>
-              setSettings(obj => {
-                obj.styleType = v;
-                return obj;
-              })
-            }
+            style={{ width: 130 }}
+            onChange={v => handleSettings('styleType', v)}
             options={[
-              { label: '内联样式', value: 'inline' },
-              { label: '类名样式', value: 'classname' },
+              { label: '内联', value: 'inline' },
+              { label: '类名', value: 'classname' },
+            ]}
+          />
+          <span>文件后缀: </span>
+          <Select
+            size='small'
+            defaultValue='html'
+            style={{ width: 130 }}
+            onChange={v => handleSettings('file', v)}
+            options={[
+              { label: '*.html', value: 'html' },
+              { label: '*.vue', value: 'vue' },
+              { label: '*.react', value: 'react' },
             ]}
           />
         </Space>

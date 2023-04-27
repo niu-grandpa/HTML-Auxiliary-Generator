@@ -220,6 +220,11 @@ const ViewOperations: FC<Props> = memo(props => {
     [disCtxMenu, disPaste, optionsEvent]
   );
 
+  const handleCreate = useCallback((e: ReactMouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
   return (
     <>
       <Dropdown
@@ -231,7 +236,8 @@ const ViewOperations: FC<Props> = memo(props => {
           className='view-opts'
           onClick={handleNodeClick}
           onDragEnd={handleNodeClick}
-          onContextMenu={handleContextMenu}>
+          onContextMenu={handleContextMenu}
+          onDoubleClick={handleCreate}>
           {!dragNodes.length ? null : dragNodes}
         </section>
       </Dropdown>
