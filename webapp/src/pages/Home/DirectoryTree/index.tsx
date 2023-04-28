@@ -17,7 +17,7 @@ import {
   message,
   type TreeDataNode,
 } from 'antd';
-import { cloneDeep, isEqual, isNull, isUndefined } from 'lodash-es';
+import { cloneDeep, eq, gte, isNull, isUndefined } from 'lodash-es';
 import {
   FC,
   Key,
@@ -176,7 +176,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   // 添加节点附带的额外文本内容
   const processNodeContent = useCallback(
     (node: TreeDataNode, type: NodeType, content: string) => {
-      if (isEqual(type, NodeType.TEXT) || !content) return node;
+      if (eq(type, NodeType.TEXT) || !content) return node;
       const textNode = createNode({
         ...__defaultValues,
         type: NodeType.TEXT,
@@ -212,7 +212,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
     (root: TreeDataNode[], values: FormOfNodeValues, target: TreeDataNode) => {
       const { content, type } = values;
       // 1.修改节点标签
-      if (isEqual(isEdit, true)) {
+      if (eq(isEdit, true)) {
         return editNode(root, target, values);
       }
       // 2.新增节点
@@ -232,30 +232,30 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   );
 
   const onDeleteNode = useCallback(
-    (source: TreeDataNode, showConfirm = true, restCopy = true) => {
+    (source: TreeDataNode, warn = true, restCopy = true) => {
       const onDelete = () => {
-        setTreeData(deleteNode(treeData.slice(), cloneDeep(source)!));
+        setTreeData(deleteNode(treeData.slice(), source));
         restCopy && onClearSelectedNode();
       };
-      if (isEqual(showConfirm, false)) {
+      if (eq(warn, true) && gte(source.children?.length, 3)) {
+        confirm({
+          title: '注意',
+          content: '当前节点下包含多个子节点, 确定要删除吗?',
+          onOk() {
+            onDelete();
+            message.success('删除成功');
+          },
+        });
+      } else {
         onDelete();
-        return;
       }
-      confirm({
-        title: '警告',
-        content: '确定要删除该节点吗?',
-        onOk() {
-          onDelete();
-          message.success('删除成功');
-        },
-      });
     },
     [treeData, onClearSelectedNode]
   );
 
   const onCutNode = useCallback(
     (source: TreeDataNode) => {
-      if (isEqual(treeData.length, 1)) {
+      if (eq(treeData.length, 1)) {
         message.info('根节点数量至少需要2个');
         onClearSelectedNode();
         return;
