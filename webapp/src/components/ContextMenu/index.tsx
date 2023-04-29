@@ -1,6 +1,6 @@
 import { Dropdown, MenuProps } from 'antd';
 import { FC, memo, useCallback, useEffect, useMemo } from 'react';
-import { NodeType } from '../../core/type';
+import { NodeType, ProcessTreeDataNode } from '../../core/type';
 
 export const enum CTX_MENU_OPTS {
   NEW_LEAF = '0',
@@ -13,37 +13,66 @@ export const enum CTX_MENU_OPTS {
   REMOVE = '7',
 }
 
+export type ContextMenuHandlers = Partial<{
+  onCreate: () => void;
+  onCopy: () => void;
+  onCut: () => void;
+  onPaste: () => void;
+  onDelete: () => void;
+  onEdit: () => void;
+  onContent: () => void;
+}>;
+
 type Props = {
   open: boolean;
-  nodeType: NodeType;
   canPaste: boolean;
   children: JSX.Element;
   onClose: () => void;
-  onClick: (key: string) => void;
+  target: ProcessTreeDataNode | undefined | null;
+  handler: ContextMenuHandlers;
+};
+
+const map: Record<string, string> = {
+  '1': 'onCreate',
+  '2': 'onContent',
+  '3': 'onCopy',
+  '4': 'onCut',
+  '5': 'onPaste',
+  '6': 'onEdit',
+  '7': 'onDelete',
 };
 
 const ContextMenu: FC<Props> = memo(
-  ({ open, nodeType, canPaste, onClick, onClose, children }) => {
+  ({ open, target, canPaste, handler, onClose, children }) => {
     useEffect(() => {
-      const handleClose = (e: MouseEvent) => {
-        e.stopPropagation();
-        onClose();
-      };
-      document.addEventListener('click', handleClose);
+      document.addEventListener('click', onClose, true);
       return () => {
-        document.removeEventListener('click', handleClose);
+        document.removeEventListener('click', onClose, true);
       };
     }, [onClose]);
 
-    const isText = useMemo(() => nodeType === NodeType.TEXT, [nodeType]);
-    const isLeaf = useMemo(() => nodeType !== NodeType.CONTAINER, [nodeType]);
+    const overDisabled = useMemo(() => !target, [target]);
+    const isText = useMemo(
+      () => target?.type === NodeType.TEXT,
+      [target?.type]
+    );
+    const isLeaf = useMemo(
+      () => target?.type === NodeType.CONTAINER,
+      [target?.type]
+    );
+    const isPaste = useMemo(
+      () => overDisabled || canPaste || isLeaf || isText,
+      [overDisabled, canPaste, isLeaf, isText]
+    );
 
     const handleClick = useCallback(
       ({ key }: { key: string }) => {
-        onClick(key);
+        const funcName = map[key];
+        // @ts-ignore
+        handler[funcName]?.();
         onClose();
       },
-      [onClick, onClose]
+      [handler, onClose]
     );
 
     const items: MenuProps['items'] = useMemo(
@@ -51,52 +80,56 @@ const ContextMenu: FC<Props> = memo(
         {
           label: '新建...',
           key: CTX_MENU_OPTS.NEW_NON_LEAF,
-          disabled: isLeaf,
+          disabled: isText,
           onClick: handleClick,
         },
         {
-          label: '内容...',
+          label: '添加内容',
           key: CTX_MENU_OPTS.ADD_TEXT,
-          disabled: isLeaf,
+          disabled: overDisabled || isText,
           onClick: handleClick,
         },
         {
           label: '复制',
           key: CTX_MENU_OPTS.COPY,
+          disabled: overDisabled,
           onClick: handleClick,
         },
         {
           label: '剪切',
           key: CTX_MENU_OPTS.CUT,
+          disabled: overDisabled,
           onClick: handleClick,
         },
         {
           label: '粘贴',
           key: CTX_MENU_OPTS.PASTE,
-          disabled: canPaste || isLeaf || isText,
+          disabled: isPaste,
           onClick: handleClick,
         },
         {
           label: '修改...',
           key: CTX_MENU_OPTS.EDIT_TAG,
+          disabled: overDisabled,
           onClick: handleClick,
         },
         {
           label: '删除',
           key: CTX_MENU_OPTS.REMOVE,
           onClick: handleClick,
+          disabled: overDisabled,
           danger: true,
         },
       ],
-      [canPaste, isLeaf, isText, handleClick]
+      [isPaste, isText, overDisabled, handleClick]
     );
 
     return (
       <Dropdown
+        {...{ open }}
         menu={{ items }}
-        overlayStyle={{ width: 120 }}
         trigger={['contextMenu']}
-        {...{ open }}>
+        overlayStyle={{ width: 120 }}>
         {children}
       </Dropdown>
     );

@@ -29,7 +29,10 @@ import {
   useState,
 } from 'react';
 import { LazyLoading, ModalFormOfNode } from '../../../components';
-import { ContextMenu } from '../../../components/ContextMenu';
+import {
+  ContextMenu,
+  ContextMenuHandlers,
+} from '../../../components/ContextMenu';
 import { __defaultValues } from '../../../components/ModalFormOfNode';
 import { FormOfNodeValues } from '../../../components/ModalFormOfNode/ModalFormOfNodeItem';
 import core from '../../../core';
@@ -299,23 +302,19 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
     });
   }, []);
 
-  const ctxMenuMethods = useCallback(
-    (key: string) => {
-      const methods = {
-        '1': () => crea(NodeType.CONTAINER),
-        '2': () => crea(NodeType.TEXT),
-        '3': () => onCopyNode(selectedNode!),
-        '4': () => onCutNode(selectedNode!),
-        '5': () => onPasteNode(copyNode!, selectedNode!),
-        '6': () => {
-          setIsEdit(true);
-          setOpenModalForm(true);
-        },
-        '7': () => onDeleteNode(selectedNode!),
-      };
-      // @ts-ignore
-      methods[key]();
-    },
+  const ctxMenuHandlers = useMemo<ContextMenuHandlers>(
+    () => ({
+      onCreate: () => crea(NodeType.CONTAINER),
+      onContent: () => crea(NodeType.TEXT),
+      onCopy: () => onCopyNode(selectedNode!),
+      onCut: () => onCutNode(selectedNode!),
+      onPaste: () => onPasteNode(copyNode!, selectedNode!),
+      onEdit: () => {
+        setIsEdit(true);
+        setOpenModalForm(true);
+      },
+      onDelete: () => onDeleteNode(selectedNode!),
+    }),
     [
       copyNode,
       crea,
@@ -381,6 +380,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   useEffect(() => {
     if (needDeleteNode) {
       onDeleteNode(needDeleteNode!, false);
+      noticeDeleteNode(null);
     }
   }, [needDeleteNode, onDeleteNode, noticeDeleteNode]);
 
@@ -448,8 +448,8 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
       <ContextMenu
         open={openCtxMenu}
         canPaste={canPaste}
-        onClick={ctxMenuMethods}
-        nodeType={nodeInitVals.type}
+        target={selectedNode}
+        handler={ctxMenuHandlers}
         onClose={() => setOpenCtxMenu(false)}>
         <section className='file-list' onContextMenu={e => e.preventDefault()}>
           <Row>
