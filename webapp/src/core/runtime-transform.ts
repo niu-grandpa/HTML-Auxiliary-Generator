@@ -1,7 +1,6 @@
 import { CSSProperties, Key } from 'react';
 import { getKebabCase2 } from '../utils';
-import { NodeType } from './runtime-generate';
-import { type VNode } from './utils';
+import { NodeType, VNode } from './type';
 
 export type TransformOptions = {
   /**空格起始位置 */
@@ -52,7 +51,7 @@ function processHTMLBody(
     const processTag = (
       key: string,
       startTag: string,
-      props: VNode['props'] & { actualPos: [number, number] },
+      props: VNode['props'],
       len: number,
       selfClose: boolean
     ) => {
@@ -196,8 +195,6 @@ function processHTMLOuterStyle(dragVnodes: VNode[], html: string[]) {
   addContent('</style>');
   addNewline();
 }
-
-function processScript() {}
 
 function restTranslateOfStyle(obj: CSSProperties['translate'], pos: number[]) {
   const [x, y] = pos;

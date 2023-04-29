@@ -1,21 +1,26 @@
 import { TreeDataNode } from 'antd';
-import { CSSProperties } from 'react';
-import { NodeType } from './runtime-generate';
+import { NodeType, VNode } from './type';
 
-export type VNode = {
-  type: NodeType;
-  key: string;
-  tag: string;
-  children: VNode[];
-  content: string;
-  actualPos: [number, number];
-  props: {
-    id: string;
-    className: string;
-    style: CSSProperties;
-    attributes: { name: string; value: string }[];
-  } | null;
-};
+/**创建拖动节点——虚拟节点 */
+export function createDragVnode(
+  key: string,
+  type: NodeType,
+  tag: string,
+  content: string,
+  props: VNode['props'],
+  actualPos: number[],
+  children: VNode[]
+): VNode {
+  return {
+    key,
+    type,
+    tag,
+    content,
+    props,
+    children,
+    actualPos,
+  };
+}
 
 export function createNodeKey(): string {
   return getHash();
@@ -33,27 +38,6 @@ export function resolveKeyConflicts(node: TreeDataNode) {
     resolveKeyConflicts(child);
   }
   return node;
-}
-
-/**创建拖动节点——虚拟节点 */
-export function createDragVnode(
-  key: string,
-  type: NodeType,
-  tag: string,
-  content: string,
-  props: VNode['props'],
-  actualPos: [number, number],
-  children: VNode[]
-): VNode {
-  return {
-    key,
-    type,
-    tag,
-    content,
-    props,
-    children,
-    actualPos,
-  };
 }
 
 const randomRandomWord = randomWord();

@@ -20,7 +20,7 @@ const Home = () => {
       <Content>
         <figure className='wec-figure'>
           <Row style={{ marginTop: 84 }}>
-            <Col span={13} className='wec-title'>
+            <Col span={12} className='wec-title'>
               <h1 className='wec-title-title'>HTML Auxiliary Generator</h1>
               <p className='wec-title-desc'>
                 辅助开发者通过「可视化」操作，「更简单」「更省时」地制作出静态网页或组件！
@@ -59,7 +59,7 @@ const Home = () => {
           </a>
           Made with ❤ by Ryan John
         </p>
-        <p style={{ fontSize: 16 }}>热爱开源追求自由的 Github 牛爷爷</p>
+        <p style={{ marginTop: 6 }}>热爱开源追求自由的 Github 牛爷爷</p>
       </Footer>
     </Layout>
   );

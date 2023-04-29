@@ -1,9 +1,7 @@
 import { TreeDataNode } from 'antd';
 import { create } from 'zustand';
-import { VNode } from '../core/utils';
-
-type NodeType = TreeDataNode | null | undefined;
-type NodeInfo = { key: string; node: NodeType };
+import { VNode } from '../core/type';
+import { NodeInfo, NodeType } from './type';
 
 type Props = {
   node: NodeType;

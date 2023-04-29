@@ -33,7 +33,7 @@ import { ContextMenu } from '../../../components/ContextMenu';
 import { __defaultValues } from '../../../components/ModalFormOfNode';
 import { FormOfNodeValues } from '../../../components/ModalFormOfNode/ModalFormOfNodeItem';
 import core from '../../../core';
-import { NodeType } from '../../../core/runtime-generate';
+import { NodeType, ProcessTreeDataNode } from '../../../core/type';
 import { useTreeDataModel } from '../../../model';
 import { StyleFormValueType } from './StyleForm';
 
@@ -82,7 +82,9 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   const [nodeStyleVals, setNodeStyleVals] = useState<StyleFormValueType>({});
 
   const [copyNode, setCopyNode] = useState<TreeDataNode | null>(null);
-  const [selectedNode, setSelectedNode] = useState<TreeDataNode | null>(null);
+  const [selectedNode, setSelectedNode] = useState<ProcessTreeDataNode | null>(
+    null
+  );
 
   const [isEdit, setIsEdit] = useState(false);
 
@@ -107,7 +109,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
     if (!isNull(selectedNode) && !isUndefined(selectedNode)) {
       // @ts-ignore
       const { type, title, isLeaf, alias, props, content } = selectedNode;
-      const { id, className, attributes, style } = props;
+      const { id, className, attributes, style } = props!;
       setNodeInitVals({
         type,
         content,
@@ -115,8 +117,8 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
         leaf: isLeaf!,
         alias,
         repeat: 1,
-        identity: id,
-        className,
+        identity: id!,
+        className: className!,
         attributes,
       });
       setNodeStyleVals(style);
@@ -190,18 +192,22 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   );
 
   const editNode = useCallback(
-    (root: TreeDataNode[], node: TreeDataNode, values: FormOfNodeValues) => {
+    (
+      root: ProcessTreeDataNode[],
+      node: ProcessTreeDataNode,
+      values: FormOfNodeValues
+    ) => {
+      const { style, actualPos } = node.props!;
       const { value, alias, className, identity, attributes, content } = values;
       node.title = value;
-      // @ts-ignore
       node.content = content;
-      // @ts-ignore
       node.alias = alias || value || content;
-      // @ts-ignore
       node.props = {
-        id: identity,
+        style,
+        actualPos,
         className,
         attributes,
+        id: identity,
       };
       return updateAntTree(root, node);
     },
@@ -209,7 +215,11 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   );
 
   const updateNode = useCallback(
-    (root: TreeDataNode[], values: FormOfNodeValues, target: TreeDataNode) => {
+    (
+      root: ProcessTreeDataNode[],
+      values: FormOfNodeValues,
+      target: ProcessTreeDataNode
+    ) => {
       const { content, type } = values;
       // 1.修改节点标签
       if (eq(isEdit, true)) {
@@ -345,8 +355,8 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
         return;
       }
       const c = cloneDeep(cur);
-      // @ts-ignore
-      c.props.style = { ...c.props.style, ...values };
+      const oldStyle = c.props!.style;
+      c.props!.style = { ...oldStyle, ...values };
       setTreeData(updateAntTree(treeData.slice(), c).slice());
     },
     [selectedNode, treeData, selectedNodeInfo]
@@ -356,14 +366,14 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
     (values: FormOfNodeValues) => {
       const target = cloneDeep(selectedNode)!;
       let { repeat, content, type } = values;
-      let newData: TreeDataNode[] = treeData.slice();
+      let newData = treeData.slice();
       while (repeat--) {
         // 没有选中任何节点进行创建，说明是要创建根节点
         if (!target) {
           newData.push(processNodeContent(createNode(values), type, content));
           continue;
         }
-        newData = updateNode(newData, values, target)!;
+        newData = updateNode(newData as ProcessTreeDataNode[], values, target)!;
       }
       setTreeData(newData.slice());
       resetIsEdit();

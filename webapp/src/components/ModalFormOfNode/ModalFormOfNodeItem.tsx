@@ -13,8 +13,8 @@ import { useForm } from 'antd/es/form/Form';
 import { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { __defaultValues } from '.';
 import { COMMON_TAGS } from '../../assets';
-import { NodeType } from '../../core/runtime-generate';
 import { SELF_CLOSING_TAG } from '../../core/runtime-transform';
+import { NodeType } from '../../core/type';
 
 export type FormOfNodeValues = {
   value: string;

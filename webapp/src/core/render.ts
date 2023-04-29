@@ -1,11 +1,10 @@
 import {
-  createElement,
   InputHTMLAttributes,
+  createElement,
   type ClassAttributes,
   type ReactNode,
 } from 'react';
-import { NodeType } from './runtime-generate';
-import { type VNode } from './utils';
+import { NodeType, VNode } from './type';
 
 /**
  * 将用于画布上要拖动的虚拟节点渲染为react节点

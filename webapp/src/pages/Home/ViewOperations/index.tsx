@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { CTX_MENU_OPTS } from '../../../components/ContextMenu';
 import core, { calcActualPos, renderDragVnode } from '../../../core';
+import { ProcessTreeDataNode } from '../../../core/type';
 import { resolveKeyConflicts } from '../../../core/utils';
 import { useDrag } from '../../../hooks';
 import { useTreeDataModel } from '../../../model';
@@ -66,7 +67,7 @@ const ViewOperations: FC<Props> = memo(props => {
   const getTreeNode = useCallback(
     (key: string) => {
       const current = findNode(treeData, key);
-      return cloneDeep(current);
+      return cloneDeep(current) as ProcessTreeDataNode;
     },
     [treeData]
   );
@@ -91,7 +92,7 @@ const ViewOperations: FC<Props> = memo(props => {
       const current = getTreeNode(key);
       if (isUndefined(current)) return;
       setNodePosData(current, x, y);
-      noticeUpdateNode(current);
+      noticeUpdateNode(current as ProcessTreeDataNode);
     },
     [getTreeNode, noticeUpdateNode, setNodePosData]
   );
@@ -130,7 +131,7 @@ const ViewOperations: FC<Props> = memo(props => {
       create() {},
       del: (treeNode: TreeDataNode, restCopy = true) => {
         setCurKey('');
-        noticeDeleteNode(treeNode);
+        noticeDeleteNode(treeNode as ProcessTreeDataNode);
         restCopy && optsMethods.copy(undefined);
       },
       copy: (treeNode?: TreeDataNode) => {
@@ -150,7 +151,7 @@ const ViewOperations: FC<Props> = memo(props => {
         if (isUndefined(treeNode)) {
           const { left, top } = wrapperElem.current!.getBoundingClientRect();
           setNodePosData(c, mouseX - left - 50, mouseY - top - 90);
-          noticePushNode(c);
+          noticePushNode(c as ProcessTreeDataNode);
         } else {
           const parentDom = getDomByNodeKey(treeNode.key as string);
           const [x, y] = getStringPxToNumber(parentDom.style.translate);
@@ -160,7 +161,7 @@ const ViewOperations: FC<Props> = memo(props => {
             mouseY - y - parentDom.offsetHeight + 10
           );
           treeNode.children?.push(c);
-          noticeUpdateNode(treeNode);
+          noticeUpdateNode(treeNode as ProcessTreeDataNode);
         }
       },
     }),

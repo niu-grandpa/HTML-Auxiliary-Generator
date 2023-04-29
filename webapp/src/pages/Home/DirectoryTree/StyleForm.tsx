@@ -4,7 +4,7 @@ import { forIn, isEqual, keys } from 'lodash';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { useDebounce } from '../../../hooks';
 
-export type StyleFormValueType = Record<string, string | number>;
+export type StyleFormValueType = React.CSSProperties;
 type Props = {
   defaultValues: StyleFormValueType;
   onValuesChange: (values: StyleFormValueType) => void;
@@ -24,7 +24,9 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
 
   const processUnit = useCallback(
     (values: StyleFormValueType, name: string, unit: string) => {
+      // @ts-ignore
       const val = values[name];
+      // @ts-ignore
       values[name] = val + (isEqual(unit, 'none') ? '' : unit);
     },
     []

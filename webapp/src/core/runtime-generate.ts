@@ -1,13 +1,8 @@
-import { type TreeDataNode } from 'antd';
+import { TreeDataNode } from 'antd';
 import { FormOfNodeValues } from '../components/ModalFormOfNode/ModalFormOfNodeItem';
 import { transform, TransformOptions } from './runtime-transform';
-import { createDragVnode, createNodeKey, type VNode } from './utils';
-
-export const enum NodeType {
-  CONTAINER,
-  SINGLE,
-  TEXT,
-}
+import { NodeType, ProcessTreeDataNode, VNode } from './type';
+import { createDragVnode, createNodeKey } from './utils';
 
 const generate = _generate_();
 const savedKeys: number[] = [];
@@ -17,64 +12,64 @@ function _generate_() {
   /**
    * 创建antd tree节点
    */
-  function createAntTreeNode(
-    values: FormOfNodeValues & { style?: Partial<CSSStyleDeclaration> }
-  ): TreeDataNode {
+  function createAntTreeNode({
+    type,
+    value,
+    alias,
+    className,
+    identity,
+    style,
+    attributes,
+    content,
+  }: FormOfNodeValues & {
+    style?: Partial<CSSStyleDeclaration>;
+  }): ProcessTreeDataNode {
     const key = createNodeKey();
-    const {
-      type,
-      value,
-      alias,
-      className,
-      identity,
-      style,
-      attributes,
-      content,
-    } = values;
+    const isText = type === NodeType.TEXT;
     const extra = {
       type,
       content,
-      // 由于leaf节点添加的内容不显示下级，因此通过标题显示出来
-      alias: type === NodeType.TEXT ? content : alias || value || content,
-      // 存储画布元素相对浏览器的实际位置 [x,y]
+      tag: value,
       actualPos: [0, 0],
       props: {
-        id: identity || undefined,
-        className: className || undefined,
-        attributes: attributes || [],
-        style: { position: 'absolute', ...style },
         draggable: true,
+        id: identity ?? undefined,
         'data-drag-vnode-uuid': key,
         'data-is-drag-target': true,
+        attributes: attributes ?? [],
+        className: className ?? undefined,
+        style: { position: 'absolute', ...style },
       },
+      alias: isText ? content : alias || value || content,
     };
     const node = {
-      isLeaf: type === NodeType.TEXT || type === NodeType.SINGLE,
-      title: type === NodeType.TEXT ? content : value,
-      children: [],
       key,
       ...extra,
+      children: [],
+      title: isText ? content : value,
+      isLeaf: isText || type === NodeType.SINGLE,
     };
+    // @ts-ignore
     return node;
   }
 
   /**
-   * antd Tree节点转换为vnode
+   * antd Tree节点转换为dragVnode
    */
   function antTreeNodeToVNode(root: TreeDataNode[]): VNode[] {
     const vnodes = Array<VNode>(root.length);
 
-    const createVnode = (node: TreeDataNode): VNode => {
-      // @ts-ignore
-      const { title, key, children, type, props, content, actualPos } = node;
+    const createNode = (node: TreeDataNode): VNode => {
+      const { title, key, children, type, props, content, actualPos } =
+        node as ProcessTreeDataNode;
       const dragVnode = createDragVnode(
-        key as string,
+        key,
         type,
         title as string,
         content,
         props,
         actualPos,
-        children?.length ? antTreeNodeToVNode(children as TreeDataNode[]) : []
+        children?.length ? antTreeNodeToVNode(children) : []
       );
       return dragVnode;
     };
@@ -83,8 +78,8 @@ function _generate_() {
     let right = root.length - 1;
 
     while (left <= right) {
-      vnodes[left] = createVnode(root[left++]);
-      vnodes[right] = createVnode(root[right--]);
+      vnodes[left] = createNode(root[left++]);
+      vnodes[right] = createNode(root[right--]);
     }
 
     return vnodes;
