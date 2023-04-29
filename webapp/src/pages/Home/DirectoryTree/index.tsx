@@ -88,7 +88,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
 
   const [isEdit, setIsEdit] = useState(false);
 
-  const disPaste = useMemo(() => isNull(copyNode), [copyNode]);
+  const canPaste = useMemo(() => isNull(copyNode), [copyNode]);
 
   const [openCtxMenu, setOpenCtxMenu] = useState(false);
   const [openModalForm, setOpenModalForm] = useState(false);
@@ -127,17 +127,6 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
       setNodeInitVals(__defaultValues);
     }
   }, [selectedNode]);
-
-  useEffect(() => {
-    const closeContextMenu = (e: Event) => {
-      e.stopPropagation();
-      setOpenCtxMenu(false);
-    };
-    document.addEventListener('click', closeContextMenu);
-    return () => {
-      document.removeEventListener('click', closeContextMenu);
-    };
-  }, []);
 
   const resetIsEdit = useCallback(() => {
     isEdit && setIsEdit(false);
@@ -338,14 +327,6 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
     ]
   );
 
-  const handleCtxItemClick = useCallback(
-    ({ key }: { key: string }) => {
-      ctxMenuMethods(key);
-      setOpenCtxMenu(false);
-    },
-    [ctxMenuMethods]
-  );
-
   const handleEditStyle = useCallback(
     (values: StyleFormValueType) => {
       const cur = selectedNode || selectedNodeInfo.node;
@@ -466,9 +447,10 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
       />
       <ContextMenu
         open={openCtxMenu}
-        {...{ disPaste }}
-        onClick={handleCtxItemClick}
-        nodeType={nodeInitVals.type}>
+        canPaste={canPaste}
+        onClick={ctxMenuMethods}
+        nodeType={nodeInitVals.type}
+        onClose={() => setOpenCtxMenu(false)}>
         <section className='file-list' onContextMenu={e => e.preventDefault()}>
           <Row>
             <Col style={{ fontSize: 13 }} span={18}>

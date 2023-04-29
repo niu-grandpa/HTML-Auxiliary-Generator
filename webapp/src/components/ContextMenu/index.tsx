@@ -1,5 +1,5 @@
 import { Dropdown, MenuProps } from 'antd';
-import { FC, memo, useMemo } from 'react';
+import { FC, memo, useCallback, useEffect, useMemo } from 'react';
 import { NodeType } from '../../core/type';
 
 export const enum CTX_MENU_OPTS {
@@ -16,64 +16,85 @@ export const enum CTX_MENU_OPTS {
 type Props = {
   open: boolean;
   nodeType: NodeType;
-  disPaste: boolean;
+  canPaste: boolean;
   children: JSX.Element;
-  onClick: ({ key }: { key: string }) => void;
+  onClose: () => void;
+  onClick: (key: string) => void;
 };
 
 const ContextMenu: FC<Props> = memo(
-  ({ open, nodeType, disPaste, onClick, children }) => {
+  ({ open, nodeType, canPaste, onClick, onClose, children }) => {
+    useEffect(() => {
+      const handleClose = (e: MouseEvent) => {
+        e.stopPropagation();
+        onClose();
+      };
+      document.addEventListener('click', handleClose);
+      return () => {
+        document.removeEventListener('click', handleClose);
+      };
+    }, [onClose]);
+
     const isText = useMemo(() => nodeType === NodeType.TEXT, [nodeType]);
     const isLeaf = useMemo(() => nodeType !== NodeType.CONTAINER, [nodeType]);
+
+    const handleClick = useCallback(
+      ({ key }: { key: string }) => {
+        onClick(key);
+        onClose();
+      },
+      [onClick, onClose]
+    );
+
     const items: MenuProps['items'] = useMemo(
       () => [
         {
-          label: '新建元素...',
+          label: '新建...',
           key: CTX_MENU_OPTS.NEW_NON_LEAF,
           disabled: isLeaf,
-          onClick,
+          onClick: handleClick,
         },
         {
-          label: '添加文本...',
+          label: '内容...',
           key: CTX_MENU_OPTS.ADD_TEXT,
           disabled: isLeaf,
-          onClick,
-        },
-        {
-          label: '剪切',
-          key: CTX_MENU_OPTS.CUT,
-          onClick,
+          onClick: handleClick,
         },
         {
           label: '复制',
           key: CTX_MENU_OPTS.COPY,
-          onClick,
+          onClick: handleClick,
+        },
+        {
+          label: '剪切',
+          key: CTX_MENU_OPTS.CUT,
+          onClick: handleClick,
         },
         {
           label: '粘贴',
           key: CTX_MENU_OPTS.PASTE,
-          disabled: disPaste || isLeaf || isText,
-          onClick,
+          disabled: canPaste || isLeaf || isText,
+          onClick: handleClick,
         },
         {
-          label: '编辑...',
+          label: '修改...',
           key: CTX_MENU_OPTS.EDIT_TAG,
-          onClick,
+          onClick: handleClick,
         },
         {
           label: '删除',
           key: CTX_MENU_OPTS.REMOVE,
-          onClick,
+          onClick: handleClick,
           danger: true,
         },
       ],
-      [disPaste, isLeaf, isText, onClick]
+      [canPaste, isLeaf, isText, handleClick]
     );
 
     return (
       <Dropdown
         menu={{ items }}
-        overlayStyle={{ width: 136 }}
+        overlayStyle={{ width: 120 }}
         trigger={['contextMenu']}
         {...{ open }}>
         {children}

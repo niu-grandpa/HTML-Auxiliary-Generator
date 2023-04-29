@@ -1,4 +1,4 @@
-import { Dropdown, TreeDataNode, message } from 'antd';
+import { TreeDataNode, message } from 'antd';
 import { cloneDeep, isEqual, isUndefined } from 'lodash';
 import {
   FC,
@@ -9,9 +9,9 @@ import {
   useRef,
   useState,
 } from 'react';
-import { CTX_MENU_OPTS } from '../../../components/ContextMenu';
+import { ContextMenu } from '../../../components/ContextMenu';
 import core, { calcActualPos, renderDragVnode } from '../../../core';
-import { ProcessTreeDataNode } from '../../../core/type';
+import { NodeType, ProcessTreeDataNode } from '../../../core/type';
 import { resolveKeyConflicts } from '../../../core/utils';
 import { useDrag } from '../../../hooks';
 import { useTreeDataModel } from '../../../model';
@@ -49,20 +49,22 @@ const ViewOperations: FC<Props> = memo(props => {
   const wrapperElem = useRef<HTMLElement>(null);
   const { onDragComplete } = useDrag(wrapperElem.current, targetDatasetName);
 
+  onDragComplete((x, y, key) => {
+    updateNodePos(key, x, y);
+  });
+
   const [curKey, setCurKey] = useState('');
-  const [disCtxMenu, setDisCtxMenu] = useState(false);
+  const [openCtxMenu, setOpenCtxMenu] = useState(false);
+  const [nodeType, setNodeType] = useState<NodeType>(0);
   const [copyNode, setCopyNode] = useState<TreeDataNode | undefined>(undefined);
 
-  const disPaste = useMemo(() => isUndefined(copyNode), [copyNode]);
+  const canPaste = useMemo(() => isUndefined(copyNode), [copyNode]);
+
   const dragNodes = useMemo(() => {
     const vnodes = antTreeNodeToVNode(treeData);
     saveDragVnodes(cloneDeep(vnodes));
     return renderDragVnode(vnodes);
   }, [treeData, saveDragVnodes]);
-
-  onDragComplete((x, y, key) => {
-    updateNodePos(key, x, y);
-  });
 
   const getTreeNode = useCallback(
     (key: string) => {
@@ -95,35 +97,6 @@ const ViewOperations: FC<Props> = memo(props => {
       noticeUpdateNode(current as ProcessTreeDataNode);
     },
     [getTreeNode, noticeUpdateNode, setNodePosData]
-  );
-
-  const handleNodeClick = useCallback(
-    (e: ReactMouseEvent) => {
-      e.stopPropagation();
-      const res = getIsTargetNode(e.target as HTMLElement);
-      if (!res) {
-        setCurKey('');
-        saveSelectedNode({ key: '', node: null });
-        return false;
-      }
-      const key = res.dataset[targetKeyName] as string;
-      saveSelectedNode({ key, node: getTreeNode(key) });
-    },
-    [saveSelectedNode, getTreeNode]
-  );
-
-  const handleContextMenu = useCallback(
-    (e: ReactMouseEvent) => {
-      const target = getIsTargetNode(e.target as HTMLElement);
-      if (!target) {
-        setCurKey('');
-        !disCtxMenu && setDisCtxMenu(true);
-        return false;
-      }
-      setDisCtxMenu(false);
-      setCurKey(target.dataset[targetKeyName]!);
-    },
-    [disCtxMenu]
   );
 
   const optsMethods = useMemo(
@@ -190,59 +163,61 @@ const ViewOperations: FC<Props> = memo(props => {
     [curKey, getTreeNode, optsMethods]
   );
 
-  const items = useMemo(
-    () => [
-      {
-        label: '复制',
-        key: CTX_MENU_OPTS.COPY,
-        disabled: disCtxMenu,
-        onClick: () => optionsEvent('copy'),
-      },
-      {
-        label: '剪切',
-        key: CTX_MENU_OPTS.CUT,
-        disabled: disCtxMenu,
-        onClick: () => optionsEvent('cut'),
-      },
-      {
-        label: '粘贴',
-        key: CTX_MENU_OPTS.PASTE,
-        disabled: disPaste,
-        onClick: (e: unknown) => optionsEvent('paste', e),
-      },
-      {
-        label: '删除',
-        key: CTX_MENU_OPTS.REMOVE,
-        danger: true,
-        disabled: disCtxMenu,
-        onClick: () => optionsEvent('del'),
-      },
-    ],
-    [disCtxMenu, disPaste, optionsEvent]
-  );
-
   const handleCreate = useCallback((e: ReactMouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
   }, []);
 
+  const handleContextMenu = useCallback(
+    (e: ReactMouseEvent) => {
+      setOpenCtxMenu(true);
+      const node = getIsTargetNode(e.target as HTMLElement);
+      if (!node) {
+        setCurKey('');
+        return false;
+      }
+      const key = node.dataset[targetKeyName]!;
+      const nodeObj = getTreeNode(key);
+      setCurKey(key);
+      setNodeType(nodeObj.type);
+    },
+    [getTreeNode]
+  );
+
+  const handleMenuClick = useCallback((key: string) => {}, []);
+
+  const handleNodeClick = useCallback(
+    (e: ReactMouseEvent) => {
+      e.stopPropagation();
+      const node = getIsTargetNode(e.target as HTMLElement);
+      if (!node) {
+        setCurKey('');
+        setOpenCtxMenu(false);
+        saveSelectedNode({ key: '', node: null });
+        return false;
+      }
+      const key = node.dataset[targetKeyName]!;
+      saveSelectedNode({ key, node: getTreeNode(key) });
+    },
+    [saveSelectedNode, getTreeNode]
+  );
+
   return (
-    <>
-      <Dropdown
-        trigger={['contextMenu']}
-        overlayStyle={{ width: 100 }}
-        menu={{ items }}>
-        <section
-          ref={wrapperElem}
-          className='view-opts'
-          onClick={handleNodeClick}
-          onDragEnd={handleNodeClick}
-          onContextMenu={handleContextMenu}
-          onDoubleClick={handleCreate}>
-          {!dragNodes.length ? null : dragNodes}
-        </section>
-      </Dropdown>
-    </>
+    <ContextMenu
+      open={openCtxMenu}
+      onClick={handleMenuClick}
+      {...{ nodeType, canPaste }}
+      onClose={() => setOpenCtxMenu(false)}>
+      <section
+        ref={wrapperElem}
+        className='view-opts'
+        onClick={handleNodeClick}
+        onDragEnd={handleNodeClick}
+        onContextMenu={handleContextMenu}
+        onDoubleClick={handleCreate}>
+        {!dragNodes.length ? null : dragNodes}
+      </section>
+    </ContextMenu>
   );
 });
 
