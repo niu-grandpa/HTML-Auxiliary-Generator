@@ -31,24 +31,24 @@ export type FormOfNodeValues = {
 type Props = {
   edit: boolean;
   trigger: JSX.Element;
-  initialValues: FormOfNodeValues;
+  initValues: FormOfNodeValues;
   onFinish: (values: FormOfNodeValues) => void;
 };
 
 /**创建或编辑节点的表单输入框 */
 const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
-  ({ edit, trigger, onFinish, initialValues }) => {
+  ({ edit, trigger, onFinish, initValues }) => {
     const [form] = useForm<FormOfNodeValues>();
 
     const [isTextType, setIsTextType] = useState(
-      initialValues?.type === NodeType.TEXT
+      initValues?.type === NodeType.TEXT
     );
     const [isSingle, setIsSingle] = useState(false);
-    const [nodeType, setNodeType] = useState<NodeType>(initialValues!.type);
+    const [nodeType, setNodeType] = useState<NodeType>(initValues!.type);
 
     const disContainerType = useMemo(
-      () => isSingle || (edit && initialValues?.type === NodeType.TEXT),
-      [isSingle, edit, initialValues?.type]
+      () => isSingle || (edit && initValues?.type === NodeType.TEXT),
+      [isSingle, edit, initValues?.type]
     );
     const hiddenContentInput = useMemo(
       () => !isSingle && !edit,
@@ -56,26 +56,26 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
     );
 
     useEffect(() => {
-      setIsSingle(initialValues?.type === NodeType.SINGLE);
-      setIsTextType(initialValues?.type === NodeType.TEXT);
-    }, [initialValues]);
+      setIsSingle(initValues?.type === NodeType.SINGLE);
+      setIsTextType(initValues?.type === NodeType.TEXT);
+    }, [initValues]);
 
     const initData = useCallback(() => {
       form.resetFields();
-      form.setFieldsValue({ ...__defaultValues, type: initialValues!.type });
-    }, [form, initialValues]);
+      form.setFieldsValue({ ...__defaultValues, type: initValues!.type });
+    }, [form, initValues]);
 
     useEffect(() => {
       if (!edit) {
         initData();
       } else {
-        let alias = initialValues?.alias;
-        if (initialValues?.value === initialValues?.alias) {
+        let alias = initValues?.alias;
+        if (initValues?.value === initValues?.alias) {
           alias = '';
         }
-        form.setFieldsValue({ ...initialValues, alias });
+        form.setFieldsValue({ ...initValues, alias });
       }
-    }, [edit, form, initData, initialValues]);
+    }, [edit, form, initData, initValues]);
 
     const handleValuesChange = useCallback(
       (_: any, { value, type }: FormOfNodeValues) => {
@@ -85,14 +85,14 @@ const ModalFormOfNodeItem: FC<Partial<Props>> = memo(
           form.setFieldsValue({ type: NodeType.SINGLE });
         } else {
           setIsSingle(false);
-          const restType = edit ? initialValues!.type : type;
+          const restType = edit ? initValues!.type : type;
           setNodeType(restType);
           form.setFieldsValue({ type: restType });
         }
         setIsTextType(type === NodeType.TEXT);
       },
 
-      [form, initialValues, edit]
+      [form, initValues, edit]
     );
 
     const handleFinish = useCallback(

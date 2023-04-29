@@ -1,4 +1,4 @@
-import { TreeDataNode } from 'antd';
+import { ProcessTreeDataNode } from './type';
 
 function createIndexMap(source: unknown[]): Map<unknown, number> {
   const map = new Map<unknown, number>();
@@ -15,22 +15,23 @@ function createIndexMap(source: unknown[]): Map<unknown, number> {
  * @returns
  */
 export function updateAntTree(
-  root: TreeDataNode[],
-  node: TreeDataNode
-): TreeDataNode[] {
+  root: ProcessTreeDataNode[],
+  node: ProcessTreeDataNode
+): ProcessTreeDataNode[] {
   const oldNode = findNode(root, node);
   oldNode && patchNode(oldNode, node);
   return root;
 }
 
 export function findNode(
-  root: TreeDataNode[],
-  node: TreeDataNode | string
-): TreeDataNode | undefined {
+  root: ProcessTreeDataNode[],
+  node: ProcessTreeDataNode | string
+): ProcessTreeDataNode | undefined {
   const target = typeof node === 'string' ? node : node.key;
 
   let left = 0;
   let right = root.length - 1;
+
   while (left <= right) {
     const leftNode = root[left++];
     const rightNode = root[right--];
@@ -41,10 +42,10 @@ export function findNode(
       return rightNode;
     }
     if (leftNode.children?.length) {
-      return findNode(leftNode.children, node);
+      return findNode(leftNode.children as ProcessTreeDataNode[], node);
     }
     if (rightNode.children?.length) {
-      return findNode(rightNode.children, node);
+      return findNode(rightNode.children as ProcessTreeDataNode[], node);
     }
   }
   // for (let i = 0; i < root.length; i++) {
@@ -58,35 +59,37 @@ export function findNode(
   // }
 }
 
-export function deleteNode(root: TreeDataNode[], node: TreeDataNode) {
+export function deleteNode(
+  root: ProcessTreeDataNode[],
+  node: ProcessTreeDataNode
+) {
   for (let i = 0; i < root.length; i++) {
     const n = root[i];
     if (n.key === node.key) {
       root.splice(i, 1);
       break;
     } else if (n.children?.length) {
-      deleteNode(n.children, node);
+      deleteNode(n.children as ProcessTreeDataNode[], node);
     }
   }
   return root;
 }
 
-function patchNode(n1: TreeDataNode, n2: TreeDataNode) {
+function patchNode(n1: ProcessTreeDataNode, n2: ProcessTreeDataNode) {
   // 修改标签名
   n1.title !== n2.title && (n1.title = n2.title);
-  // @ts-ignore
   n1.alias !== n2.alias && (n1.alias = n2.alias);
-  // @ts-ignore
   n1.content !== n2.content && (n1.content = n2.content);
-  // @ts-ignore
   n1.props !== n2.props && patchProps(n1, n2);
-  // @ts-ignore
   n2.actualPos.forEach((pos, i) => (n1.actualPos[i] = pos));
 
   const oldChildren = n1.children!;
   const newChildren = n2.children!;
   if (oldChildren.length !== newChildren.length) {
-    n1.children = patchChildren(oldChildren, newChildren);
+    n1.children = patchChildren(
+      oldChildren as ProcessTreeDataNode[],
+      newChildren as ProcessTreeDataNode[]
+    );
   } else {
     // todo
   }
@@ -94,7 +97,7 @@ function patchNode(n1: TreeDataNode, n2: TreeDataNode) {
 }
 
 // 只存在同一层新增和删除节点的情况
-function patchChildren(c1: TreeDataNode[], c2: TreeDataNode[]) {
+function patchChildren(c1: ProcessTreeDataNode[], c2: ProcessTreeDataNode[]) {
   const oldLen = c1.length;
   const newLen = c2.length;
   // 1.首次新增节点
@@ -133,14 +136,15 @@ function patchChildren(c1: TreeDataNode[], c2: TreeDataNode[]) {
   return c1;
 }
 
-function patchProps(n1: TreeDataNode, n2: TreeDataNode) {
-  // @ts-ignore
+function patchProps(n1: ProcessTreeDataNode, n2: ProcessTreeDataNode) {
   const oldProps = n1.props;
-  // @ts-ignore
   const newProps = n2.props;
   for (const key in newProps) {
+    // @ts-ignore
     const oldValue = oldProps[key];
+    // @ts-ignore
     const newValue = newProps[key];
+    // @ts-ignore
     oldProps[key] = newValue;
     //  attributes属性 -> [{ name:string, value: string }, ...]
     // if (Array.isArray(oldValue) && Array.isArray(newValue)) {

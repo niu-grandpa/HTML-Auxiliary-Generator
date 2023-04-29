@@ -1,5 +1,5 @@
 import { TreeDataNode } from 'antd';
-import { FormOfNodeValues } from '../components/ModalFormOfNode/ModalFormOfNodeItem';
+import { FormOfNodeValues } from '../components/ModalCreateNode/ModalFormOfNodeItem';
 
 export type ProcessTreeDataNode = TreeDataNode & VNode & FormOfNodeValues;
 

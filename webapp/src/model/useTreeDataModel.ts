@@ -1,4 +1,3 @@
-import { TreeDataNode } from 'antd';
 import { create } from 'zustand';
 import { VNode } from '../core/type';
 import { NodeInfo, NodeType } from './type';
@@ -8,12 +7,12 @@ type Props = {
   newNode: NodeType;
   deleteNode: NodeType;
   selectedNode: NodeInfo;
-  treeData: TreeDataNode[];
+  treeData: NodeType[];
   dragVnodes: VNode[];
   push: (node: NodeType) => void;
   update: (node: NodeType) => void;
   delete: (key: NodeType) => void;
-  saveTreeData: (data: TreeDataNode[]) => void;
+  saveTreeData: (data: NodeType[]) => void;
   saveDragVnodes: (vnodes: VNode[]) => void;
   saveSelectedNode: (info: NodeInfo) => void;
 };
@@ -29,7 +28,7 @@ export const useTreeDataModel = create<Props>(set => ({
   push: (node: NodeType) => set(() => ({ newNode: node })),
   update: (node: NodeType) => set(() => ({ node })),
   delete: (node: NodeType) => set(() => ({ deleteNode: node })),
-  saveTreeData: (data: TreeDataNode[]) => set(() => ({ treeData: data })),
+  saveTreeData: (data: NodeType[]) => set(() => ({ treeData: data })),
   saveDragVnodes: (vnodes: VNode[]) => set(() => ({ dragVnodes: vnodes })),
   saveSelectedNode: (selectedNode: NodeInfo) => set(() => ({ selectedNode })),
 }));

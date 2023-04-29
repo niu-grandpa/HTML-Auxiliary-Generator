@@ -1,10 +1,4 @@
-import {
-  CodepenOutlined,
-  CoffeeOutlined,
-  FileTextOutlined,
-  FolderAddOutlined,
-  ReloadOutlined,
-} from '@ant-design/icons';
+import { FolderAddOutlined, ReloadOutlined } from '@ant-design/icons';
 import {
   Button,
   Col,
@@ -28,215 +22,99 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { LazyLoading, ModalFormOfNode } from '../../../components';
+import { LazyLoading } from '../../../components';
 import {
   ContextMenu,
   ContextMenuHandlers,
 } from '../../../components/ContextMenu';
-import { __defaultValues } from '../../../components/ModalFormOfNode';
-import { FormOfNodeValues } from '../../../components/ModalFormOfNode/ModalFormOfNodeItem';
 import core from '../../../core';
-import { NodeType, ProcessTreeDataNode } from '../../../core/type';
-import { useTreeDataModel } from '../../../model';
+import { ProcessTreeDataNode } from '../../../core/type';
+import { useCreateNodeModel, useTreeDataModel } from '../../../model';
 import { StyleFormValueType } from './StyleForm';
 
 type Props = {
   fieldNames: Partial<{ title: string; key: string; children: string }>;
 };
 
-const StyleForm = lazy(() => import('./StyleForm'));
 const { confirm } = Modal;
+const StyleForm = lazy(() => import('./StyleForm'));
 
-const { createAntTreeNode, updateAntTree, deleteNode, resolveKeyConflicts } =
-  core;
-
-const nodeIcons = {
-  0: <CodepenOutlined />,
-  1: <CoffeeOutlined />,
-  2: <FileTextOutlined />,
-};
+const { updateAntTree, deleteNode, resolveKeyConflicts } = core;
 
 const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
-  const {
-    saveTreeData,
-    needPushNode,
-    selectedNodeInfo,
-    noticePushNode,
-    noticeUpdateNode,
-    needUpdateNode,
-    needDeleteNode,
-    noticeDeleteNode,
-  } = useTreeDataModel(state => ({
+  const { selectedNodeInfo, saveSelectedNode } = useTreeDataModel(state => ({
     selectedNodeInfo: state.selectedNode,
-    saveTreeData: state.saveTreeData,
-    needPushNode: state.newNode,
-    noticePushNode: state.push,
-    noticeUpdateNode: state.update,
-    needDeleteNode: state.deleteNode,
-    needUpdateNode: state.node,
-    noticeDeleteNode: state.delete,
+    saveSelectedNode: state.saveSelectedNode,
   }));
 
+  const { nodeData, openCreateModal, updateNodeData } = useCreateNodeModel(
+    state => ({
+      nodeData: state.nodeData,
+      openCreateModal: state.openModal,
+      updateNodeData: state.updateNodeData,
+    })
+  );
+
+  const [copyNode, setCopyNode] = useState<ProcessTreeDataNode>();
+  const [selected, setSelected] = useState<ProcessTreeDataNode>();
+  const [nodeStyleVals, setNodeStyleVals] = useState<StyleFormValueType>({});
+  const [openCtxMenu, setOpenCtxMenu] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<Key[]>([]);
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
 
-  const [nodeInitVals, setNodeInitVals] =
-    useState<FormOfNodeValues>(__defaultValues);
-  const [nodeStyleVals, setNodeStyleVals] = useState<StyleFormValueType>({});
+  const canPaste = useMemo(() => !isUndefined(copyNode), [copyNode]);
 
-  const [copyNode, setCopyNode] = useState<TreeDataNode | null>(null);
-  const [selectedNode, setSelectedNode] = useState<ProcessTreeDataNode | null>(
-    null
-  );
-
-  const [isEdit, setIsEdit] = useState(false);
-
-  const canPaste = useMemo(() => isNull(copyNode), [copyNode]);
-
-  const [openCtxMenu, setOpenCtxMenu] = useState(false);
-  const [openModalForm, setOpenModalForm] = useState(false);
+  useEffect(() => {
+    setTreeData(nodeData as TreeDataNode[]);
+  }, [nodeData]);
 
   useEffect(() => {
     setSelectedKeys([selectedNodeInfo.key]);
   }, [selectedNodeInfo]);
 
   useEffect(() => {
-    saveTreeData(cloneDeep(treeData));
-  }, [treeData, saveTreeData]);
-
-  useEffect(() => {
-    setSelectedNode(selectedNodeInfo.node || null);
+    setSelected(selectedNodeInfo.node || undefined);
   }, [selectedNodeInfo]);
 
   useEffect(() => {
-    if (!isNull(selectedNode) && !isUndefined(selectedNode)) {
-      // @ts-ignore
-      const { type, title, isLeaf, alias, props, content } = selectedNode;
-      const { id, className, attributes, style } = props!;
-      setNodeInitVals({
-        type,
-        content,
-        value: `${title}`,
-        leaf: isLeaf!,
-        alias,
-        repeat: 1,
-        identity: id!,
-        className: className!,
-        attributes,
-      });
-      setNodeStyleVals(style);
-    } else {
-      setNodeStyleVals({});
-      setNodeInitVals(__defaultValues);
+    if (!isNull(selected) && !isUndefined(selected)) {
+      setNodeStyleVals(selected.props!.style);
     }
-  }, [selectedNode]);
-
-  const resetIsEdit = useCallback(() => {
-    isEdit && setIsEdit(false);
-  }, [isEdit]);
+  }, [selected]);
 
   const onClearSelectedNode = useCallback(() => {
-    setSelectedNode(null);
-  }, []);
+    setSelected(undefined);
+    saveSelectedNode({ key: '', node: undefined });
+  }, [saveSelectedNode]);
 
   const handleResetSelected = useCallback(() => {
     setSelectedKeys([]);
     onClearSelectedNode();
+    setNodeStyleVals({});
   }, [onClearSelectedNode]);
 
   const handleOpenMdl = useCallback(
-    (type?: NodeType) => {
-      setNodeInitVals(v => {
-        v!.type = !isUndefined(type) ? type! : NodeType.CONTAINER;
-        return v;
-      });
-      setOpenModalForm(true);
-      setSelectedNode(selectedNode);
+    (edit = false, addText = false) => {
+      setSelected(selected);
+      openCreateModal(selected, edit, addText);
     },
-    [selectedNode]
-  );
-
-  const handleCloseModal = useCallback(() => {
-    resetIsEdit();
-    setOpenModalForm(false);
-  }, [resetIsEdit]);
-
-  const createNode = useCallback((values: FormOfNodeValues) => {
-    const node = createAntTreeNode(values);
-    node.icon = nodeIcons[values.type];
-    return node;
-  }, []);
-
-  // 添加节点附带的额外文本内容
-  const processNodeContent = useCallback(
-    (node: TreeDataNode, type: NodeType, content: string) => {
-      if (eq(type, NodeType.TEXT) || !content) return node;
-      const textNode = createNode({
-        ...__defaultValues,
-        type: NodeType.TEXT,
-        leaf: true,
-        content,
-      });
-      node.children?.push(textNode);
-      return node;
-    },
-    [createNode]
-  );
-
-  const editNode = useCallback(
-    (
-      root: ProcessTreeDataNode[],
-      node: ProcessTreeDataNode,
-      values: FormOfNodeValues
-    ) => {
-      const { style, actualPos } = node.props!;
-      const { value, alias, className, identity, attributes, content } = values;
-      node.title = value;
-      node.content = content;
-      node.alias = alias || value || content;
-      node.props = {
-        style,
-        actualPos,
-        className,
-        attributes,
-        id: identity,
-      };
-      return updateAntTree(root, node);
-    },
-    []
-  );
-
-  const updateNode = useCallback(
-    (
-      root: ProcessTreeDataNode[],
-      values: FormOfNodeValues,
-      target: ProcessTreeDataNode
-    ) => {
-      const { content, type } = values;
-      // 1.修改节点标签
-      if (eq(isEdit, true)) {
-        return editNode(root, target, values);
-      }
-      // 2.新增节点
-      const n = processNodeContent(createNode(values), type, content);
-      target!.children?.push(n);
-      return updateAntTree(root, target);
-    },
-    [isEdit, editNode, createNode, processNodeContent]
+    [selected, openCreateModal]
   );
 
   const onCopyNode = useCallback(
     (source: TreeDataNode) => {
-      setCopyNode(cloneDeep(source));
+      setCopyNode(cloneDeep(source) as ProcessTreeDataNode);
       onClearSelectedNode();
     },
     [onClearSelectedNode]
   );
 
   const onDeleteNode = useCallback(
-    (source: TreeDataNode, warn = true, restCopy = true) => {
+    (source: ProcessTreeDataNode, warn = true, restCopy = true) => {
       const onDelete = () => {
-        setTreeData(deleteNode(treeData.slice(), source));
+        updateNodeData(
+          deleteNode(treeData.slice() as ProcessTreeDataNode[], source)
+        );
         restCopy && onClearSelectedNode();
       };
       if (eq(warn, true) && gte(source.children?.length, 3)) {
@@ -252,11 +130,11 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
         onDelete();
       }
     },
-    [treeData, onClearSelectedNode]
+    [treeData, onClearSelectedNode, updateNodeData]
   );
 
   const onCutNode = useCallback(
-    (source: TreeDataNode) => {
+    (source: ProcessTreeDataNode) => {
       if (eq(treeData.length, 1)) {
         message.info('根节点数量至少需要2个');
         onClearSelectedNode();
@@ -269,66 +147,57 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
   );
 
   const onPasteNode = useCallback(
-    (target: TreeDataNode, source?: TreeDataNode) => {
+    (target: ProcessTreeDataNode, source?: ProcessTreeDataNode) => {
       if (!isUndefined(source)) {
         const s = cloneDeep(source);
         const t = cloneDeep(target);
         resolveKeyConflicts(t)!;
         s.children?.push(t);
-        setTreeData(updateAntTree(treeData, s).slice());
+        updateNodeData(
+          updateAntTree(treeData as ProcessTreeDataNode[], s).slice()
+        );
         onClearSelectedNode();
       } else {
-        setTreeData([...treeData, target]);
+        updateNodeData([...treeData, target] as ProcessTreeDataNode[]);
       }
     },
-    [onClearSelectedNode, treeData]
+    [onClearSelectedNode, treeData, updateNodeData]
   );
 
   const handleClickNode = useCallback((keys: Key[], info: any) => {
     setSelectedKeys(keys);
-    setSelectedNode(info.selectedNodes[0]);
+    setSelected(info.selectedNodes[0]);
   }, []);
 
   const handleRightClick = useCallback(({ node }: any) => {
-    setSelectedNode(node);
+    setSelected(node);
     setOpenCtxMenu(true);
-  }, []);
-
-  const crea = useCallback((type: NodeType) => {
-    setOpenModalForm(true);
-    setNodeInitVals(v => {
-      v!.type = type;
-      return v;
-    });
   }, []);
 
   const ctxMenuHandlers = useMemo<ContextMenuHandlers>(
     () => ({
-      onCreate: () => crea(NodeType.CONTAINER),
-      onContent: () => crea(NodeType.TEXT),
-      onCopy: () => onCopyNode(selectedNode!),
-      onCut: () => onCutNode(selectedNode!),
-      onPaste: () => onPasteNode(copyNode!, selectedNode!),
-      onEdit: () => {
-        setIsEdit(true);
-        setOpenModalForm(true);
-      },
-      onDelete: () => onDeleteNode(selectedNode!),
+      onCreate: handleOpenMdl,
+      onContent: () => handleOpenMdl(false, true),
+      onCopy: () => onCopyNode(selected!),
+      onCut: () => onCutNode(selected!),
+      onPaste: () => onPasteNode(copyNode! as ProcessTreeDataNode, selected!),
+      onEdit: () => handleOpenMdl(true),
+      onDelete: () => onDeleteNode(selected!),
     }),
     [
       copyNode,
-      crea,
       onCopyNode,
       onCutNode,
       onDeleteNode,
       onPasteNode,
-      selectedNode,
+      selected,
+      handleOpenMdl,
     ]
   );
 
   const handleEditStyle = useCallback(
     (values: StyleFormValueType) => {
-      const cur = selectedNode || selectedNodeInfo.node;
+      const cur = selected || selectedNodeInfo.node;
       if (!cur) {
         message.info('请先选择一个节点');
         setNodeStyleVals({});
@@ -337,59 +206,12 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
       const c = cloneDeep(cur);
       const oldStyle = c.props!.style;
       c.props!.style = { ...oldStyle, ...values };
-      setTreeData(updateAntTree(treeData.slice(), c).slice());
+      setTreeData(
+        updateAntTree(treeData.slice() as ProcessTreeDataNode[], c).slice()
+      );
     },
-    [selectedNode, treeData, selectedNodeInfo]
+    [selected, treeData, selectedNodeInfo]
   );
-
-  const handleFinish = useCallback(
-    (values: FormOfNodeValues) => {
-      const target = cloneDeep(selectedNode)!;
-      let { repeat, content, type } = values;
-      let newData = treeData.slice();
-      while (repeat--) {
-        // 没有选中任何节点进行创建，说明是要创建根节点
-        if (!target) {
-          newData.push(processNodeContent(createNode(values), type, content));
-          continue;
-        }
-        newData = updateNode(newData as ProcessTreeDataNode[], values, target)!;
-      }
-      setTreeData(newData.slice());
-      resetIsEdit();
-      onClearSelectedNode();
-    },
-    [
-      treeData,
-      selectedNode,
-      createNode,
-      updateNode,
-      resetIsEdit,
-      processNodeContent,
-      onClearSelectedNode,
-    ]
-  );
-
-  useEffect(() => {
-    if (needUpdateNode) {
-      setTreeData(updateAntTree(treeData.slice(), needUpdateNode!).slice());
-      noticeUpdateNode(null);
-    }
-  }, [treeData, needUpdateNode, saveTreeData, noticeUpdateNode]);
-
-  useEffect(() => {
-    if (needDeleteNode) {
-      onDeleteNode(needDeleteNode!, false);
-      noticeDeleteNode(null);
-    }
-  }, [needDeleteNode, onDeleteNode, noticeDeleteNode]);
-
-  useEffect(() => {
-    if (needPushNode) {
-      onPasteNode(needPushNode);
-      noticePushNode(null);
-    }
-  }, [treeData, needPushNode, onPasteNode, noticePushNode]);
 
   const tabsItems: TabsProps['items'] = useMemo(
     () => [
@@ -438,17 +260,10 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
 
   return (
     <>
-      <ModalFormOfNode
-        edit={isEdit}
-        open={openModalForm}
-        onCancel={handleCloseModal}
-        defaultValues={nodeInitVals}
-        onValuesChange={handleFinish}
-      />
       <ContextMenu
         open={openCtxMenu}
         canPaste={canPaste}
-        target={selectedNode}
+        target={selected}
         handler={ctxMenuHandlers}
         onClose={() => setOpenCtxMenu(false)}>
         <section className='file-list' onContextMenu={e => e.preventDefault()}>
@@ -459,7 +274,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
             <Col span={3}>
               <Tooltip title='新建元素'>
                 <Button
-                  onClick={() => handleOpenMdl(NodeType.CONTAINER)}
+                  onClick={() => handleOpenMdl()}
                   size='small'
                   ghost
                   icon={<FolderAddOutlined />}

@@ -1,5 +1,12 @@
 import { Dropdown, MenuProps } from 'antd';
-import { FC, memo, useCallback, useEffect, useMemo } from 'react';
+import {
+  BaseSyntheticEvent,
+  FC,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+} from 'react';
 import { NodeType, ProcessTreeDataNode } from '../../core/type';
 
 export const enum CTX_MENU_OPTS {
@@ -60,13 +67,15 @@ const ContextMenu: FC<Props> = memo(
       () => target?.type === NodeType.CONTAINER,
       [target?.type]
     );
+
     const isPaste = useMemo(
-      () => overDisabled || canPaste || isLeaf || isText,
-      [overDisabled, canPaste, isLeaf, isText]
+      () => canPaste && (!isLeaf || !isText),
+      [canPaste, isLeaf, isText]
     );
 
     const handleClick = useCallback(
-      ({ key }: { key: string }) => {
+      ({ key, domEvent }: { key: string; domEvent: BaseSyntheticEvent }) => {
+        domEvent.stopPropagation();
         const funcName = map[key];
         // @ts-ignore
         handler[funcName]?.();
@@ -104,7 +113,7 @@ const ContextMenu: FC<Props> = memo(
         {
           label: '粘贴',
           key: CTX_MENU_OPTS.PASTE,
-          disabled: isPaste,
+          disabled: !isPaste,
           onClick: handleClick,
         },
         {

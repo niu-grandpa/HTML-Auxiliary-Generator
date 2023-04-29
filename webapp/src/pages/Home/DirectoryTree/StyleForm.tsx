@@ -17,8 +17,9 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
   useEffect(() => {
     if (keys(defaultValues).length) {
       // todo 设置默认单位
-      form.resetFields();
       form.setFieldsValue(defaultValues);
+    } else {
+      form.resetFields();
     }
   }, [form, defaultValues]);
 

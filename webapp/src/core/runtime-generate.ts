@@ -1,5 +1,5 @@
 import { TreeDataNode } from 'antd';
-import { FormOfNodeValues } from '../components/ModalFormOfNode/ModalFormOfNodeItem';
+import { FormOfNodeValues } from '../components/ModalCreateNode/ModalFormOfNodeItem';
 import { transform, TransformOptions } from './runtime-transform';
 import { NodeType, ProcessTreeDataNode, VNode } from './type';
 import { createDragVnode, createNodeKey } from './utils';
@@ -56,7 +56,7 @@ function _generate_() {
   /**
    * antd Tree节点转换为dragVnode
    */
-  function antTreeNodeToVNode(root: TreeDataNode[]): VNode[] {
+  function antTreeNodeToVNode(root: ProcessTreeDataNode[]): VNode[] {
     const vnodes = Array<VNode>(root.length);
 
     const createNode = (node: TreeDataNode): VNode => {
@@ -69,7 +69,9 @@ function _generate_() {
         content,
         props,
         actualPos,
-        children?.length ? antTreeNodeToVNode(children) : []
+        children?.length
+          ? antTreeNodeToVNode(children as ProcessTreeDataNode[])
+          : []
       );
       return dragVnode;
     };

@@ -18,7 +18,7 @@ import core, { calcActualPos, renderDragVnode } from '../../../core';
 import { ProcessTreeDataNode } from '../../../core/type';
 import { resolveKeyConflicts } from '../../../core/utils';
 import { useDrag } from '../../../hooks';
-import { useTreeDataModel } from '../../../model';
+import { useCreateNodeModel, useTreeDataModel } from '../../../model';
 import {
   getDomByNodeKey,
   getIsTargetNode,
@@ -27,26 +27,23 @@ import {
 
 type Props = {};
 
-const { antTreeNodeToVNode, findNode } = core;
+const { antTreeNodeToVNode, findNode, deleteNode, updateAntTree } = core;
 
 const targetDatasetName = 'isDragTarget';
 const targetKeyName = 'dragVnodeUuid';
 
 /**视图操作区域 */
 const ViewOperations: FC<Props> = memo(props => {
-  const {
-    treeData,
-    noticePushNode,
-    noticeDeleteNode,
-    noticeUpdateNode,
-    saveSelectedNode,
-    saveDragVnodes,
-  } = useTreeDataModel(state => ({
-    treeData: state.treeData,
+  const { nodeData, openCreateModal, setCoordinate, updateNodeData } =
+    useCreateNodeModel(state => ({
+      nodeData: state.nodeData,
+      openCreateModal: state.openModal,
+      setCoordinate: state.setCoordinate,
+      updateNodeData: state.updateNodeData,
+    }));
+
+  const { saveSelectedNode, saveDragVnodes } = useTreeDataModel(state => ({
     saveDragVnodes: state.saveDragVnodes,
-    noticePushNode: state.push,
-    noticeDeleteNode: state.delete,
-    noticeUpdateNode: state.update,
     saveSelectedNode: state.saveSelectedNode,
   }));
 
@@ -63,13 +60,13 @@ const ViewOperations: FC<Props> = memo(props => {
   const [selected, setSelected] = useState<ProcessTreeDataNode>();
 
   const nodeType = useMemo(() => selected?.type || 0, [selected]);
-  const canPaste = useMemo(() => isUndefined(copyNode), [copyNode]);
+  const canPaste = useMemo(() => !isUndefined(copyNode), [copyNode]);
 
   const dragNodes = useMemo(() => {
-    const vnodes = antTreeNodeToVNode(treeData);
+    const vnodes = antTreeNodeToVNode(nodeData as ProcessTreeDataNode[]);
     saveDragVnodes(cloneDeep(vnodes));
     return renderDragVnode(vnodes);
-  }, [treeData, saveDragVnodes]);
+  }, [nodeData, saveDragVnodes]);
 
   useEffect(() => {
     saveSelectedNode({ key: selected?.key ?? '', node: selected });
@@ -77,10 +74,10 @@ const ViewOperations: FC<Props> = memo(props => {
 
   const getTreeNode = useCallback(
     (key: string) => {
-      const current = findNode(treeData, key);
+      const current = findNode(nodeData as ProcessTreeDataNode[], key);
       return cloneDeep(current) as ProcessTreeDataNode;
     },
-    [treeData]
+    [nodeData]
   );
 
   const setNodePosData = useCallback(
@@ -100,68 +97,69 @@ const ViewOperations: FC<Props> = memo(props => {
       const current = getTreeNode(key);
       if (isUndefined(current)) return;
       setNodePosData(current, x, y);
-      noticeUpdateNode(current as ProcessTreeDataNode);
     },
-    [getTreeNode, noticeUpdateNode, setNodePosData]
+    [getTreeNode, setNodePosData]
   );
 
   const optsMethods = useMemo(
     () => ({
-      create() {},
-      copy: (treeNode?: ProcessTreeDataNode) => {
-        treeNode ? setCopyNode(cloneDeep(treeNode)) : setCopyNode(undefined);
+      create: (node?: ProcessTreeDataNode, pos?: number[]) => {
+        setCoordinate(pos!);
+        openCreateModal(node, false);
       },
-      cut: (treeNode: ProcessTreeDataNode) => {
-        if (isEqual(treeData.length, 1)) {
+      addText: (node?: ProcessTreeDataNode) => {
+        openCreateModal(node, false, true);
+      },
+      copy: (node?: ProcessTreeDataNode) => {
+        node ? setCopyNode(cloneDeep(node)) : setCopyNode(undefined);
+      },
+      cut: (node: ProcessTreeDataNode) => {
+        if (isEqual(nodeData.length, 1)) {
           message.info('需要节点数量大于1');
           return;
         }
-        optsMethods.copy(treeNode);
-        optsMethods.del(treeNode, false);
+        optsMethods.copy(node);
+        optsMethods.del(node, false);
       },
-      paste: (
-        targetNode: ProcessTreeDataNode,
-        mouseX: number,
-        mouseY: number
-      ) => {
+      paste: (targetNode: ProcessTreeDataNode, pos: number[]) => {
+        const [mouseX, mouseY] = pos;
         const c = cloneDeep(copyNode)!;
         resolveKeyConflicts(c);
         if (isUndefined(targetNode)) {
           setNodePosData(c, mouseX, mouseY);
-          noticePushNode(c);
+          nodeData.push(c);
+          updateNodeData(nodeData.slice());
         } else {
           const parentDom = getDomByNodeKey(targetNode.key as string);
           const [x, y] = getStringPxToNumber(parentDom.style.translate);
           setNodePosData(c, mouseX - x, mouseY - y);
           targetNode.children?.push(c);
-          noticeUpdateNode(targetNode);
+          updateNodeData(
+            updateAntTree(nodeData as ProcessTreeDataNode[], targetNode).slice()
+          );
         }
       },
-      del: (treeNode: ProcessTreeDataNode, restCopy = true) => {
-        noticeDeleteNode(treeNode);
+      edit: (node: ProcessTreeDataNode) => openCreateModal(node, true),
+      del: (node: ProcessTreeDataNode, restCopy = true) => {
+        updateNodeData(
+          deleteNode(nodeData as ProcessTreeDataNode[], node).slice()
+        );
         setSelected(undefined);
         restCopy && optsMethods.copy(undefined);
       },
     }),
     [
-      treeData,
+      nodeData,
       copyNode,
-      noticeUpdateNode,
-      noticePushNode,
-      noticeDeleteNode,
+      setCoordinate,
+      openCreateModal,
+      updateNodeData,
       setNodePosData,
     ]
   );
 
-  const handleCreate = useCallback((e: ReactMouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
-
-  const handleContextMenu = useCallback(
+  const handleSetSelected = useCallback(
     (e: ReactMouseEvent) => {
-      setOpenCtxMenu(true);
-      setCtxPos([e.clientX, e.clientY]);
       const node = getIsTargetNode(e.target as HTMLElement);
       if (!node) {
         setSelected(undefined);
@@ -170,37 +168,51 @@ const ViewOperations: FC<Props> = memo(props => {
       const key = node.dataset[targetKeyName]!;
       const nodeObj = getTreeNode(key);
       setSelected(nodeObj);
+      saveSelectedNode({ key, node: nodeObj });
+      return nodeObj;
     },
-    [getTreeNode]
+    [getTreeNode, saveSelectedNode]
   );
 
-  const ctxMenuHandlers = useMemo<ContextMenuHandlers>(
-    () => ({
-      onCreate: () => {
-        // todo
-      },
-      onCopy: () => optsMethods.copy(selected),
-      onCut: () => optsMethods.cut(selected!),
-      onPaste: () => optsMethods.paste(selected!, ctxPos[0], ctxPos[1]),
-      onDelete: () => optsMethods.del(selected!, true),
-      onEdit: () => {},
-      onContent: () => {},
-    }),
-    [optsMethods, selected, ctxPos]
+  const handleCreate = useCallback(
+    (e: ReactMouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const target = handleSetSelected(e);
+      optsMethods.create(target || undefined);
+    },
+    [optsMethods, handleSetSelected]
   );
+
+  const handleContextMenu = useCallback(
+    (e: ReactMouseEvent) => {
+      setOpenCtxMenu(true);
+      setCtxPos([e.clientX, e.clientY]);
+      handleSetSelected(e);
+    },
+    [handleSetSelected]
+  );
+
+  const ctxMenuHandlers = useMemo<ContextMenuHandlers>(() => {
+    const { create, copy, cut, paste, del, edit, addText } = optsMethods;
+    return {
+      onCreate: () => create(selected, ctxPos),
+      onCopy: () => copy(selected),
+      onCut: () => cut(selected!),
+      onPaste: () => paste(selected!, ctxPos),
+      onDelete: () => del(selected!, true),
+      onEdit: () => edit(selected!),
+      onContent: () => addText(selected),
+    };
+  }, [optsMethods, selected, ctxPos]);
 
   const handleNodeClick = useCallback(
     (e: ReactMouseEvent) => {
       e.stopPropagation();
-      const node = getIsTargetNode(e.target as HTMLElement);
-      if (!node) {
-        setSelected(undefined);
-        setOpenCtxMenu(false);
-        return false;
-      }
-      setSelected(getTreeNode(node.dataset[targetKeyName]!));
+      const res = handleSetSelected(e);
+      !res && setOpenCtxMenu(false);
     },
-    [getTreeNode]
+    [handleSetSelected]
   );
 
   return (
