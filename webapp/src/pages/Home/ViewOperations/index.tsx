@@ -1,9 +1,7 @@
 import { message } from 'antd';
 import { cloneDeep, isEqual, isUndefined } from 'lodash';
 import {
-  FC,
   MouseEvent as ReactMouseEvent,
-  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -25,15 +23,13 @@ import {
   getStringPxToNumber,
 } from '../../../utils';
 
-type Props = {};
-
 const { antTreeNodeToVNode, findNode, deleteNode, updateAntTree } = core;
 
 const targetDatasetName = 'isDragTarget';
 const targetKeyName = 'dragVnodeUuid';
 
 /**视图操作区域 */
-const ViewOperations: FC<Props> = memo(props => {
+const ViewOperations = () => {
   const { nodeData, openCreateModal, setCoordinate, updateNodeData } =
     useCreateNodeModel(state => ({
       nodeData: state.nodeData,
@@ -104,8 +100,16 @@ const ViewOperations: FC<Props> = memo(props => {
   const optsMethods = useMemo(
     () => ({
       create: (node?: ProcessTreeDataNode, pos?: number[]) => {
+        if (!isUndefined(node)) {
+          // 计算嵌套的子节点相对父节点的位置
+          const { offsetLeft, offsetTop } = getDomByNodeKey(node.key);
+          if (!isUndefined(pos) && pos.length) {
+            pos[0] = pos[0] - offsetLeft;
+            pos[1] = pos[1] - offsetTop;
+          }
+        }
         setCoordinate(pos!);
-        openCreateModal(node, false);
+        openCreateModal(node, false, false);
       },
       addText: (node?: ProcessTreeDataNode) => {
         openCreateModal(node, false, true);
@@ -174,12 +178,12 @@ const ViewOperations: FC<Props> = memo(props => {
     [getTreeNode, saveSelectedNode]
   );
 
-  const handleCreate = useCallback(
+  const handleCreateByDbClick = useCallback(
     (e: ReactMouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
       const target = handleSetSelected(e);
-      optsMethods.create(target || undefined);
+      optsMethods.create(target || undefined, [e.clientX, e.clientY]);
     },
     [optsMethods, handleSetSelected]
   );
@@ -228,11 +232,11 @@ const ViewOperations: FC<Props> = memo(props => {
         onClick={handleNodeClick}
         onDragEnd={handleNodeClick}
         onContextMenu={handleContextMenu}
-        onDoubleClick={handleCreate}>
+        onDoubleClick={handleCreateByDbClick}>
         {!dragNodes.length ? null : dragNodes}
       </section>
     </ContextMenu>
   );
-});
+};
 
 export default ViewOperations;

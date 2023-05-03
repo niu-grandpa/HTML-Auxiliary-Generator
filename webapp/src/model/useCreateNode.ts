@@ -56,13 +56,21 @@ export const useCreateNodeModel = create<Props>((set, get) => ({
   ) => {
     return set({ target, edit, open: true, addText });
   },
-  setCoordinate: (coordinate: number[]) => set({ coordinate }),
+  setCoordinate: (coordinate: number[]) => {
+    const menuHeader = document.querySelector(
+      '#menu-header'
+    ) as HTMLHeadElement;
+    coordinate[1] = coordinate[1] - menuHeader.offsetHeight;
+    return set({ coordinate });
+  },
   updateNodeData: (data: ProcessTreeDataNode[]) => set({ nodeData: data }),
   createNode: (data: FormOfNodeValues) => {
     const { edit, target, nodeData, coordinate } = get();
-
     const _createAntTreeNode = (data: FormOfNodeValues) => {
       const node = createAntTreeNode(data);
+      if (coordinate.length) {
+        node.props!.style.translate = `${coordinate[0]}px ${coordinate[1]}px`;
+      }
       node.icon = nodeIcons[node.type];
       return node;
     };

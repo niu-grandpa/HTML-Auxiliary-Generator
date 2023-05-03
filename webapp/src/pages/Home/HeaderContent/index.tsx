@@ -47,15 +47,14 @@ const HeaderContent = () => {
   }, [htmlString]);
 
   const handleCompileHTML = useCallback(() => {
+    const res = buildHTMLString(dragVnodes, {
+      space: 0,
+      indentation: 2,
+      styleType: settings.styleType,
+      sugar: settings.sugar,
+    });
+    setHTMLString(res);
     setOpenCodeView(true);
-    setHTMLString(
-      buildHTMLString(dragVnodes, {
-        space: 0,
-        indentation: 2,
-        styleType: settings.styleType,
-        sugar: settings.sugar,
-      })
-    );
   }, [dragVnodes, settings]);
 
   const handleSettings = useCallback((name: string, val: string) => {
@@ -91,7 +90,7 @@ const HeaderContent = () => {
           <section className='logo' />
           <Space size='large'>
             {navItems.map(({ icon, title, onClick }) => (
-              <Button type='link' ghost {...{ icon, onClick }} key={title}>
+              <Button type='link' {...{ icon, onClick }} key={title}>
                 {title}
               </Button>
             ))}

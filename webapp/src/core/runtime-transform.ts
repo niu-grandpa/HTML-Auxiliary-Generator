@@ -73,7 +73,9 @@ function processHTMLBody(
 
       if (attributes.length) {
         for (const { name, value } of attributes) {
-          startTag += ` ${name}="${value}"`;
+          if (value === undefined) continue;
+          if (value === '') startTag += ` ${name}`;
+          else startTag += ` ${name}="${value}"`;
         }
       }
 
@@ -217,5 +219,13 @@ function isInvalidCSSValue(value: any) {
   ) {
     return true;
   }
+  if (
+    value === 0 ||
+    value === '0px' ||
+    value === '0%' ||
+    value === '0px 0px' ||
+    value === '0 0'
+  )
+    return true;
   return false;
 }

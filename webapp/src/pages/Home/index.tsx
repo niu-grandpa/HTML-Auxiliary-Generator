@@ -16,7 +16,7 @@ const Home: React.FC = () => {
   return (
     <>
       <Layout className='layout'>
-        <Header>
+        <Header id='menu-header'>
           <HeaderContent />
         </Header>
         <Content>
