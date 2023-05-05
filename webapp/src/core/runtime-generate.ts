@@ -90,7 +90,10 @@ function _generate_() {
   /**
    * 根据vnode树构建html字符串
    */
-  function buildHTMLString(vnodes: VNode[], options: TransformOptions): string {
+  function buildHTMLString(
+    vnodes: VNode[],
+    options: TransformOptions
+  ): string[] {
     const res = transform(vnodes, options);
     return res;
   }

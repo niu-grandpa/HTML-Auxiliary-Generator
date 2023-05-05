@@ -19,13 +19,45 @@ const propsWithoutUnits = ['opacity', 'zoom', 'fontWeight', 'scale'];
 export function transform(
   dragVnodes: VNode[],
   options: TransformOptions
-): string {
+): string[] {
   const html: string[] = [];
   if (options.styleType === 'classname') {
     processHTMLOuterStyle(dragVnodes, html);
   }
   processHTMLBody(dragVnodes, html, options);
-  return html.join('');
+  return html;
+}
+
+export function processWhenHTMLExport(
+  sugar: TransformOptions['sugar'],
+  name: string,
+  html: string[]
+) {
+  const vueType = () => {
+    const styleTagEndPos = html.indexOf('</style>');
+    const ss = styleTagEndPos > -1;
+    html.splice(
+      styleTagEndPos + 1,
+      0,
+      `${ss ? '\n\n' : ''}<template>${!ss ? '\n' : ''}`
+    );
+    html.push('</template>');
+    return html.join('');
+  };
+  const reactType = () => {
+    html.unshift('<>\n');
+    html.push(`    </>`);
+    return `function ${name}() {
+  return (
+    ${html.join('')}
+  );
+}`;
+  };
+  return sugar === 'react'
+    ? reactType()
+    : sugar === 'vue'
+    ? vueType()
+    : html.join('');
 }
 
 function processHTMLBody(
@@ -39,12 +71,6 @@ function processHTMLBody(
 
   const addNewline = () => html.push('\n');
   const addContent = (s: string) => html.push(s);
-
-  const addBodyTag = (end?: boolean) => {
-    if (!isUseClassName) return;
-    addContent(`<${end ? '/' : ''}body>`);
-    addNewline();
-  };
 
   const dfs = (dragVnodes: VNode[], html: string[], space: number) => {
     const whiteSpace = ' '.repeat(space);
@@ -150,10 +176,7 @@ function processHTMLBody(
     }
   };
 
-  addBodyTag();
   dfs(dragVnodes, html, _space);
-  addBodyTag(true);
-
   return html;
 }
 

@@ -10,6 +10,7 @@ import {
   Col,
   Drawer,
   Empty,
+  Input,
   Modal,
   Row,
   Select,
@@ -23,7 +24,7 @@ import core from '../../../core';
 import { useTreeDataModel } from '../../../model';
 import LoginComponent from './Login';
 
-const { buildHTMLString } = core;
+const { buildHTMLString, processWhenHTMLExport } = core;
 
 const HeaderContent = () => {
   const { dragVnodes } = useTreeDataModel(state => ({
@@ -32,9 +33,10 @@ const HeaderContent = () => {
 
   const [htmlString, setHTMLString] = useState('');
   const [settings, setSettings] = useState({
-    styleType: 'inline',
-    sugar: 'default',
     file: 'html',
+    sugar: 'default',
+    styleType: 'inline',
+    name: `Component_${Date.now()}`,
   });
   const [openCodeView, setOpenCodeView] = useState(false);
   const [openSettings, setOpenSettings] = useState(false);
@@ -46,16 +48,24 @@ const HeaderContent = () => {
     });
   }, [htmlString]);
 
+  const onComplie = useCallback(
+    (sugar = settings.sugar, styleType = settings.styleType) => {
+      const res = buildHTMLString(dragVnodes, {
+        space: 1,
+        indentation: 2,
+        styleType,
+        sugar,
+      });
+      setHTMLString(res.join(''));
+      return res;
+    },
+    [dragVnodes, settings]
+  );
+
   const handleCompileHTML = useCallback(() => {
-    const res = buildHTMLString(dragVnodes, {
-      space: 0,
-      indentation: 2,
-      styleType: settings.styleType,
-      sugar: settings.sugar,
-    });
-    setHTMLString(res);
+    onComplie();
     setOpenCodeView(true);
-  }, [dragVnodes, settings]);
+  }, [onComplie]);
 
   const handleSettings = useCallback((name: string, val: string) => {
     setSettings(obj => {
@@ -64,6 +74,16 @@ const HeaderContent = () => {
       return obj;
     });
   }, []);
+
+  const handleExport = useCallback(() => {
+    const sugar = settings.sugar;
+    const res = processWhenHTMLExport(
+      sugar,
+      settings.name,
+      onComplie(sugar, sugar === 'react' ? 'inline' : settings.styleType)
+    );
+    // todo 传给后端接口
+  }, [onComplie, settings]);
 
   const navItems = useMemo(
     () => [
@@ -78,9 +98,9 @@ const HeaderContent = () => {
         title: '设置',
         onClick: () => setOpenSettings(true),
       },
-      { icon: <DownloadOutlined />, title: '导出', onClick: () => {} },
+      { icon: <DownloadOutlined />, title: '导出', onClick: handleExport },
     ],
-    [handleCompileHTML]
+    [handleCompileHTML, handleExport]
   );
 
   return (
@@ -123,14 +143,13 @@ const HeaderContent = () => {
       </Drawer>
       <Modal
         open={openSettings}
-        title='代码转换'
+        title='功能设置'
         footer={false}
         onCancel={() => setOpenSettings(false)}>
         <Space style={{ marginTop: 16, marginBottom: 16 }} size='large' wrap>
-          <span>转换目标: </span>
+          <span>框架语法: </span>
           <Select
             size='small'
-            allowClear
             defaultValue='default'
             style={{ width: 130 }}
             onChange={v => handleSettings('sugar', v)}
@@ -143,7 +162,6 @@ const HeaderContent = () => {
           <span>样式语法: </span>
           <Select
             size='small'
-            allowClear
             defaultValue='inline'
             style={{ width: 130 }}
             onChange={v => handleSettings('styleType', v)}
@@ -152,7 +170,9 @@ const HeaderContent = () => {
               { label: '类名', value: 'classname' },
             ]}
           />
-          <span>文件后缀: </span>
+          <span>导出命名: </span>
+          <Input size='small' style={{ width: 130 }} />
+          <span>导出后缀: </span>
           <Select
             size='small'
             defaultValue='html'
