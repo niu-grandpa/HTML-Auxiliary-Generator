@@ -105,27 +105,30 @@ function processHTMLBody(
         }
       }
 
-      if (style && Object.keys(style).length) {
-        restTranslateOfStyle(style.translate, actualPos);
-        if (styleType === 'inline') {
-          if (sugar === 'react') {
-            let styleObj: Record<string, Key> = {};
-            for (const key in style) {
-              // @ts-ignore
-              const val: string | number = style[key];
-              if (isInvalidCSSValue(val)) continue;
-              styleObj[key] = val;
+      if (style) {
+        // 拖拽节点初始化会加上 {position: 'absolute'}，如果没有其他样式就没必要处理
+        if (!isDefaultStyle(Object.keys(style))) {
+          restTranslateOfStyle(style.translate, actualPos);
+          if (styleType === 'inline') {
+            if (sugar === 'react') {
+              let styleObj: Record<string, Key> = {};
+              for (const key in style) {
+                // @ts-ignore
+                const val: string | number = style[key];
+                if (isInvalidCSSValue(val)) continue;
+                styleObj[key] = val;
+              }
+              startTag += ` style={${JSON.stringify(styleObj)}}`;
+            } else {
+              for (const key in style) {
+                // @ts-ignore
+                let val: string | number = style[key];
+                if (isInvalidCSSValue(val)) continue;
+                if (sugar === 'default') val = normalizeCSSUnit(key, val);
+                inlineStyle += `${getKebabCase2(key)}: ${val}; `;
+              }
+              startTag += ` style="${inlineStyle.trimEnd()}"`;
             }
-            startTag += ` style={${JSON.stringify(styleObj)}}`;
-          } else {
-            for (const key in style) {
-              // @ts-ignore
-              let val: string | number = style[key];
-              if (isInvalidCSSValue(val)) continue;
-              if (sugar === 'default') val = normalizeCSSUnit(key, val);
-              inlineStyle += `${getKebabCase2(key)}: ${val}; `;
-            }
-            startTag += ` style="${inlineStyle.trimEnd()}"`;
           }
         }
       }
@@ -203,6 +206,7 @@ function processHTMLOuterStyle(dragVnodes: VNode[], html: string[]) {
   getNodeCls('', dragVnodes);
 
   for (const [key, value] of classList) {
+    if (isDefaultStyle(Object.keys(value))) continue;
     addContent(`  .${key} {`);
     addNewline();
     for (const styleName in value) {
@@ -234,6 +238,10 @@ function normalizeCSSUnit(key: string, styleVal: string | number) {
   }
   return styleVal;
 }
+
+const isDefaultStyle = (styleKeys: string[]) => {
+  return styleKeys.length === 1 && styleKeys[0] === 'position';
+};
 
 function isInvalidCSSValue(value: any) {
   if (

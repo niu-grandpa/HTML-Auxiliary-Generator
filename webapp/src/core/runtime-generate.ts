@@ -24,12 +24,15 @@ function _generate_() {
   }: FormOfNodeValues & {
     style?: Partial<CSSStyleDeclaration>;
   }): ProcessTreeDataNode {
+    const tag = value;
     const key = createNodeKey();
     const isText = type === NodeType.TEXT;
+    const __alias = isText ? content : alias || value || content;
     const extra = {
+      tag,
       type,
       content,
-      tag: value,
+      alias: __alias,
       actualPos: [0, 0],
       props: {
         draggable: true,
@@ -40,7 +43,6 @@ function _generate_() {
         className: className ?? undefined,
         style: { position: 'absolute', ...style },
       },
-      alias: isText ? content : alias || value || content,
     };
     const node = {
       key,

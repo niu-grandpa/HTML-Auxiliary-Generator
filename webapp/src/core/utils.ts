@@ -1,5 +1,4 @@
-import { TreeDataNode } from 'antd';
-import { NodeType, VNode } from './type';
+import { NodeType, ProcessTreeDataNode, VNode } from './type';
 
 /**创建拖动节点——虚拟节点 */
 export function createDragVnode(
@@ -27,15 +26,13 @@ export function createNodeKey(): string {
 }
 
 // 解决复制的节点 key 冲突
-export function resolveKeyConflicts(node: TreeDataNode) {
+export function resolveKeyConflicts(node: ProcessTreeDataNode) {
   const newKey = createNodeKey();
   node.key = newKey;
-  // @ts-ignore
-  node.props['data-drag-vnode-uuid'] = newKey;
+  node.props!['data-drag-vnode-uuid'] = newKey;
   if (node.isLeaf || !node.children?.length) return;
   for (let i = 0; i < node.children.length; i++) {
-    const child = node.children[i];
-    resolveKeyConflicts(child);
+    resolveKeyConflicts(node.children[i] as ProcessTreeDataNode);
   }
   return node;
 }
