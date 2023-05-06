@@ -4,15 +4,8 @@ import { NodeInfo, NodeType } from './type';
 
 type Props = {
   node: NodeType;
-  newNode: NodeType;
-  deleteNode: NodeType;
   selectedNode: NodeInfo;
-  treeData: NodeType[];
   dragVnodes: VNode[];
-  push: (node: NodeType) => void;
-  update: (node: NodeType) => void;
-  delete: (key: NodeType) => void;
-  saveTreeData: (data: NodeType[]) => void;
   saveDragVnodes: (vnodes: VNode[]) => void;
   saveSelectedNode: (info: NodeInfo) => void;
 };
@@ -20,15 +13,8 @@ type Props = {
 /** 使得树节点在两个组件间能够进行数据修改 */
 export const useTreeDataModel = create<Props>(set => ({
   node: null,
-  newNode: null,
-  deleteNode: null,
   selectedNode: { key: '', node: null },
-  treeData: [],
   dragVnodes: [],
-  push: (node: NodeType) => set(() => ({ newNode: node })),
-  update: (node: NodeType) => set(() => ({ node })),
-  delete: (node: NodeType) => set(() => ({ deleteNode: node })),
-  saveTreeData: (data: NodeType[]) => set(() => ({ treeData: data })),
   saveDragVnodes: (vnodes: VNode[]) => set(() => ({ dragVnodes: vnodes })),
   saveSelectedNode: (selectedNode: NodeInfo) => set(() => ({ selectedNode })),
 }));

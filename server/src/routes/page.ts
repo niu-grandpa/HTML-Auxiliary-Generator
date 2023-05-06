@@ -1,19 +1,22 @@
+/**
+ * 本质上前端的路由都是通过js动态切换的，并不存在对应html页面
+ * 因此，前端访问的任何路径始终都需要返回index.html，交由前端处理
+ */
+
 import { Router } from 'express';
+import path from 'path';
 
 const router = Router();
 
-router.get('/', (req, res) => res.redirect('/'));
-router.get('/home', (req, res) => {
-  // todo 发送对应静态文件
-});
-router.get('/tutorial', (req, res) => {
-  // todo 发送对应静态文件
-});
-router.get('/user-center', (req, res) => {
-  // todo 发送对应静态文件
-});
-router.get('*', (req, res) => {
-  // todo 发送对应静态文件
-});
+const redirect = (res: any) => {
+  res.setHeader('Content-Type', 'text/html');
+  res.sendFile(path.join(__dirname, '../../public/index.html'));
+};
+
+router.get('/', (_, res) => res.redirect('/'));
+router.get('/home', (_, res) => redirect(res));
+router.get('/tutorial', (_, res) => redirect(res));
+router.get('/user-center', (_, res) => redirect(res));
+router.get('*', (_, res) => redirect(res));
 
 export { router };
