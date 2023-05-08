@@ -206,11 +206,11 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
       const c = cloneDeep(cur);
       const oldStyle = c.props!.style;
       c.props!.style = { ...oldStyle, ...values };
-      setTreeData(
+      updateNodeData(
         updateAntTree(treeData.slice() as ProcessTreeDataNode[], c).slice()
       );
     },
-    [selected, treeData, selectedNodeInfo]
+    [selected, treeData, updateNodeData, selectedNodeInfo]
   );
 
   const tabsItems: TabsProps['items'] = useMemo(

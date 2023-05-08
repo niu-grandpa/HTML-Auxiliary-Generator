@@ -12,18 +12,26 @@ import {
   ContextMenu,
   ContextMenuHandlers,
 } from '../../../components/ContextMenu';
-import core, { calcActualPos, renderDragVnode } from '../../../core';
+import core from '../../../core';
 import { ProcessTreeDataNode } from '../../../core/type';
 import { resolveKeyConflicts } from '../../../core/utils';
 import { useDrag } from '../../../hooks';
 import { useCreateNodeModel, useTreeDataModel } from '../../../model';
 import {
   getDomByNodeKey,
+  getHeaderHeight,
   getIsTargetNode,
   getStringPxToNumber,
 } from '../../../utils';
 
-const { antTreeNodeToVNode, findNode, deleteNode, updateAntTree } = core;
+const {
+  findNode,
+  deleteNode,
+  updateAntTree,
+  renderDragVnode,
+  antTreeNodeToVNode,
+  calcRealCoordOfNode,
+} = core;
 
 const targetDatasetName = 'isDragTarget';
 const targetKeyName = 'dragVnodeUuid';
@@ -78,14 +86,17 @@ const ViewOperations = () => {
 
   const setNodePosData = useCallback(
     (node: ProcessTreeDataNode, x: number, y: number) => {
-      node.actualPos = calcActualPos(wrapperElem.current!, x, y);
+      node.actualPos = calcRealCoordOfNode(wrapperElem.current!, x, y);
       const style = node.props!.style;
       node.props!.style = {
         ...style,
         translate: `${x}px ${y}px`,
       };
+      updateNodeData(
+        updateAntTree(nodeData as ProcessTreeDataNode[], node).slice()
+      );
     },
-    []
+    [nodeData, updateNodeData]
   );
 
   const updateNodePos = useCallback(
@@ -102,10 +113,11 @@ const ViewOperations = () => {
       create: (node?: ProcessTreeDataNode, pos?: number[]) => {
         if (!isUndefined(node)) {
           // 计算嵌套的子节点相对父节点的位置
-          const { offsetLeft, offsetTop } = getDomByNodeKey(node.key);
+          const parentElm = getDomByNodeKey(node.key);
+          const { x, y } = parentElm.getBoundingClientRect();
           if (!isUndefined(pos) && pos.length) {
-            pos[0] = pos[0] - offsetLeft;
-            pos[1] = pos[1] - offsetTop;
+            pos[0] = pos[0] - x;
+            pos[1] = pos[1] - y + getHeaderHeight();
           }
         }
         setCoordinate(pos!);

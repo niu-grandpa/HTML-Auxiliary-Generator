@@ -43,7 +43,11 @@ const Home = () => {
             onClick={() => navigate('/home')}>
             开始使用
           </Button>
-          <Button size='large' shape='round' className='wec-start-btn'>
+          <Button
+            size='large'
+            shape='round'
+            className='wec-start-btn'
+            onClick={() => navigate('/tutorial')}>
             使用教程
           </Button>
         </Space>

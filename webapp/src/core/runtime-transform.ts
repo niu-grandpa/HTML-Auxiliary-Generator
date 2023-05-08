@@ -24,7 +24,7 @@ export function transform(
   if (options.styleType === 'classname') {
     processHTMLOuterStyle(dragVnodes, html);
   }
-  processHTMLBody(dragVnodes, html, options);
+  processBodyHTML(dragVnodes, html, options);
   return html;
 }
 
@@ -33,15 +33,15 @@ export function processWhenHTMLExport(
   name: string,
   html: string[]
 ) {
-  const vueType = () => {
-    const styleTagEndPos = html.indexOf('</style>');
-    const ss = styleTagEndPos > -1;
+  const styleTagEndPos = html.indexOf('</style>');
+  const ss = styleTagEndPos > -1;
+  const commonType = (name: string) => {
     html.splice(
       styleTagEndPos + 1,
       0,
-      `${ss ? '\n\n' : ''}<template>${!ss ? '\n' : ''}`
+      `${ss ? '\n\n' : ''}<${name}>${!ss ? '\n' : ''}`
     );
-    html.push('</template>');
+    html.push(`</${name}>`);
     return html.join('');
   };
   const reactType = () => {
@@ -53,14 +53,15 @@ export function processWhenHTMLExport(
   );
 }`;
   };
+
   return sugar === 'react'
     ? reactType()
     : sugar === 'vue'
-    ? vueType()
-    : html.join('');
+    ? commonType('template')
+    : commonType('body');
 }
 
-function processHTMLBody(
+function processBodyHTML(
   dragVnodes: VNode[],
   html: string[],
   options: TransformOptions

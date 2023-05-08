@@ -20,9 +20,9 @@ import {
 } from 'antd';
 import { isEqual } from 'lodash';
 import { useCallback, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import core from '../../../core';
 import { useTreeDataModel } from '../../../model';
-import LoginComponent from './Login';
 
 const { buildHTMLString, processWhenHTMLExport } = core;
 
@@ -30,7 +30,7 @@ const HeaderContent = () => {
   const { dragVnodes } = useTreeDataModel(state => ({
     dragVnodes: state.dragVnodes,
   }));
-
+  const navigate = useNavigate();
   const [htmlString, setHTMLString] = useState('');
   const [settings, setSettings] = useState({
     file: 'html',
@@ -87,7 +87,11 @@ const HeaderContent = () => {
 
   const navItems = useMemo(
     () => [
-      { icon: <ReadOutlined />, title: '使用教程', onClick: () => {} },
+      {
+        icon: <ReadOutlined />,
+        title: '使用教程',
+        onClick: () => navigate('/tutorial'),
+      },
       {
         icon: <FileTextOutlined />,
         title: '查看代码',
@@ -100,7 +104,7 @@ const HeaderContent = () => {
       },
       { icon: <DownloadOutlined />, title: '导出', onClick: handleExport },
     ],
-    [handleCompileHTML, handleExport]
+    [navigate, handleCompileHTML, handleExport]
   );
 
   return (
@@ -115,9 +119,6 @@ const HeaderContent = () => {
               </Button>
             ))}
           </Space>
-        </Col>
-        <Col span={2}>
-          <LoginComponent />
         </Col>
       </Row>
       <Drawer

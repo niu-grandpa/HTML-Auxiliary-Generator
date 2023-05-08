@@ -1,4 +1,30 @@
+import { getHeaderHeight } from '../utils';
 import { ProcessTreeDataNode } from './type';
+
+/**
+ * Calculate the real coordinates of the node
+ *
+ * 计算节点脱离画布后在浏览器页面的真实坐标
+ */
+export function calcRealCoordOfNode(
+  wrapper: HTMLElement,
+  targetX: number,
+  targetY: number
+) {
+  // x坐标需加上此画布损失的右边距整个浏览器剩余的宽度比值,
+  // targetX + [targetX / ((bodyW - wrapperW) / 100))]
+  const bodyWidth = document.body.offsetWidth;
+  const wrapperWidth = wrapper.offsetWidth;
+  // 减去画布宽度后整个页面剩余的宽度百分比
+  const remainingWidth = (bodyWidth - wrapperWidth) / 100;
+  // 补全拖拽元素在实际页面的左侧距离
+  const widthCompletion = ~~(targetX / remainingWidth);
+  // 补全拖拽元素在实际页面的上侧距离
+  const heightCompletion = targetY - getHeaderHeight();
+  targetX += widthCompletion;
+  targetY = heightCompletion > 0 ? targetY - heightCompletion : targetY;
+  return [targetX, targetY];
+}
 
 function createIndexMap(source: unknown[]): Map<unknown, number> {
   const map = new Map<unknown, number>();

@@ -16,7 +16,6 @@ const redirect = (res: any) => {
 router.get('/', (_, res) => res.redirect('/'));
 router.get('/home', (_, res) => redirect(res));
 router.get('/tutorial', (_, res) => redirect(res));
-router.get('/user-center', (_, res) => redirect(res));
 router.get('*', (_, res) => redirect(res));
 
 export { router };

@@ -11,6 +11,7 @@ import { __defaultValues } from '../components/ModalCreateNode';
 import { type FormOfNodeValues } from '../components/ModalCreateNode/ModalFormOfNodeItem';
 import core from '../core';
 import { NodeType } from '../core/type';
+import { getHeaderHeight } from '../utils';
 import { NodeType as ProcessTreeDataNode } from './type';
 
 type Props = {
@@ -57,10 +58,7 @@ export const useCreateNodeModel = create<Props>((set, get) => ({
     return set({ target, edit, open: true, addText });
   },
   setCoordinate: (coordinate: number[]) => {
-    const menuHeader = document.querySelector(
-      '#menu-header'
-    ) as HTMLHeadElement;
-    coordinate[1] = coordinate[1] - menuHeader.offsetHeight;
+    coordinate[1] = coordinate[1] - getHeaderHeight();
     return set({ coordinate });
   },
   updateNodeData: (data: ProcessTreeDataNode[]) => set({ nodeData: data }),
@@ -69,7 +67,7 @@ export const useCreateNodeModel = create<Props>((set, get) => ({
     const _createAntTreeNode = (data: FormOfNodeValues) => {
       const node = createAntTreeNode(data);
       if (coordinate.length) {
-        node.props!.style.translate = `${coordinate[0]}px ${coordinate[1]}px`;
+        node.props!.style.translate = `${~~coordinate[0]}px ${~~coordinate[1]}px`;
       }
       node.icon = nodeIcons[node.type];
       return node;
