@@ -1,4 +1,3 @@
-import { getHeaderHeight } from '../utils';
 import { ProcessTreeDataNode } from './type';
 
 /**
@@ -19,11 +18,7 @@ export function calcRealCoordOfNode(
   const remainingWidth = (bodyWidth - wrapperWidth) / 100;
   // 补全拖拽元素在实际页面的左侧距离
   const widthCompletion = ~~(targetX / remainingWidth);
-  // 补全拖拽元素在实际页面的上侧距离
-  const heightCompletion = targetY - getHeaderHeight();
-  targetX += widthCompletion;
-  targetY = heightCompletion > 0 ? targetY - heightCompletion : targetY;
-  return [targetX, targetY];
+  return [targetX + widthCompletion, targetY];
 }
 
 function createIndexMap(source: unknown[]): Map<unknown, number> {
