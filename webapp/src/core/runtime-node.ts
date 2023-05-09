@@ -157,30 +157,23 @@ function patchChildren(c1: ProcessTreeDataNode[], c2: ProcessTreeDataNode[]) {
   return c1;
 }
 
-function patchProps(n1: ProcessTreeDataNode, n2: ProcessTreeDataNode) {
+function patchProps(n1: any, n2: any) {
   const oldProps = n1.props;
   const newProps = n2.props;
   for (const key in newProps) {
-    // @ts-ignore
-    const oldValue = oldProps[key];
-    // @ts-ignore
-    const newValue = newProps[key];
-    // @ts-ignore
-    oldProps[key] = newValue;
-    //  attributes属性 -> [{ name:string, value: string }, ...]
-    // if (Array.isArray(oldValue) && Array.isArray(newValue)) {
-    //   const oldAttrs = oldValue;
-    //   const newAttrs = newValue;
-    //   if (!oldAttrs.length && newAttrs.length) {
-    //     oldProps[key] = newAttrs;
-    //   } else if (oldAttrs.length && !newAttrs.length) {
-    //     oldProps[key] = [];
-    //   } else {
-    //     const indexMap = createIndexMap(oldAttrs);
-    // todo
-    //   }
-    // } else if (oldValue !== newValue) {
-    //   oldProps[key] = newValue;
-    // }
+    const oldVal = oldProps[key];
+    const newVal = newProps[key];
+    if (oldVal === undefined || oldVal !== newVal) {
+      oldProps[key] = newVal;
+    }
+  }
+  for (const key in oldProps) {
+    const oldVal = oldProps[key];
+    const newVal = newProps[key];
+    if (newVal === undefined && oldVal !== undefined) {
+      oldProps[key] = undefined;
+    } else if (oldVal !== newVal) {
+      oldProps[key] = newVal;
+    }
   }
 }

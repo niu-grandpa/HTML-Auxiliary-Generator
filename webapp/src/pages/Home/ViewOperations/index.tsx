@@ -52,7 +52,7 @@ const ViewOperations = () => {
   }));
 
   const wrapperElem = useRef<HTMLElement>(null);
-  const { onDragComplete } = useDrag(wrapperElem.current, targetDatasetName);
+  const { onDragComplete } = useDrag(wrapperElem.current, targetKeyName);
 
   onDragComplete((x, y, key) => {
     updateNodePos(key, x, y);

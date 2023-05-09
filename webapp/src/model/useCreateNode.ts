@@ -49,7 +49,7 @@ export const useCreateNodeModel = create<Props>((set, get) => ({
   addText: false,
   nodeData: [],
   coordinate: [],
-  closeModal: () => set({ open: false, target: null }),
+  closeModal: () => set({ open: false, target: null, coordinate: [] }),
   openModal: (
     target: ProcessTreeDataNode,
     edit: boolean,
