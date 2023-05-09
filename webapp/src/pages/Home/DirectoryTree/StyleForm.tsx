@@ -3,6 +3,7 @@ import { DefaultOptionType } from 'antd/es/select';
 import { forIn, isEqual, keys } from 'lodash';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { useDebounce } from '../../../hooks';
+import { getStringPxToNumber } from '../../../utils';
 
 export type StyleFormValueType = React.CSSProperties;
 type Props = {
@@ -16,7 +17,11 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
 
   useEffect(() => {
     if (keys(defaultValues).length) {
-      // todo 设置默认单位
+      const [x, y] = getStringPxToNumber(defaultValues.translate as string);
+      // @ts-ignore
+      defaultValues['x-coordinate'] = x;
+      // @ts-ignore
+      defaultValues['y-coordinate'] = y;
       form.setFieldsValue(defaultValues);
     } else {
       form.resetFields();
@@ -33,6 +38,19 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
     []
   );
 
+  const processCoordinate = useCallback(
+    (cur: any, values: StyleFormValueType) => {
+      let { translate } = defaultValues;
+      if (cur['x-coordinate'] || cur['y-coordinate']) {
+        const [x, y] = getStringPxToNumber(translate as string);
+        if (cur['x-coordinate']) translate = `${cur['x-coordinate']}px ${y}px`;
+        if (cur['y-coordinate']) translate = `${x}px ${cur['y-coordinate']}px`;
+      }
+      values.translate = translate;
+    },
+    [defaultValues]
+  );
+
   const handleSetUnit = useCallback(
     (unit: string, name: string) => {
       processUnit(form.getFieldsValue(), name, unit);
@@ -44,10 +62,10 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
     [form, processUnit]
   );
 
-  const handleValuesChange = useDebounce((_, values: StyleFormValueType) => {
-    const { translate } = defaultValues;
+  const handleValuesChange = useDebounce((cur, values: StyleFormValueType) => {
+    processCoordinate(cur, values);
     forIn(unitObj, (unit, name) => processUnit(values, name, unit));
-    onValuesChange({ ...values, translate });
+    onValuesChange(values);
   });
 
   return (
@@ -58,6 +76,18 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
       autoComplete='off'
       className='style-form'
       onValuesChange={handleValuesChange}>
+      <Space>
+        <FormItemOfInputNumber
+          closeUnit
+          onUnitChange={handleSetUnit}
+          name='x-coordinate'
+        />
+        <FormItemOfInputNumber
+          closeUnit
+          onUnitChange={handleSetUnit}
+          name='y-coordinate'
+        />
+      </Space>
       <Space>
         <FormItemOfSelect
           name='display'

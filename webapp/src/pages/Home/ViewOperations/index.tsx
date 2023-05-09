@@ -54,10 +54,6 @@ const ViewOperations = () => {
   const wrapperElem = useRef<HTMLElement>(null);
   const { onDragComplete } = useDrag(wrapperElem.current, targetKeyName);
 
-  onDragComplete((x, y, key) => {
-    updateNodePos(key, x, y);
-  });
-
   const [openCtxMenu, setOpenCtxMenu] = useState(false);
   const [ctxPos, setCtxPos] = useState<number[]>([0, 0]);
   const [copyNode, setCopyNode] = useState<ProcessTreeDataNode>();
@@ -100,13 +96,15 @@ const ViewOperations = () => {
   );
 
   const updateNodePos = useCallback(
-    (key: string, x: number, y: number) => {
+    (x: number, y: number, key: string) => {
       const current = getTreeNode(key);
       if (isUndefined(current)) return;
       setNodePosData(current, x, y);
     },
     [getTreeNode, setNodePosData]
   );
+
+  onDragComplete(updateNodePos);
 
   const optsMethods = useMemo(
     () => ({
