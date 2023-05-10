@@ -18,19 +18,22 @@ import {
   Tooltip,
   message,
 } from 'antd';
-import { isEqual } from 'lodash';
+import { cloneDeep, isEqual } from 'lodash';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import core from '../../../core';
-import { useTreeDataModel } from '../../../model';
+import { ProcessTreeDataNode } from '../../../core/type';
+import { useCreateNodeModel } from '../../../model';
 
-const { buildHTMLString, processWhenHTMLExport } = core;
+const { buildHTMLString, processWhenHTMLExport, antTreeNodeToVNode } = core;
 
 const HeaderContent = () => {
-  const { dragVnodes } = useTreeDataModel(state => ({
-    dragVnodes: state.dragVnodes,
+  const { nodeData } = useCreateNodeModel(state => ({
+    nodeData: state.nodeData,
   }));
+
   const navigate = useNavigate();
+
   const [htmlString, setHTMLString] = useState('');
   const [settings, setSettings] = useState({
     file: 'html',
@@ -50,7 +53,10 @@ const HeaderContent = () => {
 
   const onComplie = useCallback(
     (sugar = settings.sugar, styleType = settings.styleType) => {
-      const res = buildHTMLString(dragVnodes, {
+      const v = antTreeNodeToVNode(
+        cloneDeep(nodeData) as ProcessTreeDataNode[]
+      );
+      const res = buildHTMLString(v, {
         space: 1,
         indentation: 2,
         styleType,
@@ -59,7 +65,7 @@ const HeaderContent = () => {
       setHTMLString(res.join(''));
       return res;
     },
-    [dragVnodes, settings]
+    [settings, nodeData]
   );
 
   const handleCompileHTML = useCallback(() => {

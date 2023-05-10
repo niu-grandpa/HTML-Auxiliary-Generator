@@ -232,7 +232,7 @@ const DirectoryTree: FC<Props> = memo(({ fieldNames }) => {
         ),
       },
       {
-        label: 'Style',
+        label: '外观样式',
         key: 'style',
         children: (
           <LazyLoading

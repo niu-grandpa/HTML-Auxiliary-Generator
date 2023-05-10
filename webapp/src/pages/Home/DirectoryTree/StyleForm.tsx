@@ -18,11 +18,11 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
   useEffect(() => {
     if (keys(defaultValues).length) {
       const [x, y] = getStringPxToNumber(defaultValues.translate as string);
-      // @ts-ignore
-      defaultValues['x-coordinate'] = x;
-      // @ts-ignore
-      defaultValues['y-coordinate'] = y;
-      form.setFieldsValue(defaultValues);
+      form.setFieldsValue({
+        ...defaultValues,
+        'x-coordinate': x,
+        'y-coordinate': y,
+      });
     } else {
       form.resetFields();
     }
@@ -47,6 +47,10 @@ const StyleForm = memo<Props>(({ defaultValues, onValuesChange }) => {
         if (cur['y-coordinate']) translate = `${x}px ${cur['y-coordinate']}px`;
       }
       values.translate = translate;
+      // @ts-ignore
+      delete values['x-coordinate'];
+      // @ts-ignore
+      delete values['y-coordinate'];
     },
     [defaultValues]
   );

@@ -102,7 +102,7 @@ function patchNode(n1: ProcessTreeDataNode, n2: ProcessTreeDataNode) {
   n1.alias !== n2.alias && (n1.alias = n2.alias);
   n1.content !== n2.content && (n1.content = n2.content);
   n1.props !== n2.props && patchProps(n1, n2);
-  n2.actualPos.forEach((pos, i) => (n1.actualPos[i] = pos));
+  n1.actualPos = n2.actualPos;
 
   const oldChildren = n1.children!;
   const newChildren = n2.children!;

@@ -109,7 +109,7 @@ function processBodyHTML(
       if (style) {
         // 拖拽节点初始化会加上 {position: 'absolute'}，如果没有其他样式就没必要处理
         if (!isDefaultStyle(Object.keys(style))) {
-          restTranslateOfStyle(style.translate, actualPos);
+          restTranslateOfStyle(style, actualPos);
           if (styleType === 'inline') {
             if (sugar === 'react') {
               let styleObj: Record<string, Key> = {};
@@ -196,7 +196,7 @@ function processHTMLOuterStyle(dragVnodes: VNode[], html: string[]) {
   const getNodeCls = (perfix: string, nodes: VNode[]) => {
     for (const { children, props, key, type, actualPos } of nodes) {
       if (type === NodeType.TEXT) continue;
-      restTranslateOfStyle(props!.style.translate, actualPos);
+      restTranslateOfStyle(props!.style, actualPos);
       const className = props?.className || key;
       const cls = perfix ? `${perfix} > ${className}` : className;
       classList.set(cls, props!.style);
@@ -226,10 +226,10 @@ function processHTMLOuterStyle(dragVnodes: VNode[], html: string[]) {
   addNewline();
 }
 
-function restTranslateOfStyle(obj: CSSProperties['translate'], pos: number[]) {
+function restTranslateOfStyle(obj: CSSProperties, pos: number[]) {
   const [x, y] = pos;
   if (!x && !y) return;
-  obj = `${x}px ${y}px`;
+  obj.translate = `${x}px ${y}px`;
 }
 
 function normalizeCSSUnit(key: string, styleVal: string | number) {

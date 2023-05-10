@@ -27,9 +27,9 @@ export function useDrag(refElem: HTMLElement | null, targetKeyName: string) {
       let x = originX - parentX;
       let y = originY - parentY;
 
-      originY < 0 && (x = 0);
+      originX < 0 && (x = 0);
       originY < 0 && (y = 0);
-      originY > rightBound && (x = rightBound - parentX);
+      originX > rightBound && (x = rightBound - parentX);
       originY > bottomBound && (y = bottomBound - parentY);
 
       return { x, y };

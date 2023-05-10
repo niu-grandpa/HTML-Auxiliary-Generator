@@ -46,7 +46,7 @@ const ViewOperations = () => {
       updateNodeData: state.updateNodeData,
     }));
 
-  const { saveSelectedNode, saveDragVnodes } = useTreeDataModel(state => ({
+  const { saveSelectedNode } = useTreeDataModel(state => ({
     saveDragVnodes: state.saveDragVnodes,
     saveSelectedNode: state.saveSelectedNode,
   }));
@@ -64,9 +64,8 @@ const ViewOperations = () => {
 
   const dragNodes = useMemo(() => {
     const vnodes = antTreeNodeToVNode(nodeData as ProcessTreeDataNode[]);
-    saveDragVnodes(cloneDeep(vnodes));
     return renderDragVnode(vnodes);
-  }, [nodeData, saveDragVnodes]);
+  }, [nodeData]);
 
   useEffect(() => {
     saveSelectedNode({ key: selected?.key ?? '', node: selected });
@@ -237,6 +236,7 @@ const ViewOperations = () => {
       {...{ nodeType, canPaste }}
       onClose={() => setOpenCtxMenu(false)}>
       <section
+        id='linkCanvasDom'
         ref={wrapperElem}
         className='view-opts'
         onClick={handleNodeClick}

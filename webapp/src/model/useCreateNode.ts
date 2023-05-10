@@ -6,10 +6,11 @@ import {
 import { TreeDataNode } from 'antd';
 import { eq } from 'lodash';
 import { createElement } from 'react';
-import { create } from 'zustand';
+import { StoreApi, UseBoundStore, create } from 'zustand';
 import { __defaultValues } from '../components/ModalCreateNode';
 import { type FormOfNodeValues } from '../components/ModalCreateNode/ModalFormOfNodeItem';
 import core from '../core';
+import { calcRealCoordOfNode } from '../core/runtime-node';
 import { NodeType } from '../core/type';
 import { getHeaderHeight } from '../utils';
 import { NodeType as ProcessTreeDataNode } from './type';
@@ -32,6 +33,8 @@ type Props = {
   createNode: (data: FormOfNodeValues, pos?: [number, number]) => void;
 };
 
+type UseCreateNodeModel = UseBoundStore<StoreApi<Props>>;
+
 const { createAntTreeNode, updateAntTree } = core;
 
 const nodeIcons = {
@@ -42,7 +45,7 @@ const nodeIcons = {
 /**
  * 组件间可以共享创建节点的方法
  */
-export const useCreateNodeModel = create<Props>((set, get) => ({
+export const useCreateNodeModel: UseCreateNodeModel = create((set, get) => ({
   open: false,
   edit: false,
   target: null,
@@ -67,7 +70,13 @@ export const useCreateNodeModel = create<Props>((set, get) => ({
     const _createAntTreeNode = (data: FormOfNodeValues) => {
       const node = createAntTreeNode(data);
       if (coordinate.length) {
-        node.props!.style.translate = `${~~coordinate[0]}px ${~~coordinate[1]}px`;
+        const [x, y] = coordinate;
+        node.actualPos = calcRealCoordOfNode(
+          document.querySelector('#linkCanvasDom') as HTMLElement,
+          x,
+          y
+        );
+        node.props!.style.translate = `${~~x}px ${~~y}px`;
       }
       node.icon = nodeIcons[node.type];
       return node;
